@@ -2580,12 +2580,11 @@ async function showInviteBanner(token) {
 
 // Check session on load
 async function authInit() {
-  // Check for invite token in URL
+  // Check for invite token — from URL or sessionStorage (survives redirects)
   const urlParams = new URLSearchParams(window.location.search);
-  const inviteToken = urlParams.get('invite');
+  const inviteToken = urlParams.get('invite') || sessionStorage.getItem('pendingInviteToken');
   if (inviteToken) {
     sessionStorage.setItem('pendingInviteToken', inviteToken);
-    // Clean URL
     window.history.replaceState({}, '', window.location.pathname);
   }
 
@@ -2597,7 +2596,7 @@ async function authInit() {
     // If invite token, show register tab and update UI
     if (inviteToken) {
       authShowTab('register');
-      showInviteBanner(inviteToken);
+      await showInviteBanner(inviteToken);
     }
   }
 }
