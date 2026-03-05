@@ -2920,7 +2920,7 @@ async function updateSharePermission(brandId, userId, permission) {
     });
   }
   // Liten fördröjning så Supabase hinner committa innan vi läser om
-  await new Promise(r => setTimeout(r, 300));
+  await new Promise(r => setTimeout(r, 800));
   openShareModal(brandId);
 }
 
