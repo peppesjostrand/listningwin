@@ -2,6 +2,16 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
+<script>
+  // Preserve invite token before any redirects
+  (function() {
+    try {
+      var p = new URLSearchParams(window.location.search);
+      var t = p.get('invite');
+      if (t) sessionStorage.setItem('pendingInviteToken', t);
+    } catch(e) {}
+  })();
+</script>
   <!-- v2.1772187763 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Listningsfönster 2026 — v02271022</title>
