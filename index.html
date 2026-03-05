@@ -2331,74 +2331,115 @@ function renderUndoBar() {
 
 
 // ═══════════════════════════════════════════════
-// BRANDS — persistent state
+// PROJECTS — persistent state (ersätter brands)
 // ═══════════════════════════════════════════════
 const BRAND_COLORS = ['#a78bfa','#f472b6','#fb923c','#facc15','#4ade80','#38bdf8','#f87171','#34d399','#e879f9','#94a3b8'];
 
-
 let selectedBrandId = null;
 let editingBrandId = null;
-let catModalTarget = null; // { brandId, productId }
-let catModalSelected = []; // [{catName, source}]
+let catModalTarget = null;
+let catModalSelected = [];
 
-let brands = [];       // [{ id, name, color, products: [{ id, name, cats: [{catName, source}] }] }]
+// brands-arrayen behålls för kompatibilitet med all renderingskod
+// men varje brand har nu även: projectId, visibility, permission
+let brands = [];
+
+// Map: brandId → projectId (för sparande)
+const brandProjectMap = {};
 
 // ═══════════════════════════════════════════════
-// SUPABASE SYNC
+// SUPABASE
 // ═══════════════════════════════════════════════
 const SUPA_URL = 'https://rjbqvbnzxxltnwoqfstb.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqYnF2Ym56eHhsdG53b3Fmc3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNzU5MzIsImV4cCI6MjA4Nzc1MTkzMn0.w51_Lx8sipSdO48MquB9LTf-LOvru0qPuR1fwFVPtoA';
-const SUPA_ROW = '00000000-0000-0000-0000-000000000001';
 const supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
+// Ladda alla projekt som användaren kan se
 async function loadBrands() {
   document.getElementById('overview-content').innerHTML =
     '<div class="empty-state" style="margin-top:40px">⏳ Laddar data...</div>';
   try {
     if (!currentWorkspaceId) throw new Error('No workspace');
     const { data, error } = await supabaseClient
-      .from('brands')
-      .select('data')
-      .eq('workspace_id', currentWorkspaceId)
-      .limit(1);
+      .rpc('get_my_projects', { p_workspace_id: currentWorkspaceId });
     if (error) throw error;
-    brands = (data && data.length && data[0].data) ? JSON.parse(data[0].data) : [];
+
+    brands = (data || []).map(p => {
+      const products = Array.isArray(p.data) ? p.data : [];
+      const brand = {
+        id: p.id,           // använd project UUID som brand id
+        name: p.name,
+        color: p.color || '#a78bfa',
+        products,
+        visibility: p.visibility,
+        permission: p.permission,
+        createdBy: p.created_by
+      };
+      brandProjectMap[p.id] = p.id;
+      return brand;
+    });
   } catch(e) {
-    // Silently fall back to localStorage (iframe preview or network issue)
-    try {
-      const raw = localStorage.getItem('listwin_brands');
-      brands = raw ? JSON.parse(raw) : [];
-    } catch(e2) { brands = []; }
+    console.warn('loadBrands error', e);
+    brands = [];
   }
   renderAll();
 }
 
-async function saveBrands() {
-  try { localStorage.setItem('listwin_brands', JSON.stringify(brands)); } catch(e) {}
-  if (!currentWorkspaceId) return;
+// Spara ett enskilt projekt
+async function saveProject(brandId) {
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand || !currentWorkspaceId) return;
   try {
-    // Check if row exists for this workspace
-    const { data: existing } = await supabaseClient
-      .from('brands')
-      .select('id')
-      .eq('workspace_id', currentWorkspaceId)
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      // Update existing row
-      await supabaseClient
-        .from('brands')
-        .update({ data: JSON.stringify(brands) })
-        .eq('workspace_id', currentWorkspaceId);
-    } else {
-      // Insert new row for this workspace
-      await supabaseClient
-        .from('brands')
-        .insert({ workspace_id: currentWorkspaceId, data: JSON.stringify(brands) });
-    }
+    await supabaseClient.rpc('save_project_data', {
+      p_project_id: brandId,
+      p_data: JSON.stringify(brand.products)
+    });
   } catch(e) {
-    console.warn('Supabase save failed', JSON.stringify(e));
+    console.warn('saveProject error', e);
   }
+}
+
+// Bakåtkompatibel saveBrands — sparar alla projekt
+async function saveBrands() {
+  for (const brand of brands) {
+    await saveProject(brand.id);
+  }
+}
+
+// Skapa nytt projekt i Supabase + lägg till i brands-arrayen
+async function createProject(name, color) {
+  if (!currentWorkspaceId) return null;
+  const { data: projectId, error } = await supabaseClient.rpc('create_project', {
+    p_workspace_id: currentWorkspaceId,
+    p_name: name,
+    p_color: color,
+    p_visibility: 'private'
+  });
+  if (error) { console.warn('createProject error', error); return null; }
+  const newBrand = {
+    id: projectId,
+    name,
+    color,
+    products: [],
+    visibility: 'private',
+    permission: 'owner',
+    createdBy: currentUser?.id
+  };
+  brandProjectMap[projectId] = projectId;
+  brands.push(newBrand);
+  return newBrand;
+}
+
+// Uppdatera synlighet på ett projekt
+async function updateProjectVisibility(brandId, visibility) {
+  const { error } = await supabaseClient
+    .from('projects')
+    .update({ visibility })
+    .eq('id', brandId);
+  if (error) { console.warn('updateProjectVisibility error', error); return false; }
+  const brand = brands.find(b => b.id === brandId);
+  if (brand) brand.visibility = visibility;
+  return true;
 }
 
 // ═══════════════════════════════════════════════
@@ -2660,56 +2701,30 @@ function togglePastFromSettings(cb) {
 // ── TEAM / INVITATIONS ──
 async function loadTeamMembers() {
   if (!currentWorkspaceId) return;
+  const { data } = await supabaseClient
+    .from('workspace_members')
+    .select('user_id, role')
+    .eq('workspace_id', currentWorkspaceId);
+
+  if (!data) return;
+
+  // Get emails for each member
   const list = document.getElementById('settings-team-list');
   list.innerHTML = '<div style="font-size:12px;opacity:0.4;">Laddar...</div>';
 
+  // Use Supabase admin to get user emails — fetch from our own function
   const { data: members } = await supabaseClient.rpc('get_workspace_members_with_email', {
     p_workspace_id: currentWorkspaceId
   });
 
   if (members && members.length) {
-    list.innerHTML = members.map(m => {
-      const isSelf = currentUser && m.user_id === currentUser.id;
-      const isAdmin = currentUserRole === 'admin';
-      const canRemove = isAdmin && !isSelf;
-      const initials = (m.email || '?').slice(0, 2).toUpperCase();
-      const roleLabel = m.role === 'admin' ? '👑 Admin' : 'Medlem';
-      return `
-        <div id="member-row-${m.user_id}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);">
-          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${initials}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.email}</div>
-            <div style="font-size:10px;opacity:0.45;margin-top:1px;">${roleLabel}${isSelf ? ' · Du' : ''}</div>
-          </div>
-          ${canRemove ? `<button onclick="removeMember('${m.user_id}', '${m.email}')" style="background:none;border:1px solid var(--border2);color:#f87171;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all 0.15s;" onmouseover="this.style.background='rgba(248,113,113,0.12)'" onmouseout="this.style.background='none'">Ta bort</button>` : ''}
-        </div>`;
-    }).join('');
+    list.innerHTML = members.map(m => `
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span>${m.email}</span>
+        <span style="font-size:10px;opacity:0.5;text-transform:uppercase;letter-spacing:1px;">${m.role}</span>
+      </div>`).join('');
   } else {
     list.innerHTML = '<div style="font-size:12px;opacity:0.4;">Inga medlemmar hittades</div>';
-  }
-}
-
-async function removeMember(userId, email) {
-  if (!confirm(`Ta bort ${email} från workspace?`)) return;
-
-  const { error } = await supabaseClient
-    .from('workspace_members')
-    .delete()
-    .eq('workspace_id', currentWorkspaceId)
-    .eq('user_id', userId);
-
-  if (error) {
-    alert('Kunde inte ta bort medlemmen: ' + error.message);
-    return;
-  }
-
-  // Animate out the row
-  const row = document.getElementById('member-row-' + userId);
-  if (row) {
-    row.style.transition = 'opacity 0.2s, transform 0.2s';
-    row.style.opacity = '0';
-    row.style.transform = 'translateX(8px)';
-    setTimeout(() => row.remove(), 220);
   }
 }
 
@@ -2789,18 +2804,115 @@ function toggleCoopHemmaSettings() {
 
 function uid() { return Math.random().toString(36).slice(2,9); }
 
+// ─── SYNLIGHET ───
+function renderVisibilityBadge(brand) {
+  const icons = { private: '🔒', shared: '👥', workspace: '🏢' };
+  const labels = { private: 'Privat', shared: 'Delade', workspace: 'Hela workspace' };
+  const colors = { private: '#94a3b8', shared: '#a78bfa', workspace: '#4ade80' };
+  const v = brand.visibility || 'private';
+  return `<span style="font-size:10px;padding:3px 8px;border-radius:10px;border:1px solid ${colors[v]}33;color:${colors[v]};background:${colors[v]}11;">${icons[v]} ${labels[v]}</span>`;
+}
+
+// ─── DELA-MODAL ───
+let shareModalProjectId = null;
+let workspaceMembers = []; // cachas vid öppning
+
+async function openShareModal(brandId) {
+  shareModalProjectId = brandId;
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand) return;
+
+  // Hämta workspace-members
+  const { data: members } = await supabaseClient.rpc('get_workspace_members_with_email', {
+    p_workspace_id: currentWorkspaceId
+  });
+  workspaceMembers = (members || []).filter(m => m.user_id !== currentUser?.id);
+
+  // Hämta nuvarande project_members
+  const { data: projMembers } = await supabaseClient
+    .from('project_members')
+    .select('user_id, permission')
+    .eq('project_id', brandId);
+  const memberMap = {};
+  (projMembers || []).forEach(pm => { memberMap[pm.user_id] = pm.permission; });
+
+  // Bygg modal-innehåll
+  const visOpts = ['private','shared','workspace'];
+  const visLabels = { private:'🔒 Privat', shared:'👥 Utvalda kollegor', workspace:'🏢 Hela workspace' };
+
+  const membersHtml = workspaceMembers.length === 0
+    ? '<div style="font-size:12px;opacity:0.4;">Inga kollegor i workspace ännu</div>'
+    : workspaceMembers.map(m => {
+        const perm = memberMap[m.user_id] || '';
+        const isOwner = perm === 'owner';
+        if (isOwner) return ''; // skippa owners
+        return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+          <div style="flex:1;font-size:13px;">${m.email}</div>
+          <select onchange="updateSharePermission('${brandId}','${m.user_id}',this.value)"
+            style="background:var(--surface2);border:1px solid var(--border2);color:#fff;padding:4px 8px;border-radius:6px;font-family:var(--font);font-size:12px;outline:none;">
+            <option value="" ${!perm?'selected':''}>Ingen åtkomst</option>
+            <option value="viewer" ${perm==='viewer'?'selected':''}>Kan se</option>
+            <option value="editor" ${perm==='editor'?'selected':''}>Kan redigera</option>
+          </select>
+        </div>`;
+      }).join('');
+
+  document.getElementById('share-modal-title').textContent = 'Dela — ' + brand.name;
+  document.getElementById('share-visibility-btns').innerHTML = visOpts.map(v =>
+    `<button onclick="setProjectVisibility('${brandId}','${v}')" 
+      style="flex:1;padding:8px;border-radius:7px;border:1px solid ${brand.visibility===v ? '#a78bfa' : 'var(--border2)'};background:${brand.visibility===v ? 'rgba(167,139,250,0.15)' : 'var(--surface2)'};color:#fff;cursor:pointer;font-family:var(--font);font-size:12px;transition:all 0.15s;">
+      ${visLabels[v]}
+    </button>`
+  ).join('');
+
+  document.getElementById('share-members-list').innerHTML = membersHtml;
+  document.getElementById('share-modal-overlay').style.display = 'flex';
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal-overlay').style.display = 'none';
+  shareModalProjectId = null;
+}
+
+async function setProjectVisibility(brandId, visibility) {
+  const ok = await updateProjectVisibility(brandId, visibility);
+  if (ok) {
+    renderBrands();
+    openShareModal(brandId); // uppdatera modal
+  }
+}
+
+async function updateSharePermission(brandId, userId, permission) {
+  if (!permission) {
+    // Ta bort access
+    await supabaseClient.from('project_members')
+      .delete()
+      .eq('project_id', brandId)
+      .eq('user_id', userId)
+      .neq('permission', 'owner');
+  } else {
+    await supabaseClient.rpc('share_project', {
+      p_project_id: brandId,
+      p_user_id: userId,
+      p_permission: permission
+    });
+  }
+}
+
 // ─── RENDER BRANDS TAB ───
 function renderBrands() {
   const leftHtml = `
     <div class="brand-list">
       ${brands.map(b => {
         const totalCats = b.products.reduce((n,p) => n + p.cats.length, 0);
+        const visIcon = { private: '🔒', shared: '👥', workspace: '🏢' }[b.visibility || 'private'];
         return `<div class="brand-card ${selectedBrandId===b.id?'selected':''}" onclick="selectBrand('${b.id}')">
           <span class="brand-color-dot" style="background:${b.color}"></span>
-          <div>
+          <div style="flex:1;min-width:0;">
             ${b.logo ? `<img src="${b.logo}" style="max-height:20px;max-width:70px;object-fit:contain;padding:2px">` : `<div class="brand-name">${b.name}</div>`}
             <div class="brand-meta">${b.products.length} produkt${b.products.length!==1?'er':''}</div>
           </div>
+          <span style="font-size:12px;opacity:0.5;" title="${b.visibility||'private'}">${visIcon}</span>
           <span class="brand-cat-count">${totalCats} kat.</span>
         </div>`;
       }).join('')}
@@ -2842,8 +2954,14 @@ function renderBrands() {
           ? `<img src="${brand.logo}" alt="${brand.name}" style="max-height:32px;max-width:120px;object-fit:contain;padding:4px">`
           : `<span class="brand-color-dot" style="background:${brand.color};width:14px;height:14px"></span>
         <span class="brand-detail-name">${brand.name}</span>`}
-        <button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>
-        <button class="brand-action-btn danger" onclick="deleteBrand('${brand.id}')">Ta bort</button>
+        ${renderVisibilityBadge(brand)}
+        ${brand.permission === 'owner' ? `
+          <button class="brand-action-btn" onclick="openShareModal('${brand.id}')">🔗 Dela</button>
+          <button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>
+          <button class="brand-action-btn danger" onclick="deleteBrand('${brand.id}')">Ta bort</button>
+        ` : brand.permission === 'editor' ? `
+          <button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>
+        ` : `<span style="font-size:10px;opacity:0.4;padding:4px 8px;">Skrivskyddat</span>`}
       </div>
 
       <div class="section-title" style="margin-bottom:12px">PRODUKTER</div>
@@ -2965,32 +3083,39 @@ function closeBrandModal() {
   document.getElementById('brand-modal').classList.remove('open');
 }
 
-function saveBrand() {
+async function saveBrand() {
   const name = document.getElementById('brand-name-input').value.trim();
   if (!name) return;
   const selectedSwatch = document.querySelector('.color-swatch.selected');
   const color = selectedSwatch ? selectedSwatch.dataset.color : BRAND_COLORS[0];
-  
+
   if (editingBrandId) {
-    pushUndo('Redigerade ' + name);
+    // Uppdatera namn/färg/logo lokalt + spara
     const b = brands.find(b => b.id === editingBrandId);
-    if (b) { b.name = name; b.color = color; b.logo = pendingLogoDataUrl || null; }
+    if (b) {
+      b.name = name; b.color = color; b.logo = pendingLogoDataUrl || null;
+      // Uppdatera name+color i Supabase direkt
+      await supabaseClient.from('projects')
+        .update({ name, color })
+        .eq('id', editingBrandId);
+    }
   } else {
-    pushUndo('Lade till ' + name);
-    brands.push({ id: uid(), name, color, logo: pendingLogoDataUrl || null, products: [] });
-    selectedBrandId = brands[brands.length-1].id;
+    // Skapa nytt projekt via Supabase
+    const newBrand = await createProject(name, color);
+    if (!newBrand) { alert('Kunde inte skapa projekt'); return; }
+    newBrand.logo = pendingLogoDataUrl || null;
+    selectedBrandId = newBrand.id;
   }
-  saveBrands();
   closeBrandModal();
   renderBrands();
 }
 
-function deleteBrand(id) {
-  const delBrand = brands.find(b => b.id === id);
-  pushUndo('Tog bort ' + (delBrand?.name || 'varumärke'));
+async function deleteBrand(id) {
+  if (!confirm('Ta bort detta projekt? Det kan inte ångras.')) return;
+  const { error } = await supabaseClient.from('projects').delete().eq('id', id);
+  if (error) { alert('Kunde inte ta bort: ' + error.message); return; }
   brands = brands.filter(b => b.id !== id);
   if (selectedBrandId === id) selectedBrandId = brands[0]?.id || null;
-  saveBrands();
   renderBrands();
   if (state.tab === 'overview') renderOverview();
 }
@@ -3006,21 +3131,21 @@ function addProduct(brandId) {
   const name = input.value.trim();
   if (!name) return;
   const brand = brands.find(b => b.id === brandId);
-  if (brand) { pushUndo('Lade till produkt ' + name); brand.products.push({ id: uid(), name, cats: [] }); saveBrands(); }
+  if (brand) { brand.products.push({ id: uid(), name, cats: [] }); saveProject(brandId); }
   input.value = '';
   renderBrands();
 }
 
 function deleteProduct(brandId, productId) {
   const brand = brands.find(b => b.id === brandId);
-  if (brand) { pushUndo('Tog bort produkt'); brand.products = brand.products.filter(p => p.id !== productId); saveBrands(); }
+  if (brand) { brand.products = brand.products.filter(p => p.id !== productId); saveProject(brandId); }
   renderBrands();
 }
 
 function removeCatFromProduct(brandId, productId, catName) {
   const brand = brands.find(b => b.id === brandId);
   const product = brand?.products.find(p => p.id === productId);
-  if (product) { pushUndo('Tog bort kategori ' + catName); product.cats = product.cats.filter(c => c.catName !== catName); saveBrands(); }
+  if (product) { product.cats = product.cats.filter(c => c.catName !== catName); saveProject(brandId); }
   renderBrands();
 }
 
@@ -3085,7 +3210,7 @@ function saveCatModal() {
   if (!catModalTarget) return;
   const brand = brands.find(b => b.id === catModalTarget.brandId);
   const product = brand?.products.find(p => p.id === catModalTarget.productId);
-  if (product) { pushUndo('Uppdaterade kategorier'); product.cats = [...catModalSelected]; saveBrands(); }
+  if (product) { product.cats = [...catModalSelected]; saveProject(catModalTarget.brandId); }
   closeCatModal();
   renderBrands();
 }
@@ -3151,9 +3276,27 @@ if (_cm) _cm.addEventListener('click', e => { if (e.target.id === 'cat-modal') c
 
 
 
+  <!-- DELA-MODAL -->
+  <div id="share-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)closeShareModal()">
+    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:420px;max-width:94vw;position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div id="share-modal-title" style="font-family:var(--display);font-weight:700;font-size:17px;"></div>
+        <button onclick="closeShareModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:0.6;">✕</button>
+      </div>
+
+      <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;opacity:0.45;margin-bottom:8px;">Synlighet</div>
+      <div id="share-visibility-btns" style="display:flex;gap:6px;margin-bottom:20px;"></div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;opacity:0.45;margin-bottom:10px;">Kollegor</div>
+        <div id="share-members-list" style="display:flex;flex-direction:column;gap:2px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- SETTINGS MODAL -->
   <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;" onclick="closeSettingsOutside(event)">
-    <div id="settings-modal" style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:420px;max-width:94vw;position:relative;">
+    <div id="settings-modal" style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:360px;max-width:90vw;position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <div style="font-family:var(--display);font-weight:700;font-size:18px;">⚙ Inställningar</div>
         <button onclick="closeSettings()" style="background:none;border:none;color:#ffffff;font-size:18px;cursor:pointer;opacity:0.6;line-height:1;">✕</button>
@@ -3194,7 +3337,7 @@ if (_cm) _cm.addEventListener('click', e => { if (e.target.id === 'cat-modal') c
       <div id="settings-team-section" style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px;display:none;">
         <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;margin-bottom:12px;">Teammedlemmar</div>
         
-        <div id="settings-team-list" style="margin-bottom:16px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
+        <div id="settings-team-list" style="margin-bottom:16px;display:flex;flex-direction:column;gap:8px;"></div>
 
         <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;margin-bottom:8px;">Bjud in kollega</div>
         <div style="display:flex;gap:8px;">
