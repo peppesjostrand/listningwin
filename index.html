@@ -2432,10 +2432,10 @@ async function createProject(name, color) {
 
 // Uppdatera synlighet på ett projekt
 async function updateProjectVisibility(brandId, visibility) {
-  const { error } = await supabaseClient
-    .from('projects')
-    .update({ visibility })
-    .eq('id', brandId);
+  const { error } = await supabaseClient.rpc('update_project_visibility', {
+    p_project_id: brandId,
+    p_visibility: visibility
+  });
   if (error) { console.warn('updateProjectVisibility error', error); return false; }
   const brand = brands.find(b => b.id === brandId);
   if (brand) brand.visibility = visibility;
