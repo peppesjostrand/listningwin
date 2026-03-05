@@ -2919,7 +2919,8 @@ async function updateSharePermission(brandId, userId, permission) {
       p_permission: permission
     });
   }
-  // Uppdatera modalen direkt
+  // Liten fördröjning så Supabase hinner committa innan vi läser om
+  await new Promise(r => setTimeout(r, 300));
   openShareModal(brandId);
 }
 
