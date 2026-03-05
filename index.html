@@ -2919,8 +2919,6 @@ async function updateSharePermission(brandId, userId, permission) {
       p_permission: permission
     });
   }
-  // Liten fördröjning så Supabase hinner committa innan vi läser om
-  await new Promise(r => setTimeout(r, 800));
   openShareModal(brandId);
 }
 
