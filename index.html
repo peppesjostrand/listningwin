@@ -2660,30 +2660,56 @@ function togglePastFromSettings(cb) {
 // ── TEAM / INVITATIONS ──
 async function loadTeamMembers() {
   if (!currentWorkspaceId) return;
-  const { data } = await supabaseClient
-    .from('workspace_members')
-    .select('user_id, role')
-    .eq('workspace_id', currentWorkspaceId);
-
-  if (!data) return;
-
-  // Get emails for each member
   const list = document.getElementById('settings-team-list');
   list.innerHTML = '<div style="font-size:12px;opacity:0.4;">Laddar...</div>';
 
-  // Use Supabase admin to get user emails — fetch from our own function
   const { data: members } = await supabaseClient.rpc('get_workspace_members_with_email', {
     p_workspace_id: currentWorkspaceId
   });
 
   if (members && members.length) {
-    list.innerHTML = members.map(m => `
-      <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);">
-        <span>${m.email}</span>
-        <span style="font-size:10px;opacity:0.5;text-transform:uppercase;letter-spacing:1px;">${m.role}</span>
-      </div>`).join('');
+    list.innerHTML = members.map(m => {
+      const isSelf = currentUser && m.user_id === currentUser.id;
+      const isAdmin = currentUserRole === 'admin';
+      const canRemove = isAdmin && !isSelf;
+      const initials = (m.email || '?').slice(0, 2).toUpperCase();
+      const roleLabel = m.role === 'admin' ? '👑 Admin' : 'Medlem';
+      return `
+        <div id="member-row-${m.user_id}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.email}</div>
+            <div style="font-size:10px;opacity:0.45;margin-top:1px;">${roleLabel}${isSelf ? ' · Du' : ''}</div>
+          </div>
+          ${canRemove ? `<button onclick="removeMember('${m.user_id}', '${m.email}')" style="background:none;border:1px solid var(--border2);color:#f87171;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all 0.15s;" onmouseover="this.style.background='rgba(248,113,113,0.12)'" onmouseout="this.style.background='none'">Ta bort</button>` : ''}
+        </div>`;
+    }).join('');
   } else {
     list.innerHTML = '<div style="font-size:12px;opacity:0.4;">Inga medlemmar hittades</div>';
+  }
+}
+
+async function removeMember(userId, email) {
+  if (!confirm(`Ta bort ${email} från workspace?`)) return;
+
+  const { error } = await supabaseClient
+    .from('workspace_members')
+    .delete()
+    .eq('workspace_id', currentWorkspaceId)
+    .eq('user_id', userId);
+
+  if (error) {
+    alert('Kunde inte ta bort medlemmen: ' + error.message);
+    return;
+  }
+
+  // Animate out the row
+  const row = document.getElementById('member-row-' + userId);
+  if (row) {
+    row.style.transition = 'opacity 0.2s, transform 0.2s';
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(8px)';
+    setTimeout(() => row.remove(), 220);
   }
 }
 
@@ -3127,7 +3153,7 @@ if (_cm) _cm.addEventListener('click', e => { if (e.target.id === 'cat-modal') c
 
   <!-- SETTINGS MODAL -->
   <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;" onclick="closeSettingsOutside(event)">
-    <div id="settings-modal" style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:360px;max-width:90vw;position:relative;">
+    <div id="settings-modal" style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:420px;max-width:94vw;position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <div style="font-family:var(--display);font-weight:700;font-size:18px;">⚙ Inställningar</div>
         <button onclick="closeSettings()" style="background:none;border:none;color:#ffffff;font-size:18px;cursor:pointer;opacity:0.6;line-height:1;">✕</button>
@@ -3168,7 +3194,7 @@ if (_cm) _cm.addEventListener('click', e => { if (e.target.id === 'cat-modal') c
       <div id="settings-team-section" style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px;display:none;">
         <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;margin-bottom:12px;">Teammedlemmar</div>
         
-        <div id="settings-team-list" style="margin-bottom:16px;display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="settings-team-list" style="margin-bottom:16px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
 
         <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;margin-bottom:8px;">Bjud in kollega</div>
         <div style="display:flex;gap:8px;">
