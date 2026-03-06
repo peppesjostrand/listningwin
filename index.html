@@ -2719,7 +2719,6 @@ async function showInviteBanner(token) {
 
 // Check session on load
 async function authInit() {
-  // Check for invite token — from URL or sessionStorage (survives redirects)
   const urlParams = new URLSearchParams(window.location.search);
   const inviteToken = urlParams.get('invite') || sessionStorage.getItem('pendingInviteToken');
   if (inviteToken) {
@@ -2727,12 +2726,24 @@ async function authInit() {
     window.history.replaceState({}, '', window.location.pathname);
   }
 
+  // Lyssna på auth-händelser — fångar PASSWORD_RECOVERY
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      document.getElementById('auth-overlay').style.display = 'flex';
+      document.getElementById('auth-form-login').style.display = 'none';
+      document.getElementById('auth-form-register').style.display = 'none';
+      document.getElementById('auth-form-forgot').style.display = 'none';
+      document.getElementById('auth-form-reset').style.display = '';
+      // Dölj tab-switcher vid lösenordsåterställning
+      document.querySelector('#auth-overlay > div > div:nth-child(2)').style.display = 'none';
+    }
+  });
+
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     await authOnLogin(session.user);
   } else {
     document.getElementById('auth-overlay').style.display = 'flex';
-    // If invite token, show register tab and update UI
     if (inviteToken) {
       authShowTab('register');
       await showInviteBanner(inviteToken);
@@ -2872,7 +2883,66 @@ async function sendInvitation() {
   }
 }
 
-function toggleCoopHemmaSettings() {
+function showForgotPassword(show = true) {
+  document.getElementById('auth-form-login').style.display = show ? 'none' : '';
+  document.getElementById('auth-form-forgot').style.display = show ? '' : 'none';
+  document.getElementById('forgot-feedback').style.display = 'none';
+  if (show) setTimeout(() => document.getElementById('forgot-email').focus(), 50);
+}
+
+async function sendResetEmail() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const fb = document.getElementById('forgot-feedback');
+  if (!email) return;
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://listingwin.com/?reset=true'
+  });
+
+  fb.style.display = '';
+  if (error) {
+    fb.style.background = 'rgba(248,113,113,0.1)';
+    fb.style.border = '1px solid rgba(248,113,113,0.3)';
+    fb.style.color = '#f87171';
+    fb.textContent = 'Något gick fel: ' + error.message;
+  } else {
+    fb.style.background = 'rgba(74,222,128,0.1)';
+    fb.style.border = '1px solid rgba(74,222,128,0.3)';
+    fb.style.color = '#4ade80';
+    fb.textContent = 'Mejl skickat! Kolla din inkorg.';
+  }
+}
+
+async function saveNewPassword() {
+  const password = document.getElementById('reset-password').value;
+  const fb = document.getElementById('reset-feedback');
+  if (password.length < 6) {
+    fb.style.display = '';
+    fb.style.background = 'rgba(248,113,113,0.1)';
+    fb.style.border = '1px solid rgba(248,113,113,0.3)';
+    fb.style.color = '#f87171';
+    fb.textContent = 'Lösenordet måste vara minst 6 tecken.';
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  fb.style.display = '';
+  if (error) {
+    fb.style.background = 'rgba(248,113,113,0.1)';
+    fb.style.border = '1px solid rgba(248,113,113,0.3)';
+    fb.style.color = '#f87171';
+    fb.textContent = 'Något gick fel: ' + error.message;
+  } else {
+    fb.style.background = 'rgba(74,222,128,0.1)';
+    fb.style.border = '1px solid rgba(74,222,128,0.3)';
+    fb.style.color = '#4ade80';
+    fb.textContent = 'Lösenord sparat! Loggar in...';
+    setTimeout(() => {
+      document.getElementById('auth-form-reset').style.display = 'none';
+      document.getElementById('auth-overlay').style.display = 'none';
+    }, 1500);
+  }
+}
   state.active.coopHemma = !state.active.coopHemma;
   const el = document.getElementById('settings-hemma-toggle');
   if (el) el.classList.toggle('on', state.active.coopHemma);
@@ -3510,12 +3580,44 @@ if (_cm) _cm.addEventListener('click', e => { if (e.target.id === 'cat-modal') c
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Email</label>
           <input id="auth-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
         </div>
-        <div style="margin-bottom:24px;">
+        <div style="margin-bottom:8px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Lösenord</label>
           <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')authLogin()">
         </div>
+        <div style="text-align:right;margin-bottom:20px;">
+          <span onclick="showForgotPassword()" style="font-size:12px;color:#a78bfa;cursor:pointer;opacity:0.8;">Glömt lösenord?</span>
+        </div>
         <button onclick="authLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Logga in</button>
         <div id="auth-login-error" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:7px;font-size:13px;color:#f87171;"></div>
+      </div>
+
+      <!-- GLÖMT LÖSENORD -->
+      <div id="auth-form-forgot" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <div style="font-size:14px;opacity:0.7;line-height:1.5;">Ange din email så skickar vi en länk för att återställa ditt lösenord.</div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Email</label>
+          <input id="forgot-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')sendResetEmail()">
+        </div>
+        <button onclick="sendResetEmail()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Skicka återställningslänk</button>
+        <div style="text-align:center;margin-top:16px;">
+          <span onclick="showForgotPassword(false)" style="font-size:12px;color:#a78bfa;cursor:pointer;opacity:0.8;">← Tillbaka till inloggning</span>
+        </div>
+        <div id="forgot-feedback" style="display:none;margin-top:12px;padding:10px 14px;border-radius:7px;font-size:13px;"></div>
+      </div>
+
+      <!-- NYTT LÖSENORD (efter klick i mejl) -->
+      <div id="auth-form-reset" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <div style="font-size:14px;opacity:0.7;line-height:1.5;">Ange ditt nya lösenord.</div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Nytt lösenord</label>
+          <input id="reset-password" type="password" placeholder="Minst 6 tecken" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')saveNewPassword()">
+        </div>
+        <button onclick="saveNewPassword()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Spara nytt lösenord</button>
+        <div id="reset-feedback" style="display:none;margin-top:12px;padding:10px 14px;border-radius:7px;font-size:13px;"></div>
       </div>
 
       <!-- REGISTER FORM -->
