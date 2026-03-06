@@ -2950,6 +2950,7 @@ async function saveNewPassword() {
     }, 1500);
   }
 }
+function toggleCoopHemmaSettings() {
   state.active.coopHemma = !state.active.coopHemma;
   const el = document.getElementById('settings-hemma-toggle');
   if (el) el.classList.toggle('on', state.active.coopHemma);
