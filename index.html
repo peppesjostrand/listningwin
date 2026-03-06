@@ -2726,6 +2726,10 @@ async function authInit() {
     window.history.replaceState({}, '', window.location.pathname);
   }
 
+  // Kolla om URL-fragmentet innehåller en recovery-token (från mejllänken)
+  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+  const isRecovery = hashParams.get('type') === 'recovery' || urlParams.get('reset') === 'true';
+
   // Lyssna på auth-händelser — fångar PASSWORD_RECOVERY
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
@@ -2740,7 +2744,17 @@ async function authInit() {
   });
 
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
+  if (session && isRecovery) {
+    // Visa reset-formuläret istället för att logga in direkt
+    document.getElementById('auth-overlay').style.display = 'flex';
+    document.getElementById('auth-form-login').style.display = 'none';
+    document.getElementById('auth-form-register').style.display = 'none';
+    document.getElementById('auth-form-forgot').style.display = 'none';
+    document.getElementById('auth-form-reset').style.display = '';
+    const tabSwitcher = document.querySelector('#auth-overlay > div > div:nth-child(2)');
+    if (tabSwitcher) tabSwitcher.style.display = 'none';
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if (session) {
     await authOnLogin(session.user);
   } else {
     document.getElementById('auth-overlay').style.display = 'flex';
