@@ -616,9 +616,79 @@
   .detail-sub { font-size: 11px; color: var(--muted2); margin-bottom: 16px; }
 
   @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main { padding: 16px; }
+    .sidebar {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      width: 100%;
+      height: 100vh;
+    }
+    .sidebar.mobile-open { display: flex; }
+    .main { padding: 12px 14px; }
     .hero { grid-template-columns: 1fr; }
+    .topbar { gap: 8px; }
+    .page-title { font-size: 16px; }
+    .search-input { width: 140px; }
+    .brands-layout { grid-template-columns: 1fr; }
+    .brand-overview-grid { grid-template-columns: 1fr; }
+    .ov-cat-main {
+      grid-template-columns: 40px 1fr 80px 18px;
+    }
+    .ov-cat-main > *:nth-child(3),
+    .ov-cat-main > *:nth-child(4) { display: none; }
+    .ov-table-header {
+      grid-template-columns: 40px 1fr 80px 18px;
+    }
+    .ov-table-header > *:nth-child(3),
+    .ov-table-header > *:nth-child(4) { display: none; }
+    .bov-table-head,
+    .bov-row {
+      grid-template-columns: 28px 1fr 60px;
+    }
+    .bov-table-head > *:nth-child(n+4),
+    .bov-row > *:nth-child(n+4) { display: none; }
+    .tl-new-wrap { max-width: 100%; }
+  }
+
+  /* HAMBURGERMENY */
+  .hamburger-btn {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 600;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px;
+  }
+  .hamburger-btn span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: #fff;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 490;
+  }
+  @media (max-width: 768px) {
+    .hamburger-btn { display: flex; }
+    .main { padding-top: 56px; }
+    .mobile-overlay.active { display: block; }
   }
 
 
@@ -888,8 +958,14 @@
 </head>
 <body>
 <div class="app" id="app-root" style="display:none;">
+  <!-- HAMBURGERMENY -->
+  <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMobileMenu()">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
   <!-- SIDEBAR -->
   <nav class="sidebar" id="app-sidebar">
+    <button onclick="closeMobileMenu()" style="display:none;position:absolute;top:12px;right:12px;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;opacity:0.6;line-height:1;" id="sidebar-close-btn">✕</button>
     <div class="logo">
       <div class="logo-wordmark">
         <span class="listing">LISTING</span><span class="win">WIN</span>
@@ -2219,6 +2295,7 @@ function showTab(tab) {
   });
   const titles = { overview: 'Översikt', categories: 'Per kategori', timeline: 'Tidslinje', brands: 'Varumärken' };
   document.getElementById('page-title').textContent = titles[tab];
+  closeMobileMenu();
   renderAll();
 }
 
@@ -2800,6 +2877,24 @@ function toggleCoopHemmaSettings() {
   const el = document.getElementById('settings-hemma-toggle');
   if (el) el.classList.toggle('on', state.active.coopHemma);
   renderAll();
+}
+
+function toggleMobileMenu() {
+  const sidebar = document.getElementById('app-sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  const closeBtn = document.getElementById('sidebar-close-btn');
+  sidebar.classList.toggle('mobile-open');
+  overlay.classList.toggle('active');
+  if (closeBtn) closeBtn.style.display = sidebar.classList.contains('mobile-open') ? '' : 'none';
+}
+
+function closeMobileMenu() {
+  const sidebar = document.getElementById('app-sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  const closeBtn = document.getElementById('sidebar-close-btn');
+  sidebar.classList.remove('mobile-open');
+  overlay.classList.remove('active');
+  if (closeBtn) closeBtn.style.display = 'none';
 }
 
 function uid() { return Math.random().toString(36).slice(2,9); }
