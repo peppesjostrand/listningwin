@@ -2883,6 +2883,13 @@ async function sendInvitation() {
   }
 }
 
+function toggleCoopHemmaSettings() {
+  state.active.coopHemma = !state.active.coopHemma;
+  const el = document.getElementById('settings-hemma-toggle');
+  if (el) el.classList.toggle('on', state.active.coopHemma);
+  renderAll();
+}
+
 function showForgotPassword(show = true) {
   document.getElementById('auth-form-login').style.display = show ? 'none' : '';
   document.getElementById('auth-form-forgot').style.display = show ? '' : 'none';
