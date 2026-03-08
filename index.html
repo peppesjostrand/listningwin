@@ -954,6 +954,304 @@
   .cat-table tr.cat-row.has-subgroup { cursor: default; }
   .no-cats-msg { color: var(--muted); font-size: 12px; padding: 12px 0; }
 
+
+  /* ── LANSERING ── */
+  .lansering-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; padding: 20px; }
+  @media (max-width: 900px) { .lansering-layout { grid-template-columns: 1fr; } }
+
+  .lansering-list { display: flex; flex-direction: column; gap: 8px; }
+  .lansering-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; cursor: pointer; transition: border-color 0.12s; }
+  .lansering-card:hover { border-color: var(--border2); }
+  .lansering-card.selected { border-color: #f59e0b; background: rgba(245,158,11,0.05); }
+  .lansering-card-name { font-family: var(--display); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .lansering-card-meta { font-size: 10px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  .lansering-add-btn { background: none; border: 1px dashed var(--border2); color: var(--muted2); padding: 10px 14px; border-radius: 8px; cursor: pointer; font-family: var(--font); font-size: 12px; width: 100%; text-align: left; transition: all 0.12s; margin-top: 4px; }
+  .lansering-add-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+
+  .lansering-detail { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .lansering-detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .lansering-detail-name { font-family: var(--display); font-weight: 700; font-size: 22px; flex: 1; }
+  .lansering-action-btn { background: var(--surface2); border: 1px solid var(--border2); color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: var(--font); font-size: 11px; }
+  .lansering-action-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+  .lansering-action-btn.danger:hover { border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+  .section-block { margin-bottom: 28px; }
+  .section-block-title { font-family: var(--display); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+
+  /* Checklista */
+  .checklist { display: flex; flex-direction: column; gap: 6px; }
+  .check-item { display: flex; align-items: center; gap: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; transition: border-color 0.12s; }
+  .check-item.done { border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.04); }
+  .check-item input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: #4ade80; flex-shrink: 0; }
+  .check-item-label { flex: 1; font-size: 13px; }
+  .check-item.done .check-item-label { text-decoration: line-through; opacity: 0.5; }
+  .check-item-date { font-size: 10px; color: var(--muted); }
+
+  /* Projektledardelen */
+  .custom-tasks { display: flex; flex-direction: column; gap: 6px; }
+  .task-row { display: grid; grid-template-columns: 1fr 120px 110px 120px 28px; gap: 8px; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px; }
+  @media (max-width: 700px) { .task-row { grid-template-columns: 1fr 28px; } .task-row .task-deadline, .task-row .task-status, .task-row .task-owner { display: none; } }
+  .task-name-input, .task-deadline-input, .task-owner-input { background: transparent; border: none; color: var(--text); font-family: var(--font); font-size: 12px; width: 100%; outline: none; }
+  .task-name-input::placeholder, .task-deadline-input::placeholder, .task-owner-input::placeholder { color: rgba(255,255,255,0.2); }
+  .task-status-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 11px; border-radius: 5px; padding: 2px 4px; }
+  .task-delete-btn { background: none; border: none; color: rgba(255,255,255,0.2); cursor: pointer; font-size: 16px; line-height: 1; }
+  .task-delete-btn:hover { color: #f87171; }
+  .task-add-row { display: flex; gap: 8px; margin-top: 6px; }
+
+  /* Kedjekontakt-logg */
+  .contact-log { display: flex; flex-direction: column; gap: 6px; }
+  .contact-entry { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; }
+  .contact-entry-header { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .contact-chain-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .contact-chain-badge.coop { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .contact-chain-badge.ica { background: rgba(248,113,113,0.15); color: #f87171; }
+  .contact-chain-badge.dagab { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .contact-chain-badge.other { background: rgba(255,255,255,0.1); color: #fff; }
+  .contact-entry-date { font-size: 10px; color: var(--muted); }
+  .contact-entry-text { font-size: 12px; color: var(--text); }
+  .contact-entry-next { font-size: 11px; color: #f59e0b; margin-top: 4px; }
+  .contact-add-form { background: var(--surface2); border: 1px dashed var(--border2); border-radius: 8px; padding: 14px; margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .contact-form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .contact-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 6px 10px; flex: 1; min-width: 120px; }
+  .contact-input::placeholder { color: rgba(255,255,255,0.2); }
+  .contact-chain-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 6px 8px; }
+
+  /* Progress bar */
+  .progress-bar-wrap { background: var(--surface2); border-radius: 10px; height: 6px; margin-top: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: #f59e0b; border-radius: 10px; transition: width 0.3s; }
+
+  /* Lansering modal */
+  .lansering-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .lansering-modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 400px; max-width: 95vw; }
+  .lansering-modal-title { font-family: var(--display); font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+  .lansering-form-group { margin-bottom: 14px; }
+  .lansering-form-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: block; }
+  .lansering-form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; border-radius: 6px; padding: 8px 10px; }
+  .lansering-form-input::placeholder { color: rgba(255,255,255,0.2); }
+  .lansering-modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+
+  /* ── SJOK 2: ARTIKELSTRUKTUR ── */
+  .articles-section { margin-top: 16px; }
+  .product-group { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+  .product-group-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; }
+  .product-group-header:hover { background: rgba(255,255,255,0.03); }
+  .product-group-name { font-family: var(--display); font-weight: 600; font-size: 13px; flex: 1; }
+  .product-group-toggle { font-size: 10px; color: var(--muted); }
+  .product-group-body { border-top: 1px solid var(--border); padding: 10px 14px; }
+  .article-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .article-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border); }
+  .article-row-name { flex: 1; font-size: 12px; }
+  .article-row-ean { font-size: 10px; color: var(--muted); font-family: monospace; }
+  .article-row-gtin { font-size: 10px; color: var(--muted); }
+  .article-delete-btn { background: none; border: none; color: rgba(255,255,255,0.2); cursor: pointer; font-size: 13px; }
+  .article-delete-btn:hover { color: #f87171; }
+  .article-add-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .article-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 5px; padding: 5px 8px; }
+  .article-input::placeholder { color: rgba(255,255,255,0.2); }
+  .group-add-row { display: flex; gap: 8px; margin-top: 8px; }
+
+  /* ── SJOK 2: AVISERINGSHISTORIK ── */
+  .history-section { padding: 20px; }
+  .history-brand-block { margin-bottom: 24px; }
+  .history-brand-title { font-family: var(--display); font-weight: 700; font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .history-table th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--muted); text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .history-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .history-table tr:last-child td { border-bottom: none; }
+  .history-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .hist-pill { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
+  .hist-pill-coop { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .hist-pill-ica { background: rgba(248,113,113,0.15); color: #f87171; }
+  .hist-pill-dagab { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .hist-pill-past { background: rgba(255,255,255,0.08); color: #fff; }
+  .history-empty { color: var(--muted); font-size: 13px; padding: 20px; text-align: center; }
+  .history-filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .history-filter-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 5px 8px; }
+
+  /* ── SJOK 2: EXCEL EXPORT ── */
+  .export-btn { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: var(--font); font-size: 12px; font-weight: 600; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .export-btn:hover { background: rgba(74,222,128,0.2); }
+
+
+  /* ── KALKYL ── */
+  .kalkyl-page { padding: 20px; max-width: 960px; }
+  .kalkyl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .kalkyl-grid { grid-template-columns: 1fr; } }
+  .kalkyl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px; }
+  .kalkyl-card-title { font-family: var(--display); font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+  .kalkyl-card-sub { font-size: 11px; color: var(--muted); margin-bottom: 18px; }
+  .kalkyl-field { margin-bottom: 14px; }
+  .kalkyl-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .kalkyl-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; border-radius: 6px; padding: 8px 10px; }
+  .kalkyl-input:focus { outline: none; border-color: #f59e0b; }
+  .kalkyl-result-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
+  .kalkyl-result-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .kalkyl-result-row:last-child { border-bottom: none; }
+  .kalkyl-result-label { color: var(--muted); }
+  .kalkyl-result-value { font-weight: 600; font-family: var(--display); font-size: 14px; }
+  .kalkyl-result-value.highlight { color: #f59e0b; font-size: 18px; }
+  .kalkyl-result-value.green { color: #4ade80; }
+  .kalkyl-result-value.red { color: #f87171; }
+  .kalkyl-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .kalkyl-chain-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .kalkyl-chain-tab { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); font-family: var(--font); font-size: 11px; cursor: pointer; transition: all 0.12s; }
+  .kalkyl-chain-tab.active-coop { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
+  .kalkyl-chain-tab.active-dagab { border-color: #fb923c; color: #fb923c; background: rgba(251,146,60,0.08); }
+
+  /* ── PÅMINNELSER ── */
+  .pam-page { padding: 20px; max-width: 800px; }
+  .pam-intro { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .pam-section { margin-bottom: 24px; }
+  .pam-section-title { font-family: var(--display); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  .pam-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 6px; }
+  .pam-row-label { flex: 1; font-size: 13px; }
+  .pam-row-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .pam-toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+  .pam-toggle input { opacity: 0; width: 0; height: 0; }
+  .pam-slider { position: absolute; inset: 0; background: var(--surface2); border-radius: 20px; cursor: pointer; transition: 0.2s; border: 1px solid var(--border2); }
+  .pam-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s; opacity: 0.4; }
+  .pam-toggle input:checked + .pam-slider { background: rgba(245,158,11,0.3); border-color: #f59e0b; }
+  .pam-toggle input:checked + .pam-slider:before { transform: translateX(16px); opacity: 1; background: #f59e0b; }
+  .pam-days-input { width: 56px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 5px; padding: 4px 6px; text-align: center; }
+  .pam-email-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 7px 10px; width: 100%; margin-top: 8px; }
+  .pam-save-btn { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4); color: #f59e0b; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-family: var(--font); font-size: 12px; font-weight: 600; transition: all 0.15s; }
+  .pam-save-btn:hover { background: rgba(245,158,11,0.2); }
+  .pam-saved-msg { font-size: 11px; color: #4ade80; margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
+
+
+  /* ══════════════════════════════════════════
+     NYA FUNKTIONER — BLOCK 4
+  ══════════════════════════════════════════ */
+
+  /* NOTIFIKATIONS-BADGE */
+  .notif-bell-wrap { position: relative; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s; }
+  .notif-bell-wrap:hover { background: var(--surface2); }
+  .notif-badge { position: absolute; top: 2px; right: 2px; background: #f87171; color: #fff; font-size: 9px; font-weight: 700; border-radius: 10px; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+  .notif-panel { position: absolute; top: 48px; right: 16px; width: 360px; max-width: 95vw; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 300; overflow: hidden; }
+  .notif-panel-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .notif-panel-title { font-family: var(--display); font-weight: 700; font-size: 14px; }
+  .notif-panel-clear { font-size: 10px; color: var(--muted); cursor: pointer; }
+  .notif-panel-clear:hover { color: #f87171; }
+  .notif-list { max-height: 360px; overflow-y: auto; }
+  .notif-item { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: background 0.1s; }
+  .notif-item:hover { background: rgba(255,255,255,0.03); }
+  .notif-item.unread { background: rgba(245,158,11,0.04); }
+  .notif-item-dot { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; margin-top: 5px; }
+  .notif-item-dot.read { background: transparent; border: 1px solid var(--border2); }
+  .notif-item-text { flex: 1; font-size: 12px; line-height: 1.4; }
+  .notif-item-time { font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .notif-empty { padding: 24px; text-align: center; color: var(--muted); font-size: 12px; }
+
+  /* GLOBAL SÖKNING */
+  .search-input-global { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 6px 10px 6px 28px; width: 180px; transition: width 0.2s; }
+  .search-input-global:focus { outline: none; border-color: #f59e0b; width: 260px; }
+  .search-results-panel { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); width: 480px; max-width: 95vw; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 300; overflow: hidden; }
+  .search-result-item { padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; gap: 10px; align-items: center; transition: background 0.1s; }
+  .search-result-item:hover { background: rgba(255,255,255,0.04); }
+  .search-result-icon { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+  .search-result-label { flex: 1; font-size: 12px; }
+  .search-result-sub { font-size: 10px; color: var(--muted); }
+  .search-result-type { font-size: 9px; background: var(--surface2); border: 1px solid var(--border2); padding: 1px 6px; border-radius: 8px; color: var(--muted); }
+  .search-empty { padding: 20px; text-align: center; color: var(--muted); font-size: 12px; }
+
+  /* ONBOARDING */
+  .onboard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 400; display: flex; align-items: center; justify-content: center; }
+  .onboard-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 520px; max-width: 95vw; overflow: hidden; }
+  .onboard-progress { height: 3px; background: var(--surface2); }
+  .onboard-progress-fill { height: 100%; background: #f59e0b; transition: width 0.3s; }
+  .onboard-body { padding: 36px 36px 28px; }
+  .onboard-step-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .onboard-title { font-family: var(--display); font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+  .onboard-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+  .onboard-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 14px; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
+  .onboard-input:focus { outline: none; border-color: #f59e0b; }
+  .onboard-btns { display: flex; justify-content: space-between; align-items: center; padding: 16px 36px 28px; border-top: 1px solid var(--border); }
+  .onboard-skip { font-size: 11px; color: var(--muted); cursor: pointer; }
+  .onboard-skip:hover { color: var(--text); }
+  .onboard-next { background: #f59e0b; color: #000; border: none; padding: 10px 24px; border-radius: 8px; font-family: var(--font); font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.15s; }
+  .onboard-next:hover { opacity: 0.85; }
+  .onboard-chain-picks { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .onboard-chain-pick { background: var(--surface2); border: 2px solid var(--border); border-radius: 8px; padding: 10px 18px; cursor: pointer; font-family: var(--font); font-size: 13px; transition: all 0.12s; }
+  .onboard-chain-pick.picked-coop { border-color: #4ade80; color: #4ade80; }
+  .onboard-chain-pick.picked-ica { border-color: #f87171; color: #f87171; }
+  .onboard-chain-pick.picked-dagab { border-color: #fb923c; color: #fb923c; }
+
+  /* STATUSDASHBOARD WIDGET */
+  .dash-widgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px 0; }
+  @media (max-width: 900px) { .dash-widgets { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 500px) { .dash-widgets { grid-template-columns: 1fr 1fr; } }
+  .dash-widget { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
+  .dash-widget:hover { border-color: var(--border2); }
+  .dash-widget-value { font-family: var(--display); font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .dash-widget-label { font-size: 11px; color: var(--muted); }
+  .dash-widget-sub { font-size: 10px; color: var(--muted); margin-top: 4px; opacity: 0.7; }
+
+  /* DEADLINE-TIDSLINJE PER LANSERING */
+  .deadline-timeline { display: flex; flex-direction: column; gap: 0; position: relative; margin: 8px 0 4px 8px; }
+  .deadline-timeline::before { content:''; position: absolute; left: 6px; top: 0; bottom: 0; width: 1px; background: var(--border); }
+  .dl-step { display: flex; gap: 14px; align-items: flex-start; padding: 6px 0; position: relative; }
+  .dl-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; z-index: 1; border: 2px solid var(--surface); }
+  .dl-dot.done { background: #4ade80; }
+  .dl-dot.due { background: #f59e0b; }
+  .dl-dot.late { background: #f87171; }
+  .dl-dot.future { background: var(--surface2); border-color: var(--border2); }
+  .dl-step-body { flex: 1; }
+  .dl-step-name { font-size: 12px; font-weight: 500; }
+  .dl-step-date { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .dl-step-name.done-text { text-decoration: line-through; opacity: 0.45; }
+
+  /* MÖTES-KALENDER */
+  .agenda-page { padding: 20px; }
+  .agenda-week { margin-bottom: 24px; }
+  .agenda-week-title { font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .agenda-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
+  .agenda-item-date { font-size: 10px; color: var(--muted); min-width: 60px; margin-top: 2px; }
+  .agenda-item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .agenda-item-body { flex: 1; }
+  .agenda-item-title { font-size: 12px; font-weight: 500; }
+  .agenda-item-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .agenda-add-form { background: var(--surface); border: 1px dashed var(--border2); border-radius: 8px; padding: 14px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .agenda-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 7px 10px; }
+  .agenda-input::placeholder { color: rgba(255,255,255,0.2); }
+
+  /* NOTERINGAR PER FÖNSTER */
+  .window-note-btn { font-size: 10px; background: none; border: 1px dashed var(--border2); color: var(--muted); border-radius: 4px; padding: 2px 7px; cursor: pointer; transition: all 0.12s; }
+  .window-note-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+  .window-note-panel { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-top: 6px; }
+  .window-note-textarea { width: 100%; background: transparent; border: none; color: var(--text); font-family: var(--font); font-size: 12px; resize: vertical; min-height: 60px; outline: none; }
+  .window-note-textarea::placeholder { color: rgba(255,255,255,0.2); }
+
+  /* AKTIVITETSLOGG */
+  .activity-feed { display: flex; flex-direction: column; gap: 0; }
+  .activity-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon { font-size: 14px; width: 24px; text-align: center; flex-shrink: 0; }
+  .activity-body { flex: 1; line-height: 1.4; }
+  .activity-time { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+
+  /* KOMMENTARER */
+  .comments-section { margin-top: 16px; }
+  .comment-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .comment-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+  .comment-body { flex: 1; }
+  .comment-meta { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+  .comment-text { font-size: 12px; line-height: 1.5; }
+  .comment-input-row { display: flex; gap: 8px; margin-top: 10px; align-items: flex-end; }
+  .comment-textarea { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 8px 10px; resize: none; min-height: 38px; }
+  .comment-textarea:focus { outline: none; border-color: #f59e0b; }
+
+  /* MOBIL SNABBVY */
+  .mobile-quick { display: none; }
+  @media (max-width: 768px) {
+    .mobile-quick { display: block; }
+    .mq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+    .mq-card-title { font-family: var(--display); font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .mq-check { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .mq-check:last-child { border-bottom: none; }
+    .mq-check input[type=checkbox] { accent-color: #4ade80; }
+  }
+
 </style>
 </head>
 <body>
@@ -984,6 +1282,11 @@
       <button class="nav-btn" onclick="showTab('categories')" id="nav-categories"><span class="icon">⊞</span> Per kategori</button>
       <button class="nav-btn" onclick="showTab('timeline')" id="nav-timeline"><span class="icon">▷</span> Tidslinje</button>
       <button class="nav-btn" onclick="showTab('brands')" id="nav-brands"><span class="icon">◈</span> Varumärken</button>
+      <button class="nav-btn" onclick="showTab('lansering')" id="nav-lansering"><span class="icon">🚀</span> Lansering</button>
+      <button class="nav-btn" onclick="showTab('historik')" id="nav-historik"><span class="icon">📋</span> Historik</button>
+      <button class="nav-btn" onclick="showTab('kalkyl')" id="nav-kalkyl"><span class="icon">🧮</span> Kalkyl</button>
+      <button class="nav-btn" onclick="showTab('paminnelser')" id="nav-paminnelser"><span class="icon">🔔</span> Påminnelser</button>
+      <button class="nav-btn" onclick="showTab('agenda')" id="nav-agenda"><span class="icon">📅</span> Agenda</button>
     </div>
 
     <div class="sidebar-section">
@@ -1013,10 +1316,16 @@
     <div class="topbar">
       <div class="page-title" id="page-title">Översikt</div>
       <div class="week-badge" id="week-badge"></div>
-      <div class="search-wrap">
+      <div class="search-wrap" style="position:relative">
         <span class="search-icon">⌕</span>
-        <input class="search-input" type="text" placeholder="Sök kategori..." id="cat-search" oninput="renderCategories()">
+        <input class="search-input search-input-global" type="text" placeholder="Sök allt..." id="global-search" oninput="renderGlobalSearch(this.value)" onfocus="showSearchPanel()" onblur="setTimeout(hideSearchPanel,200)">
+        <div id="search-panel" style="display:none" class="search-results-panel"></div>
       </div>
+      <div class="notif-bell-wrap" onclick="toggleNotifPanel()" id="notif-bell" style="margin-left:4px">
+        <span style="font-size:18px">🔔</span>
+        <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+      </div>
+      <div id="notif-panel" class="notif-panel" style="display:none"></div>
     </div>
     <div class="undo-bar" id="undo-bar">
       <button class="undo-btn" id="undo-btn" onclick="undoAction()" disabled>↩ Ångra</button>
@@ -1026,11 +1335,19 @@
     <!-- HERO -->
     <div class="hero" id="hero-area"></div>
 
+    <!-- STATUSDASHBOARD -->
+    <div id="dash-widgets-area"></div>
+
     <!-- TABS -->
     <div id="tab-overview"><div id="overview-content"></div></div>
     <div id="tab-categories" style="display:none"><div id="cat-content"></div></div>
     <div id="tab-timeline" style="display:none"><div id="timeline-content"></div></div>
   <div id="tab-brands" style="display:none"><div id="brands-content"></div></div>
+  <div id="tab-lansering" style="display:none"><div id="lansering-content"></div></div>
+  <div id="tab-historik" style="display:none"><div id="historik-content"></div></div>
+  <div id="tab-kalkyl" style="display:none"><div id="kalkyl-content"></div></div>
+  <div id="tab-paminnelser" style="display:none"><div id="paminnelser-content"></div></div>
+  <div id="tab-agenda" style="display:none"><div id="agenda-content"></div></div>
   </main>
 </div>
 
@@ -2024,7 +2341,22 @@ function renderOverview() {
 
   html += '</div>';
 
+  // Lägg till mobilsnabbvy
+  html += renderMobileQuick();
+
   document.getElementById('overview-content').innerHTML = html;
+
+  // Aktivitetslogg widget (om det finns logg)
+  if (activityLog.length > 0) {
+    const logDiv = document.createElement('div');
+    logDiv.style.cssText = 'padding:0 20px 20px';
+    logDiv.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:16px">
+      <div style="font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Senaste aktivitet</div>
+      <div id="activity-log-widget"></div>
+    </div>`;
+    document.getElementById('overview-content').appendChild(logDiv);
+    renderActivityLog('activity-log-widget');
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -2289,11 +2621,11 @@ function togglePast() {
 
 function showTab(tab) {
   state.tab = tab;
-  ['overview','categories','timeline','brands'].forEach(t => {
+  ['overview','categories','timeline','brands','lansering','historik','kalkyl','paminnelser','agenda'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
     document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
   });
-  const titles = { overview: 'Översikt', categories: 'Per kategori', timeline: 'Tidslinje', brands: 'Varumärken' };
+  const titles = { overview: 'Översikt', categories: 'Per kategori', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Lansering', historik: 'Historik & Export', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', agenda: 'Agenda & Möten' };
   document.getElementById('page-title').textContent = titles[tab];
   closeMobileMenu();
   renderAll();
@@ -2301,10 +2633,16 @@ function showTab(tab) {
 
 function renderAll() {
   renderHero();
+  renderDashWidgets();
   if (state.tab === 'overview') renderOverview();
   if (state.tab === 'categories') renderCategories();
   if (state.tab === 'timeline') renderTimeline();
   if (state.tab === 'brands') renderBrands();
+  if (state.tab === 'lansering') renderLansering();
+  if (state.tab === 'historik') renderHistorik();
+  if (state.tab === 'kalkyl') renderKalkyl();
+  if (state.tab === 'paminnelser') renderPaminnelser();
+  if (state.tab === 'agenda') renderAgenda();
 }
 
 // ═══════════════════════════════════════════════
@@ -2442,12 +2780,20 @@ async function loadBrands() {
     if (error) throw error;
 
     brands = (data || []).map(p => {
-      const products = Array.isArray(p.data) ? p.data : [];
+      // Support both old array format and new object format
+      let products = [], productGroups = [];
+      if (Array.isArray(p.data)) {
+        products = p.data;
+      } else if (p.data && typeof p.data === 'object') {
+        products = Array.isArray(p.data.products) ? p.data.products : [];
+        productGroups = Array.isArray(p.data.productGroups) ? p.data.productGroups : [];
+      }
       const brand = {
         id: p.id,           // använd project UUID som brand id
         name: p.name,
         color: p.color || '#a78bfa',
         products,
+        productGroups,
         visibility: p.visibility,
         permission: p.permission,
         createdBy: p.created_by
@@ -2469,7 +2815,7 @@ async function saveProject(brandId) {
   try {
     await supabaseClient.rpc('save_project_data', {
       p_project_id: brandId,
-      p_data: JSON.stringify(brand.products)
+      p_data: JSON.stringify({ products: brand.products, productGroups: brand.productGroups || [] })
     });
   } catch(e) {
     console.warn('saveProject error', e);
@@ -2667,6 +3013,15 @@ async function authOnLogin(user) {
   }
 
   loadBrands();
+  loadLanseringar();
+  loadWindowNotes();
+  loadAgenda();
+  // Slight delay to allow data to load before checking
+  setTimeout(() => {
+    checkAndGenerateNotifs();
+    startOnboarding();
+    addActivity('🔑', `Inloggad som ${currentUser?.email || 'användare'}`);
+  }, 1200);
 }
 
 async function authLogout() {
@@ -2764,6 +3119,1767 @@ async function authInit() {
     }
   }
 }
+
+
+// ═══════════════════════════════════════════════
+// LANSERING — SJOK 1
+// ═══════════════════════════════════════════════
+
+let lanseringar = [];
+let selectedLanseringId = null;
+
+const CHECKLIST_ITEMS = [
+  { id: 'validoo',    label: 'Artikeldata Validoo/Dabas' },
+  { id: 'priskalkyl', label: 'Priskalkyl' },
+  { id: 'varuprover', label: 'Varuprover till kedja' },
+  { id: 'mote',       label: 'Mötesbokning kedja' },
+  { id: 'presentation', label: 'Presentation' },
+  { id: 'offert',     label: 'Offert kedja' },
+];
+
+const TASK_STATUSES = ['Ej påbörjad','Pågående','Klar','Blockerad'];
+
+async function loadLanseringar() {
+  if (!currentWorkspaceId) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('projects')
+      .select('id, name, color, data')
+      .eq('workspace_id', currentWorkspaceId)
+      .eq('project_type', 'lansering');
+    if (error) throw error;
+    lanseringar = (data || []).map(p => ({
+      id: p.id,
+      name: p.name,
+      color: p.color || '#f59e0b',
+      ...(p.data || {})
+    }));
+  } catch(e) {
+    // Tabell saknar project_type-kolumn ännu — fallback till lokal state
+    lanseringar = lanseringar || [];
+  }
+  if (state.tab === 'lansering') renderLansering();
+  if (state.tab === 'historik') renderHistorik();
+  if (state.tab === 'kalkyl') renderKalkyl();
+  if (state.tab === 'paminnelser') renderPaminnelser();
+  if (state.tab === 'agenda') renderAgenda();
+}
+
+async function saveLansering(lid) {
+  const l = lanseringar.find(x => x.id === lid);
+  if (!l || !currentWorkspaceId) return;
+  const { id, name, color, ...rest } = l;
+  try {
+    await supabaseClient.rpc('save_project_data', {
+      p_project_id: id,
+      p_data: JSON.stringify(rest)
+    });
+  } catch(e) { console.warn('saveLansering error', e); }
+}
+
+function getLansering(lid) { return lanseringar.find(x => x.id === lid); }
+
+function getLanseringProgress(l) {
+  const checks = l.checklist || {};
+  const done = CHECKLIST_ITEMS.filter(i => checks[i.id]).length;
+  const tasks = l.tasks || [];
+  const tasksDone = tasks.filter(t => t.status === 'Klar').length;
+  const total = CHECKLIST_ITEMS.length + tasks.length;
+  const totalDone = done + tasksDone;
+  return total === 0 ? 0 : Math.round((totalDone / total) * 100);
+}
+
+function renderLansering() {
+  const el = document.getElementById('lansering-content');
+  if (!el) return;
+
+  const listHtml = `
+    <div class="lansering-list">
+      ${lanseringar.map(l => {
+        const pct = getLanseringProgress(l);
+        return `<div class="lansering-card ${selectedLanseringId===l.id?'selected':''}" onclick="selectLansering('${l.id}')">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="width:10px;height:10px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
+            <div class="lansering-card-name">${l.name}</div>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+          <div class="lansering-card-meta" style="margin-top:6px"><span>${pct}% klart</span></div>
+        </div>`;
+      }).join('')}
+      <button class="lansering-add-btn" onclick="openLanseringModal()">+ Ny lansering</button>
+    </div>`;
+
+  let detailHtml = `<div class="lansering-detail" style="display:flex;align-items:center;justify-content:center;min-height:200px">
+    <span style="color:var(--muted);font-size:13px">← Välj en lansering eller skapa en ny</span>
+  </div>`;
+
+  const l = getLansering(selectedLanseringId);
+  if (l) {
+    const checks = l.checklist || {};
+    const tasks = l.tasks || [];
+    const log = l.contactLog || [];
+
+    const checklistHtml = CHECKLIST_ITEMS.map(item => `
+      <div class="check-item ${checks[item.id] ? 'done' : ''}">
+        <input type="checkbox" ${checks[item.id] ? 'checked' : ''} onchange="toggleCheckItem('${l.id}','${item.id}',this.checked)">
+        <span class="check-item-label">${item.label}</span>
+        ${checks[item.id] ? `<span class="check-item-date">${checks[item.id]}</span>` : ''}
+      </div>`).join('');
+
+    const tasksHtml = tasks.map((t,i) => `
+      <div class="task-row">
+        <input class="task-name-input" value="${t.name||''}" placeholder="Uppgift..." onblur="updateTask('${l.id}',${i},'name',this.value)">
+        <input class="task-deadline-input task-deadline" value="${t.deadline||''}" type="date" onchange="updateTask('${l.id}',${i},'deadline',this.value)" title="Deadline">
+        <select class="task-status-select task-status" onchange="updateTask('${l.id}',${i},'status',this.value)">
+          ${TASK_STATUSES.map(s => `<option ${t.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+        <input class="task-owner-input task-owner" value="${t.owner||''}" placeholder="Ansvarig..." onblur="updateTask('${l.id}',${i},'owner',this.value)">
+        <button class="task-delete-btn" onclick="deleteTask('${l.id}',${i})">×</button>
+      </div>`).join('');
+
+    const logHtml = log.slice().reverse().map((e,i) => `
+      <div class="contact-entry">
+        <div class="contact-entry-header">
+          <span class="contact-chain-badge ${e.chain}">${e.chainLabel||e.chain}</span>
+          <span class="contact-entry-date">${e.date}</span>
+          ${e.contact ? `<span style="font-size:10px;color:var(--muted)">${e.contact}</span>` : ''}
+          <button onclick="deleteContactEntry('${l.id}',${log.length-1-i})" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:12px;margin-left:auto">×</button>
+        </div>
+        <div class="contact-entry-text">${e.note}</div>
+        ${e.next ? `<div class="contact-entry-next">→ ${e.next}</div>` : ''}
+      </div>`).join('');
+
+    detailHtml = `<div class="lansering-detail">
+      <div class="lansering-detail-header">
+        <span style="width:14px;height:14px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
+        <span class="lansering-detail-name">${l.name}</span>
+        <button class="lansering-action-btn" onclick="openLanseringModal('${l.id}')">Redigera</button>
+        <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
+      </div>
+
+      <div class="section-block">
+        <div class="section-block-title">Checklista — Inför lansering</div>
+        <div class="checklist">${checklistHtml}</div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-block-title">Projektuppgifter</div>
+        <div class="custom-tasks">${tasksHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga uppgifter ännu</div>'}</div>
+        <div class="task-add-row" style="margin-top:10px">
+          <button class="inline-btn" onclick="addTask('${l.id}')">+ Lägg till uppgift</button>
+        </div>
+        <div style="margin-top:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Kolumner: Uppgift / Deadline / Status / Ansvarig</div>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-block-title">Kedjekontakt & momentlogg</div>
+        <div class="contact-add-form">
+          <div class="contact-form-row">
+            <select class="contact-chain-select" id="log-chain-${l.id}">
+              <option value="coop">Coop</option>
+              <option value="ica">ICA</option>
+              <option value="dagab">Dagab</option>
+              <option value="other">Övrigt</option>
+            </select>
+            <input class="contact-input" id="log-contact-${l.id}" placeholder="Kontaktperson...">
+            <input class="contact-input" id="log-date-${l.id}" type="date" value="${new Date().toISOString().slice(0,10)}">
+          </div>
+          <textarea class="contact-input" id="log-note-${l.id}" rows="2" placeholder="Vad gjordes / vad sades?..." style="resize:vertical"></textarea>
+          <input class="contact-input" id="log-next-${l.id}" placeholder="Nästa steg (valfritt)...">
+          <div style="display:flex;justify-content:flex-end">
+            <button class="inline-btn" onclick="addContactEntry('${l.id}')">+ Lägg till i logg</button>
+          </div>
+        </div>
+        <div class="contact-log" style="margin-top:12px">${logHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga loggade moment ännu</div>'}</div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-block-title">Deadlines & tidslinje</div>
+        ${renderDeadlineTimeline(l)}
+      </div>
+
+      <div class="section-block">
+        ${renderComments(l.id)}
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = `<div class="lansering-layout">${listHtml}${detailHtml}</div>`;
+
+  // Render lansering modal if open
+  if (document.getElementById('lansering-modal')) return;
+}
+
+function selectLansering(lid) {
+  selectedLanseringId = lid;
+  renderLansering();
+}
+
+function toggleCheckItem(lid, itemId, checked) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.checklist) l.checklist = {};
+  if (checked) {
+    l.checklist[itemId] = new Date().toLocaleDateString('sv-SE');
+  } else {
+    delete l.checklist[itemId];
+  }
+  saveLansering(lid);
+  addActivity(checked ? '✅' : '⬜', `${CHECKLIST_ITEMS.find(i=>i.id===itemId)?.label} — ${getLansering(lid)?.name}`);
+  renderLansering();
+}
+
+function addTask(lid) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.tasks) l.tasks = [];
+  l.tasks.push({ name: '', deadline: '', status: 'Ej påbörjad', owner: '' });
+  saveLansering(lid);
+  renderLansering();
+}
+
+function updateTask(lid, idx, field, val) {
+  const l = getLansering(lid);
+  if (!l || !l.tasks || !l.tasks[idx]) return;
+  l.tasks[idx][field] = val;
+  saveLansering(lid);
+  if (field === 'status') renderLansering();
+}
+
+function deleteTask(lid, idx) {
+  const l = getLansering(lid);
+  if (!l || !l.tasks) return;
+  l.tasks.splice(idx, 1);
+  saveLansering(lid);
+  renderLansering();
+}
+
+function addContactEntry(lid) {
+  const l = getLansering(lid);
+  if (!l) return;
+  const chain = document.getElementById(`log-chain-${lid}`)?.value || 'other';
+  const contact = document.getElementById(`log-contact-${lid}`)?.value.trim() || '';
+  const date = document.getElementById(`log-date-${lid}`)?.value || new Date().toISOString().slice(0,10);
+  const note = document.getElementById(`log-note-${lid}`)?.value.trim() || '';
+  const next = document.getElementById(`log-next-${lid}`)?.value.trim() || '';
+  if (!note) return;
+  const chainLabels = { coop: 'Coop', ica: 'ICA', dagab: 'Dagab', other: 'Övrigt' };
+  if (!l.contactLog) l.contactLog = [];
+  l.contactLog.push({ chain, chainLabel: chainLabels[chain], contact, date, note, next });
+  saveLansering(lid);
+  addActivity('📋', `Kontaktlogg: ${chainLabels[chain]} — ${note.slice(0,40)}`);
+  renderLansering();
+}
+
+function deleteContactEntry(lid, idx) {
+  const l = getLansering(lid);
+  if (!l || !l.contactLog) return;
+  l.contactLog.splice(idx, 1);
+  saveLansering(lid);
+  renderLansering();
+}
+
+// ── LANSERING MODAL ──
+let editingLanseringId = null;
+
+function openLanseringModal(lid = null) {
+  editingLanseringId = lid;
+  const l = lid ? getLansering(lid) : null;
+  const modal = document.createElement('div');
+  modal.className = 'lansering-modal';
+  modal.id = 'lansering-modal';
+  modal.innerHTML = `
+    <div class="lansering-modal-box">
+      <div class="lansering-modal-title">${l ? 'Redigera lansering' : 'Ny lansering'}</div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Namn</label>
+        <input class="lansering-form-input" id="lm-name" placeholder="T.ex. ICA Lansering Q2 2026" value="${l ? l.name : ''}">
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Varumärke / Produkt</label>
+        <input class="lansering-form-input" id="lm-brand" placeholder="Vilket varumärke eller produktlinje?" value="${l ? (l.brand||'') : ''}">
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Kedja</label>
+        <select class="lansering-form-input" id="lm-chain">
+          <option value="">Välj kedja...</option>
+          <option value="coop" ${l&&l.chain==='coop'?'selected':''}>Coop</option>
+          <option value="ica" ${l&&l.chain==='ica'?'selected':''}>ICA</option>
+          <option value="dagab" ${l&&l.chain==='dagab'?'selected':''}>Dagab</option>
+          <option value="multi" ${l&&l.chain==='multi'?'selected':''}>Flera kedjor</option>
+        </select>
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Planerat lanseringsdatum</label>
+        <input class="lansering-form-input" id="lm-date" type="date" value="${l ? (l.launchDate||'') : ''}">
+      </div>
+      <div class="lansering-modal-btns">
+        <button class="lansering-action-btn" onclick="closeLanseringModal()">Avbryt</button>
+        <button class="inline-btn" onclick="saveLanseringModal()">Spara</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('lm-name').focus();
+}
+
+function closeLanseringModal() {
+  const m = document.getElementById('lansering-modal');
+  if (m) m.remove();
+}
+
+async function saveLanseringModal() {
+  const name = document.getElementById('lm-name')?.value.trim();
+  if (!name) return;
+  const brand = document.getElementById('lm-brand')?.value.trim() || '';
+  const chain = document.getElementById('lm-chain')?.value || '';
+  const launchDate = document.getElementById('lm-date')?.value || '';
+
+  if (editingLanseringId) {
+    const l = getLansering(editingLanseringId);
+    if (l) { l.name = name; l.brand = brand; l.chain = chain; l.launchDate = launchDate; }
+    await saveLansering(editingLanseringId);
+  } else {
+    // Skapa nytt i Supabase (återanvänd create_project)
+    if (!currentWorkspaceId) return;
+    try {
+      const { data: pid, error } = await supabaseClient.rpc('create_project', {
+        p_workspace_id: currentWorkspaceId,
+        p_name: name,
+        p_color: '#f59e0b',
+        p_visibility: 'private'
+      });
+      if (error) throw error;
+      const newL = { id: pid, name, color: '#f59e0b', brand, chain, launchDate, checklist: {}, tasks: [], contactLog: [] };
+      lanseringar.push(newL);
+      selectedLanseringId = pid;
+      // Spara extra data
+      const { id: _id, name: _n, color: _c, ...rest } = newL;
+      await supabaseClient.rpc('save_project_data', { p_project_id: pid, p_data: JSON.stringify(rest) });
+    } catch(e) {
+      // Fallback: lokal id
+      const lid = 'l_' + Date.now();
+      lanseringar.push({ id: lid, name, color: '#f59e0b', brand, chain, launchDate, checklist: {}, tasks: [], contactLog: [] });
+      selectedLanseringId = lid;
+    }
+  }
+  closeLanseringModal();
+  addActivity('🚀', `Lansering ${editingLanseringId ? 'uppdaterad' : 'skapad'}: ${name}`);
+  renderLansering();
+}
+
+async function deleteLansering(lid) {
+  if (!confirm('Ta bort denna lansering?')) return;
+  try {
+    await supabaseClient.from('projects').delete().eq('id', lid);
+  } catch(e) {}
+  lanseringar = lanseringar.filter(x => x.id !== lid);
+  if (selectedLanseringId === lid) selectedLanseringId = null;
+  renderLansering();
+}
+
+
+
+// ═══════════════════════════════════════════════
+// SJOK 2A: ARTIKELSTRUKTUR
+// ═══════════════════════════════════════════════
+
+function getOrInitGroups(brand) {
+  if (!brand.productGroups) brand.productGroups = [];
+  return brand.productGroups;
+}
+
+function renderArticleSection(brand) {
+  const groups = getOrInitGroups(brand);
+  const groupsHtml = groups.map((g, gi) => {
+    const articles = g.articles || [];
+    const articleRows = articles.map((a, ai) => `
+      <div class="article-row">
+        <span class="article-row-name">${a.name}</span>
+        ${a.ean ? `<span class="article-row-ean">EAN: ${a.ean}</span>` : ''}
+        <button class="article-delete-btn" onclick="deleteArticle('${brand.id}',${gi},${ai})">×</button>
+      </div>`).join('');
+
+    return `<div class="product-group" id="pg-${brand.id}-${gi}">
+      <div class="product-group-header" onclick="toggleGroup('${brand.id}',${gi})">
+        <span class="product-group-name">${g.name}</span>
+        <span style="font-size:10px;color:var(--muted)">${articles.length} artikel${articles.length!==1?'ar':''}</span>
+        <span class="product-group-toggle" id="pgt-${brand.id}-${gi}">▸</span>
+        <button onclick="event.stopPropagation();deleteGroup('${brand.id}',${gi})" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:13px;padding:0 2px">×</button>
+      </div>
+      <div class="product-group-body" id="pgb-${brand.id}-${gi}" style="display:none">
+        <div class="article-list">${articleRows || '<div style="color:var(--muted);font-size:11px;padding:4px 0">Inga artiklar ännu</div>'}</div>
+        <div class="article-add-row">
+          <input class="article-input" id="art-name-${brand.id}-${gi}" placeholder="Artikelnamn..." style="flex:2;min-width:120px">
+          <input class="article-input" id="art-ean-${brand.id}-${gi}" placeholder="EAN (valfritt)" style="width:130px">
+          <button class="inline-btn" onclick="addArticle('${brand.id}',${gi})">+ Artikel</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="articles-section">
+    <div class="section-title" style="margin-bottom:10px">ARTIKLAR</div>
+    ${groupsHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Lägg till en produktgrupp nedan</div>'}
+    <div class="group-add-row">
+      <input class="inline-input" id="new-group-input-${brand.id}" placeholder="Ny produktgrupp (t.ex. Müsli 500g)..." onkeydown="if(event.key==='Enter')addProductGroup('${brand.id}')">
+      <button class="inline-btn" onclick="addProductGroup('${brand.id}')">+ Grupp</button>
+    </div>
+  </div>`;
+}
+
+function toggleGroup(brandId, gi) {
+  const body = document.getElementById(`pgb-${brandId}-${gi}`);
+  const toggle = document.getElementById(`pgt-${brandId}-${gi}`);
+  if (!body) return;
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  if (toggle) toggle.textContent = open ? '▸' : '▾';
+}
+
+function addProductGroup(brandId) {
+  const input = document.getElementById(`new-group-input-${brandId}`);
+  const name = input?.value.trim();
+  if (!name) return;
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand) return;
+  getOrInitGroups(brand).push({ name, articles: [] });
+  saveProject(brandId);
+  input.value = '';
+  renderBrands();
+}
+
+function deleteGroup(brandId, gi) {
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand) return;
+  const groups = getOrInitGroups(brand);
+  groups.splice(gi, 1);
+  saveProject(brandId);
+  renderBrands();
+}
+
+function addArticle(brandId, gi) {
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand) return;
+  const groups = getOrInitGroups(brand);
+  const name = document.getElementById(`art-name-${brandId}-${gi}`)?.value.trim();
+  const ean = document.getElementById(`art-ean-${brandId}-${gi}`)?.value.trim();
+  if (!name) return;
+  if (!groups[gi].articles) groups[gi].articles = [];
+  groups[gi].articles.push({ id: uid(), name, ean });
+  saveProject(brandId);
+  document.getElementById(`art-name-${brandId}-${gi}`).value = '';
+  document.getElementById(`art-ean-${brandId}-${gi}`).value = '';
+  renderBrands();
+}
+
+function deleteArticle(brandId, gi, ai) {
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand) return;
+  const groups = getOrInitGroups(brand);
+  groups[gi].articles.splice(ai, 1);
+  saveProject(brandId);
+  renderBrands();
+}
+
+// ═══════════════════════════════════════════════
+// SJOK 2B: AVISERINGSHISTORIK
+// ═══════════════════════════════════════════════
+
+function renderHistorik() {
+  const el = document.getElementById('historik-content');
+  if (!el) return;
+
+  const allRoundsAll = allRounds();
+  const pastRounds = allRoundsAll.filter(r => daysLeft(r.launchDate) < 0);
+  const upcomingRounds = allRoundsAll.filter(r => daysLeft(r.launchDate) >= 0).sort((a,b) => daysLeft(a.launchDate)-daysLeft(b.launchDate));
+
+  const filterChain = document.getElementById('hist-filter-chain')?.value || 'all';
+  const filterView = document.getElementById('hist-filter-view')?.value || 'past';
+
+  const rounds = filterView === 'past' ? pastRounds : upcomingRounds;
+  const filtered = filterChain === 'all' ? rounds : rounds.filter(r => r.source === filterChain);
+
+  const chainPill = (source) => {
+    const map = { coop: 'hist-pill-coop', ica: 'hist-pill-ica', dagab: 'hist-pill-dagab' };
+    const labels = { coop: 'Coop', ica: 'ICA', dagab: 'Dagab' };
+    return `<span class="hist-pill ${map[source]||'hist-pill-past'}">${labels[source]||source}</span>`;
+  };
+
+  // Group by brand (products that have cats matching these rounds)
+  const brandRows = brands.map(brand => {
+    const allCats = brand.products.flatMap(p => p.cats);
+    const relevantRounds = filtered.filter(r => {
+      return allCats.some(c => c.source === r.source);
+    });
+    return { brand, rounds: relevantRounds };
+  }).filter(x => x.rounds.length > 0);
+
+  const tableHtml = (rounds, brand) => {
+    if (rounds.length === 0) return '';
+    return `<table class="history-table">
+      <thead><tr>
+        <th>Kedja</th><th>Fönster</th><th>Lanseringsdatum</th><th>Dagar</th><th>Produkter</th>
+      </tr></thead>
+      <tbody>
+        ${rounds.map(r => {
+          const dl = daysLeft(r.launchDate);
+          const st = status(dl);
+          const relProducts = brand.products.filter(p => p.cats.some(c => c.source === r.source));
+          const prodNames = relProducts.map(p => p.name).join(', ') || '—';
+          return `<tr>
+            <td>${chainPill(r.source)}</td>
+            <td style="font-weight:500">${r.name}</td>
+            <td>${r.launchDate}</td>
+            <td><span class="pill ${st.cls}" style="font-size:10px">${st.label}</span></td>
+            <td style="color:var(--muted);font-size:11px">${prodNames}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  };
+
+  const generalTable = () => {
+    if (filtered.length === 0) return `<div class="history-empty">Inga aviseringar hittades</div>`;
+    return `<table class="history-table">
+      <thead><tr>
+        <th>Kedja</th><th>Fönster</th><th>Lanseringsdatum</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        ${filtered.map(r => {
+          const dl = daysLeft(r.launchDate);
+          const st = status(dl);
+          return `<tr>
+            <td>${chainPill(r.source)}</td>
+            <td style="font-weight:500">${r.name}</td>
+            <td>${r.launchDate}</td>
+            <td><span class="pill ${st.cls}" style="font-size:10px">${st.label}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  };
+
+  el.innerHTML = `<div class="history-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div style="font-family:var(--display);font-size:18px;font-weight:700">Aviseringshistorik & Export</div>
+      <button class="export-btn" onclick="exportToExcel()">⬇ Exportera till Excel</button>
+    </div>
+
+    <div class="history-filter-bar">
+      <select class="history-filter-select" id="hist-filter-view" onchange="renderHistorik()">
+        <option value="past">Passerade aviseringar</option>
+        <option value="upcoming">Kommande aviseringar</option>
+      </select>
+      <select class="history-filter-select" id="hist-filter-chain" onchange="renderHistorik()">
+        <option value="all">Alla kedjor</option>
+        <option value="coop">Coop</option>
+        <option value="ica">ICA</option>
+        <option value="dagab">Dagab</option>
+      </select>
+    </div>
+
+    ${brands.length > 0 ? `
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Per varumärke</div>
+        ${brandRows.length > 0 ? brandRows.map(({ brand, rounds: br }) => `
+          <div class="history-brand-block">
+            <div class="history-brand-title">
+              <span style="width:10px;height:10px;border-radius:50%;background:${brand.color};display:inline-block"></span>
+              ${brand.name}
+            </div>
+            ${tableHtml(br, brand)}
+          </div>`).join('') : `<div class="history-empty">Inga varumärken med matchande aviseringar</div>`}
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Alla aviseringar</div>
+        ${generalTable()}
+      </div>
+    ` : `
+      <div style="margin-bottom:20px">${generalTable()}</div>
+    `}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// SJOK 2C: EXCEL EXPORT
+// ═══════════════════════════════════════════════
+
+function exportToExcel() {
+  const rows = [];
+
+  // Header
+  rows.push(['LISTINGWIN — Export', '', '', '', '', '', '', '']);
+  rows.push(['Exportdatum:', new Date().toLocaleDateString('sv-SE'), '', '', '', '', '', '']);
+  rows.push(['']);
+
+  // === AVISERINGAR ===
+  rows.push(['AVISERINGAR', '', '', '', '', '', '', '']);
+  rows.push(['Kedja', 'Fönster', 'Lanseringsdatum', 'Status', 'Dagar kvar']);
+  allRounds().forEach(r => {
+    const dl = daysLeft(r.launchDate);
+    const st = status(dl);
+    rows.push([
+      r.source === 'coop' ? 'Coop' : r.source === 'ica' ? 'ICA' : 'Dagab',
+      r.name,
+      r.launchDate,
+      st.label,
+      dl
+    ]);
+  });
+  rows.push(['']);
+
+  // === VARUMÄRKEN & ARTIKLAR ===
+  rows.push(['VARUMÄRKEN & ARTIKLAR', '', '', '', '', '', '', '']);
+  rows.push(['Varumärke', 'Produktgrupp', 'Artikel', 'EAN', 'Kategori (kopplad)', 'Källa']);
+  brands.forEach(brand => {
+    const groups = brand.productGroups || [];
+    if (groups.length > 0) {
+      groups.forEach(g => {
+        const articles = g.articles || [];
+        if (articles.length > 0) {
+          articles.forEach(a => {
+            rows.push([brand.name, g.name, a.name, a.ean || '', '', '']);
+          });
+        } else {
+          rows.push([brand.name, g.name, '—', '', '', '']);
+        }
+      });
+    }
+    // Legacy products
+    brand.products.forEach(p => {
+      p.cats.forEach(c => {
+        rows.push([brand.name, p.name, '', '', c.catName, c.source]);
+      });
+      if (p.cats.length === 0) rows.push([brand.name, p.name, '', '', '', '']);
+    });
+  });
+  rows.push(['']);
+
+  // === LANSERING CHECKLISTA ===
+  rows.push(['LANSERING — CHECKLISTA & LOGG', '', '', '', '', '', '', '']);
+  lanseringar.forEach(l => {
+    rows.push(['']);
+    rows.push([`Lansering: ${l.name}`, l.brand || '', l.launchDate || '', '', '', '']);
+    rows.push(['— Checklista —', '', '', '', '', '']);
+    rows.push(['Steg', 'Status', 'Datum']);
+    CHECKLIST_ITEMS.forEach(item => {
+      const done = l.checklist && l.checklist[item.id];
+      rows.push([item.label, done ? '✓ Klar' : 'Ej klar', done || '']);
+    });
+    if (l.tasks && l.tasks.length > 0) {
+      rows.push(['— Projektuppgifter —', '', '', '', '', '']);
+      rows.push(['Uppgift', 'Status', 'Deadline', 'Ansvarig']);
+      l.tasks.forEach(t => rows.push([t.name, t.status, t.deadline || '', t.owner || '']));
+    }
+    if (l.contactLog && l.contactLog.length > 0) {
+      rows.push(['— Kedjekontakt —', '', '', '', '', '']);
+      rows.push(['Datum', 'Kedja', 'Kontakt', 'Anteckning', 'Nästa steg']);
+      l.contactLog.forEach(e => rows.push([e.date, e.chainLabel || e.chain, e.contact || '', e.note, e.next || '']));
+    }
+  });
+
+  // Build CSV
+  const csv = rows.map(r => r.map(cell => {
+    const s = String(cell ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(',')).join('\n');
+
+  // BOM for Excel Swedish char support
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `listingwin_export_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+
+// ═══════════════════════════════════════════════
+// SJOK 3A: KALKYLATOR
+// ═══════════════════════════════════════════════
+
+const kalkylState = {
+  // Värdekedja
+  vk: {
+    konsumentpris: '',
+    moms: '12',
+    butiksMarginal: '35',
+    grossistMarginal: '8',
+    fragtkostnad: '',
+  },
+  // Volym
+  vol: {
+    rotation: '',
+    butiker: '',
+    veckor: '52',
+  },
+  // Rapid Start
+  rs: {
+    chain: 'coop',
+    kartongpris: '',
+    butiker: '',
+  }
+};
+
+function kv(id) {
+  const el = document.getElementById(id);
+  return el ? parseFloat(el.value.replace(',','.')) || 0 : 0;
+}
+
+function fmt(n, decimals = 0) {
+  if (isNaN(n) || !isFinite(n)) return '—';
+  return n.toLocaleString('sv-SE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtKr(n) {
+  if (isNaN(n) || !isFinite(n)) return '—';
+  return fmt(n, 2) + ' kr';
+}
+
+function renderKalkyl() {
+  const el = document.getElementById('kalkyl-content');
+  if (!el) return;
+
+  el.innerHTML = `<div class="kalkyl-page">
+    <div style="font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:4px">Kalkylator</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Värdekedja, volymer och Rapid Start-kostnad</div>
+
+    <div class="kalkyl-grid">
+
+      <!-- VÄRDEKEDJA -->
+      <div class="kalkyl-card">
+        <div class="kalkyl-card-title">Värdekedja</div>
+        <div class="kalkyl-card-sub">Räkna baklänges från konsumentpris till leverantörspris</div>
+
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Konsumentpris inkl. moms (kr)</span></div>
+          <input class="kalkyl-input" id="vk-konsumentpris" type="number" placeholder="t.ex. 49.90" oninput="updateVardekedja()">
+        </div>
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Momssats (%)</span></div>
+          <input class="kalkyl-input" id="vk-moms" type="number" value="12" oninput="updateVardekedja()">
+        </div>
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Butiksmarginal (%)</span></div>
+          <input class="kalkyl-input" id="vk-butik" type="number" value="35" oninput="updateVardekedja()">
+        </div>
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Grossistmarginal / kedjerabatt (%)</span></div>
+          <input class="kalkyl-input" id="vk-grossist" type="number" value="8" oninput="updateVardekedja()">
+        </div>
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Frakt & logistik per enhet (kr)</span></div>
+          <input class="kalkyl-input" id="vk-frakt" type="number" placeholder="t.ex. 2.50" oninput="updateVardekedja()">
+        </div>
+
+        <div class="kalkyl-result-box" id="vk-result">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Fyll i konsumentpris ovan för att se uträkning</div>
+        </div>
+      </div>
+
+      <!-- VOLYMER -->
+      <div class="kalkyl-card">
+        <div class="kalkyl-card-title">Volymkalkyl</div>
+        <div class="kalkyl-card-sub">Beräkna förväntad volym baserat på rotation och antal butiker</div>
+
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Rotation (enheter/butik/vecka)</span></div>
+          <input class="kalkyl-input" id="vol-rotation" type="number" placeholder="t.ex. 2" oninput="updateVolym()">
+        </div>
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Antal butiker</span></div>
+          <input class="kalkyl-input" id="vol-butiker" type="number" placeholder="t.ex. 500" oninput="updateVolym()">
+        </div>
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Tidsperiod (veckor)</span></div>
+          <input class="kalkyl-input" id="vol-veckor" type="number" value="52" oninput="updateVolym()">
+        </div>
+
+        <div class="kalkyl-result-box" id="vol-result">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Fyll i rotation och antal butiker</div>
+        </div>
+
+        <!-- Kombinerad volym + värde -->
+        <div class="kalkyl-result-box" id="vol-value-result" style="margin-top:10px;display:none"></div>
+      </div>
+
+      <!-- RAPID START -->
+      <div class="kalkyl-card" style="grid-column: 1 / -1;">
+        <div class="kalkyl-card-title">Rapid Start — Statisk kostnad vid lansering</div>
+        <div class="kalkyl-card-sub">Kostnad = Kartongpris × Antal butiker vid lansering</div>
+
+        <div class="kalkyl-chain-tabs">
+          <button class="kalkyl-chain-tab active-coop" id="rs-tab-coop" onclick="setRsChain('coop')">Coop</button>
+          <button class="kalkyl-chain-tab" id="rs-tab-dagab" onclick="setRsChain('dagab')">Dagab (Willys/Hemköp)</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="kalkyl-field">
+            <div class="kalkyl-label"><span>Kartongpris (kr/krt)</span></div>
+            <input class="kalkyl-input" id="rs-kartong" type="number" placeholder="t.ex. 180" oninput="updateRapidStart()">
+          </div>
+          <div class="kalkyl-field">
+            <div class="kalkyl-label" id="rs-butiker-label"><span>Antal butiker vid lansering</span></div>
+            <input class="kalkyl-input" id="rs-butiker" type="number" placeholder="t.ex. 300" oninput="updateRapidStart()">
+          </div>
+        </div>
+
+        <div class="kalkyl-field">
+          <div class="kalkyl-label"><span>Enheter per kartong (kolli)</span></div>
+          <input class="kalkyl-input" id="rs-kolli" type="number" placeholder="t.ex. 6" oninput="updateRapidStart()">
+        </div>
+
+        <div class="kalkyl-result-box" id="rs-result">
+          <div style="font-size:10px;color:var(--muted)">Fyll i kartongpris och antal butiker</div>
+        </div>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+let rsChain = 'coop';
+function setRsChain(chain) {
+  rsChain = chain;
+  document.getElementById('rs-tab-coop').className = 'kalkyl-chain-tab' + (chain==='coop'?' active-coop':'');
+  document.getElementById('rs-tab-dagab').className = 'kalkyl-chain-tab' + (chain==='dagab'?' active-dagab':'');
+  updateRapidStart();
+}
+
+function updateVardekedja() {
+  const konsument = kv('vk-konsumentpris');
+  if (!konsument) {
+    document.getElementById('vk-result').innerHTML = '<div style="font-size:10px;color:var(--muted)">Fyll i konsumentpris ovan</div>';
+    return;
+  }
+  const moms = kv('vk-moms') / 100;
+  const butik = kv('vk-butik') / 100;
+  const grossist = kv('vk-grossist') / 100;
+  const frakt = kv('vk-frakt');
+
+  const exMoms = konsument / (1 + moms);
+  const efterButik = exMoms * (1 - butik);
+  const efterGrossist = efterButik * (1 - grossist);
+  const netto = efterGrossist - frakt;
+
+  document.getElementById('vk-result').innerHTML = `
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Konsumentpris inkl. moms</span><span class="kalkyl-result-value">${fmtKr(konsument)}</span></div>
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Exkl. moms (${kv('vk-moms')}%)</span><span class="kalkyl-result-value">${fmtKr(exMoms)}</span></div>
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Efter butiksmarginal (${kv('vk-butik')}%)</span><span class="kalkyl-result-value">${fmtKr(efterButik)}</span></div>
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Efter grossist/kedjerabatt (${kv('vk-grossist')}%)</span><span class="kalkyl-result-value">${fmtKr(efterGrossist)}</span></div>
+    ${frakt ? `<div class="kalkyl-result-row"><span class="kalkyl-result-label">Frakt & logistik</span><span class="kalkyl-result-value red">− ${fmtKr(frakt)}</span></div>` : ''}
+    <div class="kalkyl-result-row" style="margin-top:4px"><span class="kalkyl-result-label" style="font-weight:600">Nettopris till leverantör</span><span class="kalkyl-result-value highlight">${fmtKr(netto)}</span></div>
+  `;
+  // Update combined vol+value if volym is filled
+  updateVolym();
+}
+
+function updateVolym() {
+  const rotation = kv('vol-rotation');
+  const butiker = kv('vol-butiker');
+  const veckor = kv('vol-veckor') || 52;
+
+  if (!rotation || !butiker) {
+    document.getElementById('vol-result').innerHTML = '<div style="font-size:10px;color:var(--muted)">Fyll i rotation och antal butiker</div>';
+    document.getElementById('vol-value-result').style.display = 'none';
+    return;
+  }
+
+  const perVecka = rotation * butiker;
+  const perAr = perVecka * veckor;
+  const perManad = perAr / 12;
+
+  document.getElementById('vol-result').innerHTML = `
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Per vecka</span><span class="kalkyl-result-value">${fmt(perVecka)} enheter</span></div>
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Per månad</span><span class="kalkyl-result-value">${fmt(perManad)} enheter</span></div>
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Per ${veckor} veckor</span><span class="kalkyl-result-value highlight">${fmt(perAr)} enheter</span></div>
+  `;
+
+  // Kombinera med värdekedjan om tillgänglig
+  const konsument = kv('vk-konsumentpris');
+  const moms = kv('vk-moms') / 100 || 0.12;
+  const butikM = kv('vk-butik') / 100 || 0.35;
+  const grossistM = kv('vk-grossist') / 100 || 0.08;
+  const frakt = kv('vk-frakt');
+  if (konsument) {
+    const netto = (konsument / (1 + moms)) * (1 - butikM) * (1 - grossistM) - frakt;
+    const omsVecka = perVecka * netto;
+    const omsAr = perAr * netto;
+    const vr = document.getElementById('vol-value-result');
+    vr.style.display = '';
+    vr.innerHTML = `
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Omsättning till leverantörspris</div>
+      <div class="kalkyl-result-row"><span class="kalkyl-result-label">Per vecka</span><span class="kalkyl-result-value">${fmtKr(omsVecka)}</span></div>
+      <div class="kalkyl-result-row"><span class="kalkyl-result-label">Per ${veckor} veckor</span><span class="kalkyl-result-value green">${fmtKr(omsAr)}</span></div>
+    `;
+  } else {
+    document.getElementById('vol-value-result').style.display = 'none';
+  }
+}
+
+function updateRapidStart() {
+  const kartong = kv('rs-kartong');
+  const butiker = kv('rs-butiker');
+  const kolli = kv('rs-kolli');
+  const chainLabel = rsChain === 'coop' ? 'Coop' : 'Dagab';
+
+  if (!kartong || !butiker) {
+    document.getElementById('rs-result').innerHTML = '<div style="font-size:10px;color:var(--muted)">Fyll i kartongpris och antal butiker</div>';
+    return;
+  }
+
+  const totalKostn = kartong * butiker;
+  const totEnheter = kolli ? kolli * butiker : null;
+
+  document.getElementById('rs-result').innerHTML = `
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Kedja</span><span class="kalkyl-result-value">${chainLabel}</span></div>
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label">Kartongpris × Butiker</span><span class="kalkyl-result-value">${fmtKr(kartong)} × ${fmt(butiker)} st</span></div>
+    ${totEnheter ? `<div class="kalkyl-result-row"><span class="kalkyl-result-label">Totalt antal enheter i startlager</span><span class="kalkyl-result-value">${fmt(totEnheter)} st</span></div>` : ''}
+    <div class="kalkyl-result-row"><span class="kalkyl-result-label" style="font-weight:600">Total Rapid Start-kostnad</span><span class="kalkyl-result-value highlight">${fmtKr(totalKostn)}</span></div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px">Statisk kostnad = ett kartongpris placeras i varje butik vid lansering</div>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// SJOK 3B: PÅMINNELSER
+// ═══════════════════════════════════════════════
+
+const PAM_KEY = 'lw_paminnelser';
+
+function loadPamSettings() {
+  try {
+    const raw = sessionStorage.getItem(PAM_KEY);
+    return raw ? JSON.parse(raw) : getDefaultPamSettings();
+  } catch(e) { return getDefaultPamSettings(); }
+}
+
+function savePamSettings(settings) {
+  try { sessionStorage.setItem(PAM_KEY, JSON.stringify(settings)); } catch(e) {}
+}
+
+function getDefaultPamSettings() {
+  return {
+    email: '',
+    avisering: { enabled: false, days: 21 },
+    prisListning: { enabled: false, days: 14 },
+    validoo: { enabled: false, days: 30 },
+    mote: { enabled: false, days: 7 },
+    lansering: { enabled: false, days: 7 },
+    customTasks: { enabled: false, days: 3 },
+  };
+}
+
+function renderPaminnelser() {
+  const el = document.getElementById('paminnelser-content');
+  if (!el) return;
+  const s = loadPamSettings();
+
+  const pamRow = (key, label, sub) => `
+    <div class="pam-row">
+      <div style="flex:1">
+        <div class="pam-row-label">${label}</div>
+        <div class="pam-row-sub">${sub}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input class="pam-days-input" type="number" min="1" max="90"
+          value="${s[key]?.days ?? 7}"
+          onchange="updatePamDay('${key}',this.value)"
+          title="Antal dagar innan">
+        <span style="font-size:10px;color:var(--muted)">dagar innan</span>
+        <label class="pam-toggle">
+          <input type="checkbox" ${s[key]?.enabled ? 'checked' : ''} onchange="togglePam('${key}',this.checked)">
+          <span class="pam-slider"></span>
+        </label>
+      </div>
+    </div>`;
+
+  el.innerHTML = `<div class="pam-page">
+    <div style="font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:4px">Påminnelser</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Välj vilka moment du vill bli påmind om och hur många dagar i förväg</div>
+
+    <div class="pam-intro">
+      <strong>Så fungerar påminnelserna:</strong> Aktivera de moment du vill bli påmind om och ange hur många dagar i förväg.
+      Ange din e-postadress nedan så skickas påminnelserna dit när deadlines närmar sig.
+      Du kan alltid stänga av enskilda påminnelser utan att ändra andra inställningar.
+    </div>
+
+    <div class="pam-section">
+      <div class="pam-section-title">Din e-postadress</div>
+      <input class="pam-email-input" id="pam-email" type="email"
+        placeholder="din@email.se"
+        value="${s.email || ''}"
+        oninput="updatePamEmail(this.value)">
+    </div>
+
+    <div class="pam-section">
+      <div class="pam-section-title">Aviseringar & Kedjemoment</div>
+      ${pamRow('avisering',  'Aviseringsfönster öppnar', 'Påminnelse när ett nytt aviseringsfönster börjar närma sig')}
+      ${pamRow('lansering',  'Planerad lansering', 'Påminnelse inför ditt planerade lanseringsdatum')}
+      ${pamRow('mote',       'Mötesbokning kedja', 'Påminnelse om att boka in möte med kedja')}
+    </div>
+
+    <div class="pam-section">
+      <div class="pam-section-title">Checklistmoment</div>
+      ${pamRow('validoo',    'Artikeldata Validoo/Dabas', 'Påminnelse om att säkerställa artikeldata')}
+      ${pamRow('prisListning','Priskalkyl klar', 'Påminnelse om att slutföra priskalkylen')}
+      ${pamRow('customTasks','Projektuppgifter med deadline', 'Påminnelse för uppgifter i projektledardelen')}
+    </div>
+
+    <div style="display:flex;align-items:center;margin-top:8px">
+      <button class="pam-save-btn" onclick="savePamAndConfirm()">Spara inställningar</button>
+      <span class="pam-saved-msg" id="pam-saved-msg">✓ Sparat</span>
+    </div>
+
+    <div style="margin-top:28px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Aktiva påminnelser just nu</div>
+      ${renderActiveReminders(s)}
+    </div>
+  </div>`;
+}
+
+function renderActiveReminders(s) {
+  const labels = {
+    avisering: 'Aviseringsfönster',
+    lansering: 'Planerad lansering',
+    mote: 'Mötesbokning kedja',
+    validoo: 'Artikeldata Validoo/Dabas',
+    prisListning: 'Priskalkyl klar',
+    customTasks: 'Projektuppgifter',
+  };
+
+  const active = Object.entries(labels).filter(([k]) => s[k]?.enabled);
+  if (active.length === 0) return '<div style="color:var(--muted);font-size:12px">Inga påminnelser aktiverade</div>';
+
+  // Find upcoming triggers
+  const rows = [];
+  const allR = allRounds().filter(r => { const d = daysLeft(r.launchDate); return d >= 0 && d <= 60; });
+
+  if (s.avisering?.enabled) {
+    allR.forEach(r => {
+      const d = daysLeft(r.launchDate);
+      const triggerAt = d - (s.avisering.days || 21);
+      if (triggerAt <= 0 && d >= 0) {
+        const src = r.source === 'coop' ? 'Coop' : r.source === 'ica' ? 'ICA' : 'Dagab';
+        rows.push({ label: `Avisering: ${r.name} (${src})`, days: d, type: r.source });
+      }
+    });
+  }
+
+  if (s.lansering?.enabled) {
+    lanseringar.filter(l => l.launchDate).forEach(l => {
+      const d = Math.round((new Date(l.launchDate) - new Date()) / 86400000);
+      if (d >= 0 && d <= (s.lansering.days || 7) * 3) {
+        rows.push({ label: `Lansering: ${l.name}`, days: d, type: 'lansering' });
+      }
+    });
+  }
+
+  if (rows.length === 0 && active.length > 0) {
+    return `<div style="color:var(--muted);font-size:12px">
+      ${active.map(([k]) => `<span style="display:inline-block;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;border-radius:4px;padding:2px 8px;font-size:10px;margin:2px">${labels[k]} — ${s[k].days}d innan</span>`).join('')}
+      <div style="margin-top:8px;font-size:11px">Inga triggers inom närmaste 60 dagarna</div>
+    </div>`;
+  }
+
+  return rows.map(r => `
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;flex-shrink:0"></span>
+      <span style="flex:1">${r.label}</span>
+      <span style="font-size:10px;color:#f59e0b;font-weight:600">${r.days}d kvar</span>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:12px">Inga aktiva triggers just nu</div>';
+}
+
+function togglePam(key, enabled) {
+  const s = loadPamSettings();
+  if (!s[key]) s[key] = { enabled: false, days: 7 };
+  s[key].enabled = enabled;
+  savePamSettings(s);
+}
+
+function updatePamDay(key, val) {
+  const s = loadPamSettings();
+  if (!s[key]) s[key] = { enabled: false, days: 7 };
+  s[key].days = parseInt(val) || 7;
+  savePamSettings(s);
+}
+
+function updatePamEmail(val) {
+  const s = loadPamSettings();
+  s.email = val;
+  savePamSettings(s);
+}
+
+function savePamAndConfirm() {
+  const email = document.getElementById('pam-email')?.value;
+  if (email) updatePamEmail(email);
+  const msg = document.getElementById('pam-saved-msg');
+  if (msg) {
+    msg.style.opacity = '1';
+    setTimeout(() => { msg.style.opacity = '0'; }, 2500);
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════
+// BLOCK 4 — 12 NYA FUNKTIONER
+// ═══════════════════════════════════════════════
+
+// ── 1. ONBOARDING ──
+const ONBOARD_KEY = 'lw_onboarded_v1';
+let onboardStep = 0;
+const onboardData = { brandName: '', chains: [] };
+
+function shouldShowOnboarding() {
+  return !sessionStorage.getItem(ONBOARD_KEY) && brands.length === 0;
+}
+
+function startOnboarding() {
+  if (!shouldShowOnboarding()) return;
+  onboardStep = 0;
+  renderOnboardStep();
+}
+
+function renderOnboardStep() {
+  const existing = document.getElementById('onboard-overlay');
+  if (existing) existing.remove();
+
+  const steps = [
+    {
+      title: 'Välkommen till ListingWin! 🎉',
+      desc: 'Det här är ditt verktyg för att hantera listningar inom dagligvaruhandeln. Vi hjälper dig att hålla koll på aviseringsfönster, lanseringar och kontakter mot kedjorna. Låt oss sätta upp ditt konto på 3 enkla steg.',
+      content: '',
+      next: 'Kom igång →'
+    },
+    {
+      title: 'Vilket varumärke representerar du?',
+      desc: 'Börja med att lägga in ditt första varumärke. Du kan alltid lägga till fler senare.',
+      content: `<input class="onboard-input" id="ob-brand" placeholder="T.ex. Löfbergs, Paulúns, Oatly..." value="${onboardData.brandName}" oninput="onboardData.brandName=this.value">`,
+      next: 'Nästa →'
+    },
+    {
+      title: 'Vilka kedjor jobbar du mot?',
+      desc: 'Välj de kedjor du aktivt jobbar med. Aviseringsfönster visas bara för valda kedjor.',
+      content: `<div class="onboard-chain-picks">
+        <button class="onboard-chain-pick ${onboardData.chains.includes('coop')?'picked-coop':''}" onclick="toggleOnboardChain('coop',this)">🟢 Coop</button>
+        <button class="onboard-chain-pick ${onboardData.chains.includes('ica')?'picked-ica':''}" onclick="toggleOnboardChain('ica',this)">🔴 ICA</button>
+        <button class="onboard-chain-pick ${onboardData.chains.includes('dagab')?'picked-dagab':''}" onclick="toggleOnboardChain('dagab',this)">🟠 Dagab</button>
+      </div>`,
+      next: 'Avsluta setup →'
+    }
+  ];
+
+  const s = steps[onboardStep];
+  const pct = ((onboardStep) / steps.length) * 100;
+
+  const div = document.createElement('div');
+  div.className = 'onboard-overlay';
+  div.id = 'onboard-overlay';
+  div.innerHTML = `
+    <div class="onboard-box">
+      <div class="onboard-progress"><div class="onboard-progress-fill" style="width:${pct}%"></div></div>
+      <div class="onboard-body">
+        <div class="onboard-step-label">Steg ${onboardStep+1} av ${steps.length}</div>
+        <div class="onboard-title">${s.title}</div>
+        <div class="onboard-desc">${s.desc}</div>
+        ${s.content}
+      </div>
+      <div class="onboard-btns">
+        <span class="onboard-skip" onclick="skipOnboarding()">Hoppa över</span>
+        <button class="onboard-next" onclick="nextOnboardStep()">${s.next}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(div);
+}
+
+function toggleOnboardChain(chain, btn) {
+  const idx = onboardData.chains.indexOf(chain);
+  if (idx >= 0) {
+    onboardData.chains.splice(idx, 1);
+    btn.className = 'onboard-chain-pick';
+  } else {
+    onboardData.chains.push(chain);
+    btn.className = `onboard-chain-pick picked-${chain}`;
+  }
+}
+
+async function nextOnboardStep() {
+  if (onboardStep === 1) {
+    const name = document.getElementById('ob-brand')?.value.trim();
+    if (name) onboardData.brandName = name;
+  }
+  onboardStep++;
+  if (onboardStep >= 3) {
+    await finishOnboarding();
+    return;
+  }
+  renderOnboardStep();
+}
+
+async function finishOnboarding() {
+  sessionStorage.setItem(ONBOARD_KEY, '1');
+  document.getElementById('onboard-overlay')?.remove();
+
+  // Skapa varumärke om angivet
+  if (onboardData.brandName && currentWorkspaceId) {
+    await createProject(onboardData.brandName, '#a78bfa');
+    renderAll();
+  }
+
+  // Aktivera valda kedjor
+  if (onboardData.chains.length > 0) {
+    state.active.coop = onboardData.chains.includes('coop');
+    state.active.ica = onboardData.chains.includes('ica');
+    state.active.dagab = onboardData.chains.includes('dagab');
+    renderAll();
+  }
+
+  addActivity('🎉', 'Välkommen! Ditt konto är nu satt upp.');
+}
+
+function skipOnboarding() {
+  sessionStorage.setItem(ONBOARD_KEY, '1');
+  document.getElementById('onboard-overlay')?.remove();
+}
+
+// ── 2. STATUSDASHBOARD WIDGETS ──
+function renderDashWidgets() {
+  const el = document.getElementById('dash-widgets-area');
+  if (!el || state.tab !== 'overview') { if(el) el.innerHTML=''; return; }
+
+  const urgentRounds = visibleRounds().filter(r => { const d = daysLeft(r.launchDate); return d >= 0 && d <= 21; });
+  const activeLanseringar = lanseringar.length;
+  const openTasks = lanseringar.reduce((n, l) => n + (l.tasks||[]).filter(t => t.status !== 'Klar').length, 0);
+  const unchecked = lanseringar.reduce((n, l) => {
+    const checks = l.checklist || {};
+    return n + CHECKLIST_ITEMS.filter(i => !checks[i.id]).length * (activeLanseringar > 0 ? 1/activeLanseringar : 0);
+  }, 0);
+  const nextWindow = visibleRounds().filter(r => daysLeft(r.launchDate) > 0).sort((a,b) => daysLeft(a.launchDate)-daysLeft(b.launchDate))[0];
+
+  el.innerHTML = `<div class="dash-widgets">
+    <div class="dash-widget" onclick="showTab('lansering')">
+      <div class="dash-widget-value" style="color:#f59e0b">${activeLanseringar}</div>
+      <div class="dash-widget-label">Aktiva lanseringar</div>
+      <div class="dash-widget-sub">Klicka för att hantera →</div>
+    </div>
+    <div class="dash-widget" onclick="showTab('overview')">
+      <div class="dash-widget-value" style="color:${urgentRounds.length>0?'#f87171':'#4ade80'}">${urgentRounds.length}</div>
+      <div class="dash-widget-label">Fönster inom 21 dagar</div>
+      <div class="dash-widget-sub">${nextWindow ? `Nästa: ${nextWindow.name}` : 'Inga akuta fönster'}</div>
+    </div>
+    <div class="dash-widget" onclick="showTab('lansering')">
+      <div class="dash-widget-value" style="color:${openTasks>0?'#fb923c':'#4ade80'}">${openTasks}</div>
+      <div class="dash-widget-label">Öppna uppgifter</div>
+      <div class="dash-widget-sub">Ej avklarade projektuppgifter</div>
+    </div>
+    <div class="dash-widget" onclick="showTab('agenda')">
+      <div class="dash-widget-value" style="color:#a78bfa">${brands.length}</div>
+      <div class="dash-widget-label">Varumärken</div>
+      <div class="dash-widget-sub">${(brands.reduce((n,b) => n+(b.productGroups||[]).reduce((m,g)=>m+(g.articles||[]).length,0),0))} artiklar registrerade</div>
+    </div>
+  </div>`;
+}
+
+// ── 3. KOPPLING LANSERING ↔ AVISERINGSFÖNSTER + DEADLINERÄKNARE ──
+function getLanseringDeadlines(l) {
+  if (!l.launchDate) return [];
+  const launch = new Date(l.launchDate);
+  const steps = [
+    { name: 'Artikeldata Validoo/Dabas', daysBefore: 42, key: 'validoo' },
+    { name: 'Priskalkyl klar', daysBefore: 35, key: 'priskalkyl' },
+    { name: 'Varuprover till kedja', daysBefore: 28, key: 'varuprover' },
+    { name: 'Mötesbokning kedja', daysBefore: 21, key: 'mote' },
+    { name: 'Presentation klar', daysBefore: 14, key: 'presentation' },
+    { name: 'Offert till kedja', daysBefore: 7, key: 'offert' },
+    { name: '🚀 Lansering', daysBefore: 0, key: '__launch__' },
+  ];
+  return steps.map(s => {
+    const deadline = new Date(launch);
+    deadline.setDate(deadline.getDate() - s.daysBefore);
+    const daysUntil = Math.round((deadline - new Date()) / 86400000);
+    const done = l.checklist && l.checklist[s.key];
+    return { ...s, deadline: deadline.toLocaleDateString('sv-SE'), daysUntil, done };
+  });
+}
+
+function renderDeadlineTimeline(l) {
+  const steps = getLanseringDeadlines(l);
+  if (!l.launchDate) return `<div style="color:var(--muted);font-size:11px;padding:8px 0">Sätt ett lanseringsdatum för att se deadlines</div>`;
+
+  // Find matching avisering window
+  const matchingWindow = l.chain ? allRounds().filter(r => r.source === l.chain).sort((a,b) => {
+    const la = new Date(l.launchDate), ra = new Date(a.launchDate), rb = new Date(b.launchDate);
+    return Math.abs(ra-la) - Math.abs(rb-la);
+  })[0] : null;
+
+  const windowBadge = matchingWindow ? `
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:6px;padding:7px 12px;margin-bottom:12px;font-size:11px">
+      <span>📅</span>
+      <span>Närmaste aviseringsfönster: <strong>${matchingWindow.name}</strong> — lansering ${matchingWindow.launchDate}</span>
+    </div>` : '';
+
+  const stepsHtml = steps.map(s => {
+    const cls = s.done ? 'done' : s.daysUntil < 0 ? 'late' : s.daysUntil <= 7 ? 'due' : 'future';
+    const dateStr = s.daysUntil === 0 ? 'Idag' : s.daysUntil > 0 ? `${s.daysUntil}d kvar` : `${Math.abs(s.daysUntil)}d sedan`;
+    return `<div class="dl-step">
+      <div class="dl-dot ${cls}"></div>
+      <div class="dl-step-body">
+        <div class="dl-step-name ${s.done?'done-text':''}">${s.name}</div>
+        <div class="dl-step-date">${s.deadline} · <span style="color:${cls==='late'?'#f87171':cls==='due'?'#f59e0b':cls==='done'?'#4ade80':'var(--muted)'}">${dateStr}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return windowBadge + `<div class="deadline-timeline">${stepsHtml}</div>`;
+}
+
+// ── 4. NOTERINGAR PER AVISERINGSFÖNSTER ──
+const windowNotes = {};
+
+function getWindowNoteKey(roundName, source) { return `note_${source}_${roundName.replace(/\s/g,'_')}`; }
+
+function renderWindowNote(roundName, source) {
+  const key = getWindowNoteKey(roundName, source);
+  const note = windowNotes[key] || '';
+  const noteId = `wn-${key}`;
+  const panelId = `wnp-${key}`;
+  return `<div style="margin-top:6px">
+    <button class="window-note-btn" onclick="toggleWindowNote('${panelId}')">✏ ${note ? 'Redigera notering' : 'Lägg till notering'}</button>
+    <div class="window-note-panel" id="${panelId}" style="display:${note?'block':'none'}">
+      <textarea class="window-note-textarea" id="${noteId}" placeholder="Anteckna vad du vet om det här fönstret..." onblur="saveWindowNote('${key}','${noteId}')">${note}</textarea>
+      ${note ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">Sparas automatiskt</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function toggleWindowNote(panelId) {
+  const p = document.getElementById(panelId);
+  if (p) { p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
+}
+
+function saveWindowNote(key, textareaId) {
+  const val = document.getElementById(textareaId)?.value || '';
+  windowNotes[key] = val;
+  try { sessionStorage.setItem('lw_window_notes', JSON.stringify(windowNotes)); } catch(e) {}
+}
+
+function loadWindowNotes() {
+  try {
+    const raw = sessionStorage.getItem('lw_window_notes');
+    if (raw) Object.assign(windowNotes, JSON.parse(raw));
+  } catch(e) {}
+}
+
+// ── 5. MÖTESKALENDER / AGENDA ──
+let agendaItems = [];
+
+function loadAgenda() {
+  try {
+    const raw = sessionStorage.getItem('lw_agenda');
+    agendaItems = raw ? JSON.parse(raw) : [];
+  } catch(e) { agendaItems = []; }
+}
+
+function saveAgenda() {
+  try { sessionStorage.setItem('lw_agenda', JSON.stringify(agendaItems)); } catch(e) {}
+}
+
+function renderAgenda() {
+  const el = document.getElementById('agenda-content');
+  if (!el) return;
+
+  // Merge agenda items with lansering deadlines and avisering windows
+  const allItems = [...agendaItems];
+
+  // Add avisering windows as items
+  visibleRounds().filter(r => daysLeft(r.launchDate) >= -7 && daysLeft(r.launchDate) <= 90).forEach(r => {
+    allItems.push({
+      id: `win_${r.source}_${r.launchDate}`,
+      date: r.launchDate,
+      title: r.name,
+      sub: `Aviseringsfönster · ${r.source === 'coop' ? 'Coop' : r.source === 'ica' ? 'ICA' : 'Dagab'}`,
+      color: r.source === 'coop' ? '#4ade80' : r.source === 'ica' ? '#f87171' : '#fb923c',
+      type: 'window',
+      readonly: true
+    });
+  });
+
+  // Add lansering deadlines
+  lanseringar.filter(l => l.launchDate).forEach(l => {
+    getLanseringDeadlines(l).forEach(s => {
+      if (!s.done && s.daysUntil >= -7 && s.daysUntil <= 90) {
+        allItems.push({
+          id: `dl_${l.id}_${s.key}`,
+          date: s.deadline,
+          title: s.name,
+          sub: `${l.name}`,
+          color: '#f59e0b',
+          type: 'deadline',
+          readonly: true
+        });
+      }
+    });
+  });
+
+  allItems.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  // Group by week
+  const weeks = {};
+  allItems.forEach(item => {
+    const d = new Date(item.date);
+    const weekNum = isoWeek(d);
+    const yr = d.getFullYear();
+    const key = `${yr}-${weekNum}`;
+    if (!weeks[key]) weeks[key] = { label: `Vecka ${weekNum}, ${yr}`, items: [] };
+    weeks[key].items.push(item);
+  });
+
+  const weeksHtml = Object.values(weeks).map(w => `
+    <div class="agenda-week">
+      <div class="agenda-week-title">${w.label}</div>
+      ${w.items.map(item => `
+        <div class="agenda-item">
+          <div class="agenda-item-date">${item.date}</div>
+          <div class="agenda-item-dot" style="background:${item.color}"></div>
+          <div class="agenda-item-body">
+            <div class="agenda-item-title">${item.title}</div>
+            <div class="agenda-item-sub">${item.sub || ''}</div>
+          </div>
+          ${!item.readonly ? `<button onclick="deleteAgendaItem('${item.id}')" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:13px">×</button>` : ''}
+        </div>`).join('')}
+    </div>`).join('');
+
+  el.innerHTML = `<div class="agenda-page">
+    <div style="font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:4px">Agenda & Möten</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Alla deadlines, aviseringsfönster och egna möten samlat</div>
+
+    <div class="agenda-add-form">
+      <input class="agenda-input" id="ag-title" placeholder="Möte / händelse..." style="grid-column:1/-1">
+      <input class="agenda-input" id="ag-date" type="date" value="${new Date().toISOString().slice(0,10)}">
+      <input class="agenda-input" id="ag-sub" placeholder="Anteckning (valfritt)">
+      <button class="inline-btn" onclick="addAgendaItem()" style="grid-column:1/-1">+ Lägg till</button>
+    </div>
+
+    ${Object.keys(weeks).length > 0 ? weeksHtml : '<div style="color:var(--muted);font-size:13px;padding:20px 0">Inga kommande händelser — lanseringsfönster och deadlines dyker upp här automatiskt</div>'}
+  </div>`;
+}
+
+function addAgendaItem() {
+  const title = document.getElementById('ag-title')?.value.trim();
+  const date = document.getElementById('ag-date')?.value;
+  const sub = document.getElementById('ag-sub')?.value.trim();
+  if (!title || !date) return;
+  agendaItems.push({ id: uid(), date, title, sub, color: '#a78bfa', type: 'custom', readonly: false });
+  saveAgenda();
+  addActivity('📅', `Agendahändelse tillagd: ${title}`);
+  renderAgenda();
+}
+
+function deleteAgendaItem(id) {
+  agendaItems = agendaItems.filter(i => i.id !== id);
+  saveAgenda();
+  renderAgenda();
+}
+
+// ── 6. IN-APP NOTIFIKATIONER ──
+let notifications = [];
+let notifPanelOpen = false;
+
+function addNotif(text, type = 'info') {
+  const n = { id: uid(), text, type, time: new Date(), read: false };
+  notifications.unshift(n);
+  if (notifications.length > 50) notifications.pop();
+  updateNotifBadge();
+}
+
+function updateNotifBadge() {
+  const unread = notifications.filter(n => !n.read).length;
+  const badge = document.getElementById('notif-badge');
+  if (badge) {
+    badge.textContent = unread > 9 ? '9+' : unread;
+    badge.style.display = unread > 0 ? 'flex' : 'none';
+  }
+}
+
+function toggleNotifPanel() {
+  notifPanelOpen = !notifPanelOpen;
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  if (notifPanelOpen) {
+    renderNotifPanel();
+    panel.style.display = 'block';
+    // Mark all as read after 1.5s
+    setTimeout(() => {
+      notifications.forEach(n => n.read = true);
+      updateNotifBadge();
+    }, 1500);
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function renderNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  const items = notifications.length === 0
+    ? '<div class="notif-empty">Inga notifieringar</div>'
+    : notifications.map(n => `
+        <div class="notif-item ${n.read?'':'unread'}">
+          <div class="notif-item-dot ${n.read?'read':''}"></div>
+          <div class="notif-item-text">
+            ${n.text}
+            <div class="notif-item-time">${n.time.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="notif-panel-header">
+      <span class="notif-panel-title">Notifieringar</span>
+      <span class="notif-panel-clear" onclick="clearNotifs()">Rensa alla</span>
+    </div>
+    <div class="notif-list">${items}</div>`;
+}
+
+function clearNotifs() {
+  notifications = [];
+  updateNotifBadge();
+  renderNotifPanel();
+}
+
+// Check for urgent rounds and generate notifs
+function checkAndGenerateNotifs() {
+  const urgent = visibleRounds().filter(r => { const d = daysLeft(r.launchDate); return d >= 0 && d <= 14; });
+  urgent.forEach(r => {
+    const d = daysLeft(r.launchDate);
+    const src = r.source === 'coop' ? 'Coop' : r.source === 'ica' ? 'ICA' : 'Dagab';
+    if (d <= 7) addNotif(`⚠️ KRITISKT: ${r.name} (${src}) lanserar om ${d} dagar!`, 'urgent');
+    else addNotif(`📅 ${r.name} (${src}) lanserar om ${d} dagar`, 'info');
+  });
+
+  lanseringar.forEach(l => {
+    if (!l.launchDate) return;
+    const d = Math.round((new Date(l.launchDate) - new Date()) / 86400000);
+    if (d >= 0 && d <= 14) addNotif(`🚀 Lansering "${l.name}" om ${d} dagar`, 'lansering');
+  });
+}
+
+// Close notif panel on outside click
+document.addEventListener('click', (e) => {
+  if (notifPanelOpen && !e.target.closest('#notif-bell') && !e.target.closest('#notif-panel')) {
+    notifPanelOpen = false;
+    const panel = document.getElementById('notif-panel');
+    if (panel) panel.style.display = 'none';
+  }
+});
+
+// ── 7. AKTIVITETSLOGG ──
+let activityLog = [];
+
+function addActivity(icon, text) {
+  activityLog.unshift({ icon, text, time: new Date() });
+  if (activityLog.length > 100) activityLog.pop();
+}
+
+function renderActivityLog(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (activityLog.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Ingen aktivitet ännu</div>';
+    return;
+  }
+  el.innerHTML = `<div class="activity-feed">
+    ${activityLog.slice(0,20).map(a => `
+      <div class="activity-item">
+        <div class="activity-icon">${a.icon}</div>
+        <div class="activity-body">${a.text}</div>
+        <div class="activity-time">${a.time.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ── 8. KOMMENTARER PER LANSERING ──
+function renderComments(lid) {
+  const l = getLansering(lid);
+  if (!l) return '';
+  const comments = l.comments || [];
+  const initials = (email) => email ? email.slice(0,2).toUpperCase() : '??';
+  const userEmail = currentUser?.email || 'du';
+
+  const commentsHtml = comments.map((c,i) => `
+    <div class="comment-item">
+      <div class="comment-avatar">${initials(c.author)}</div>
+      <div class="comment-body">
+        <div class="comment-meta">${c.author} · ${c.date}</div>
+        <div class="comment-text">${c.text}</div>
+      </div>
+      ${c.author === userEmail ? `<button onclick="deleteComment('${lid}',${i})" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:12px;align-self:flex-start">×</button>` : ''}
+    </div>`).join('');
+
+  return `<div class="comments-section">
+    <div style="font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Kommentarer</div>
+    ${commentsHtml || '<div style="color:var(--muted);font-size:12px;padding:4px 0">Inga kommentarer ännu</div>'}
+    <div class="comment-input-row">
+      <textarea class="comment-textarea" id="comment-input-${lid}" placeholder="Skriv en kommentar..." rows="2"></textarea>
+      <button class="inline-btn" onclick="addComment('${lid}')" style="align-self:flex-end">Skicka</button>
+    </div>
+  </div>`;
+}
+
+function addComment(lid) {
+  const l = getLansering(lid);
+  if (!l) return;
+  const text = document.getElementById(`comment-input-${lid}`)?.value.trim();
+  if (!text) return;
+  if (!l.comments) l.comments = [];
+  l.comments.push({ author: currentUser?.email || 'du', date: new Date().toLocaleDateString('sv-SE'), text });
+  saveLansering(lid);
+  addActivity('💬', `Kommentar tillagd på "${l.name}"`);
+  renderLansering();
+}
+
+function deleteComment(lid, idx) {
+  const l = getLansering(lid);
+  if (!l?.comments) return;
+  l.comments.splice(idx, 1);
+  saveLansering(lid);
+  renderLansering();
+}
+
+// ── 9. GLOBAL SÖKNING ──
+let searchPanelVisible = false;
+
+function showSearchPanel() {
+  searchPanelVisible = true;
+  renderGlobalSearch(document.getElementById('global-search')?.value || '');
+}
+
+function hideSearchPanel() {
+  searchPanelVisible = false;
+  const panel = document.getElementById('search-panel');
+  if (panel) panel.style.display = 'none';
+}
+
+function renderGlobalSearch(q) {
+  const panel = document.getElementById('search-panel');
+  if (!panel || !searchPanelVisible) return;
+  q = (q || '').toLowerCase().trim();
+
+  const results = [];
+
+  if (q.length < 1) { panel.style.display = 'none'; return; }
+
+  // Search brands
+  brands.forEach(b => {
+    if (b.name.toLowerCase().includes(q)) {
+      results.push({ icon: '◈', label: b.name, sub: `${b.products.length} produkter`, type: 'Varumärke', action: () => { showTab('brands'); /* select brand */ selectedBrandId = b.id; renderBrands(); } });
+    }
+    // Search products
+    b.products.forEach(p => {
+      if (p.name.toLowerCase().includes(q)) {
+        results.push({ icon: '📦', label: p.name, sub: `Varumärke: ${b.name}`, type: 'Produkt', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
+      }
+    });
+    // Search articles
+    (b.productGroups||[]).forEach(g => {
+      (g.articles||[]).forEach(a => {
+        if (a.name.toLowerCase().includes(q) || (a.ean||'').includes(q)) {
+          results.push({ icon: '🏷', label: a.name, sub: `${b.name} → ${g.name}${a.ean?' · EAN: '+a.ean:''}`, type: 'Artikel', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
+        }
+      });
+    });
+  });
+
+  // Search lanseringar
+  lanseringar.forEach(l => {
+    if (l.name.toLowerCase().includes(q)) {
+      results.push({ icon: '🚀', label: l.name, sub: l.launchDate ? `Lansering: ${l.launchDate}` : 'Lansering', type: 'Lansering', action: () => { showTab('lansering'); selectedLanseringId = l.id; renderLansering(); } });
+    }
+    // Search contact log
+    (l.contactLog||[]).forEach(e => {
+      if (e.note.toLowerCase().includes(q) || (e.contact||'').toLowerCase().includes(q)) {
+        results.push({ icon: '📋', label: `${e.chainLabel||e.chain}: ${e.note.slice(0,50)}`, sub: `Kontaktlogg · ${l.name}`, type: 'Logg', action: () => { showTab('lansering'); selectedLanseringId = l.id; renderLansering(); } });
+      }
+    });
+  });
+
+  // Search avisering windows
+  allRounds().forEach(r => {
+    if (r.name.toLowerCase().includes(q)) {
+      const src = r.source === 'coop' ? 'Coop' : r.source === 'ica' ? 'ICA' : 'Dagab';
+      results.push({ icon: '📅', label: r.name, sub: `${src} · ${r.launchDate}`, type: 'Fönster', action: () => showTab('overview') });
+    }
+  });
+
+  if (results.length === 0) {
+    panel.style.display = 'block';
+    panel.innerHTML = `<div class="search-empty">Inga resultat för "${q}"</div>`;
+    return;
+  }
+
+  panel.style.display = 'block';
+  panel.innerHTML = results.slice(0,8).map(r => `
+    <div class="search-result-item" onmousedown="${r.action.toString().replace(/"/g,"'")}">
+      <div class="search-result-icon">${r.icon}</div>
+      <div class="search-result-label">
+        ${r.label}
+        <div class="search-result-sub">${r.sub}</div>
+      </div>
+      <span class="search-result-type">${r.type}</span>
+    </div>`).join('');
+
+  // Rewrite onclick since we can't use closures in innerHTML
+  panel.querySelectorAll('.search-result-item').forEach((el, i) => {
+    el.onclick = results[i].action;
+  });
+}
+
+// ── 10. MOBILSNABBVY ──
+function renderMobileQuick() {
+  // Rendered directly in renderOverview for mobile
+  const urgentLanseringar = lanseringar.filter(l => {
+    if (!l.launchDate) return false;
+    const d = Math.round((new Date(l.launchDate) - new Date()) / 86400000);
+    return d >= 0 && d <= 30;
+  });
+
+  const openChecks = lanseringar.flatMap(l =>
+    CHECKLIST_ITEMS.filter(i => !(l.checklist||{})[i.id]).map(i => ({ ...i, lanseringName: l.name, lid: l.id }))
+  ).slice(0, 5);
+
+  if (urgentLanseringar.length === 0 && openChecks.length === 0) return '';
+
+  return `<div class="mobile-quick" style="padding:12px 16px 0">
+    ${urgentLanseringar.length > 0 ? `
+      <div class="mq-card">
+        <div class="mq-card-title">🚀 Kommande lanseringar</div>
+        ${urgentLanseringar.map(l => {
+          const d = Math.round((new Date(l.launchDate) - new Date()) / 86400000);
+          return `<div class="mq-check">
+            <span style="flex:1">${l.name}</span>
+            <span style="font-size:11px;color:#f59e0b">${d}d kvar</span>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+    ${openChecks.length > 0 ? `
+      <div class="mq-card">
+        <div class="mq-card-title">☑ Att göra</div>
+        ${openChecks.map(c => `
+          <div class="mq-check">
+            <input type="checkbox" onchange="toggleCheckItem('${c.lid}','${c.id}',this.checked)">
+            <span style="flex:1">${c.label}</span>
+            <span style="font-size:10px;color:var(--muted)">${c.lanseringName}</span>
+          </div>`).join('')}
+      </div>` : ''}
+  </div>`;
+}
+
 
 authInit();
 
@@ -3195,6 +5311,7 @@ function renderBrands() {
         <button class="inline-btn" onclick="addProduct('${brand.id}')">+ Lägg till</button>
       </div>
 
+      <div style="margin-top:28px">${renderArticleSection(brand)}</div>
       <div style="margin-top:28px">${windowsSection}</div>
     </div>`;
   }
