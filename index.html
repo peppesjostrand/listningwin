@@ -2819,13 +2819,13 @@ async function loadBrands() {
 async function saveProject(brandId) {
   const brand = brands.find(b => b.id === brandId);
   if (!brand || !currentWorkspaceId) return;
-  try {
-    await supabaseClient.rpc('save_project_data', {
-      p_project_id: brandId,
-      p_data: JSON.stringify({ products: brand.products, productGroups: brand.productGroups || [] })
-    });
-  } catch(e) {
-    console.warn('saveProject error', e);
+  const { error } = await supabaseClient.rpc('save_project_data', {
+    p_project_id: brandId,
+    p_data: JSON.stringify({ products: brand.products, productGroups: brand.productGroups || [] })
+  });
+  if (error) {
+    console.error('saveProject error:', error);
+    alert('Kunde inte spara: ' + error.message);
   }
 }
 
