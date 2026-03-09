@@ -5744,10 +5744,22 @@ function toggleCatModalItem(catName, source) {
 function saveCatModal() {
   if (!catModalTarget) return;
   const brand = brands.find(b => b.id === catModalTarget.brandId);
-  const product = brand?.products.find(p => p.id === catModalTarget.productId);
-  if (product) { product.cats = [...catModalSelected]; saveProject(catModalTarget.brandId); }
+  if (catModalTarget.groupIndex !== undefined) {
+    // Ny struktur — spara på produktgrupp
+    const group = brand?.productGroups?.[catModalTarget.groupIndex];
+    if (group) {
+      group.cats = [...catModalSelected];
+      saveProject(catModalTarget.brandId);
+      restoreOpenGroups(catModalTarget.brandId);
+    }
+  } else {
+    // Legacy — spara på produkt
+    const product = brand?.products.find(p => p.id === catModalTarget.productId);
+    if (product) { product.cats = [...catModalSelected]; saveProject(catModalTarget.brandId); }
+  }
   closeCatModal();
   renderBrands();
+  if (catModalTarget) restoreOpenGroups(catModalTarget.brandId);
 }
 
 // Close modals on overlay click — listeners attached after DOM ready (see init)
