@@ -3544,13 +3544,28 @@ function renderArticleSection(brand) {
   </div>`;
 }
 
+const openGroups = new Set(); // håller reda på vilka grupper som är öppna
+
 function toggleGroup(brandId, gi) {
+  const key = `${brandId}-${gi}`;
   const body = document.getElementById(`pgb-${brandId}-${gi}`);
   const toggle = document.getElementById(`pgt-${brandId}-${gi}`);
   if (!body) return;
   const open = body.style.display === 'block';
   body.style.display = open ? 'none' : 'block';
   if (toggle) toggle.textContent = open ? '▸' : '▾';
+  if (open) openGroups.delete(key); else openGroups.add(key);
+}
+
+function restoreOpenGroups(brandId) {
+  openGroups.forEach(key => {
+    const [bid, gi] = key.split('-');
+    if (bid !== brandId) return;
+    const body = document.getElementById(`pgb-${key}`);
+    const toggle = document.getElementById(`pgt-${key}`);
+    if (body) { body.style.display = 'block'; }
+    if (toggle) toggle.textContent = '▾';
+  });
 }
 
 function addProductGroup(brandId) {
@@ -3572,6 +3587,7 @@ function deleteGroup(brandId, gi) {
   groups.splice(gi, 1);
   saveProject(brandId);
   renderBrands();
+  restoreOpenGroups(brandId);
 }
 
 function addArticle(brandId, gi) {
@@ -3587,6 +3603,7 @@ function addArticle(brandId, gi) {
   document.getElementById(`art-name-${brandId}-${gi}`).value = '';
   document.getElementById(`art-ean-${brandId}-${gi}`).value = '';
   renderBrands();
+  restoreOpenGroups(brandId);
 }
 
 function deleteArticle(brandId, gi, ai) {
@@ -3596,6 +3613,7 @@ function deleteArticle(brandId, gi, ai) {
   groups[gi].articles.splice(ai, 1);
   saveProject(brandId);
   renderBrands();
+  restoreOpenGroups(brandId);
 }
 
 // ═══════════════════════════════════════════════
