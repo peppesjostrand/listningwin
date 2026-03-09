@@ -3209,7 +3209,11 @@ function renderLansering() {
             <div class="lansering-card-name">${l.name}</div>
           </div>
           <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
-          <div class="lansering-card-meta" style="margin-top:6px"><span>${pct}% klart</span></div>
+          <div class="lansering-card-meta" style="margin-top:6px">
+            <span>${pct}% klart</span>
+            ${l.brand ? `<span style="opacity:0.6">· ${l.brand}</span>` : ''}
+            ${l.chain ? `<span style="color:${l.chain==='coop'?'#4ade80':l.chain==='ica'?'#f87171':'#fb923c'}">${l.chain==='coop'?'Coop':l.chain==='ica'?'ICA':l.chain==='dagab'?'Dagab':'Flera'}</span>` : ''}
+          </div>
         </div>`;
       }).join('')}
       <button class="lansering-add-btn" onclick="openLanseringModal()">+ Ny lansering</button>
@@ -3404,8 +3408,11 @@ function openLanseringModal(lid = null) {
         <input class="lansering-form-input" id="lm-name" placeholder="T.ex. ICA Lansering Q2 2026" value="${l ? l.name : ''}">
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Varumärke / Produkt</label>
-        <input class="lansering-form-input" id="lm-brand" placeholder="Vilket varumärke eller produktlinje?" value="${l ? (l.brand||'') : ''}">
+        <label class="lansering-form-label">Kopplat varumärke</label>
+        <select class="lansering-form-input" id="lm-brand">
+          <option value="">Inget varumärke valt...</option>
+          ${brands.map(b => `<option value="${b.id}" ${(l && l.brandId === b.id) ? 'selected' : ''}>${b.name}</option>`).join('')}
+        </select>
       </div>
       <div class="lansering-form-group">
         <label class="lansering-form-label">Kedja</label>
@@ -3438,13 +3445,14 @@ function closeLanseringModal() {
 async function saveLanseringModal() {
   const name = document.getElementById('lm-name')?.value.trim();
   if (!name) return;
-  const brand = document.getElementById('lm-brand')?.value.trim() || '';
+  const brandId = document.getElementById('lm-brand')?.value || '';
+  const brandName = brands.find(b => b.id === brandId)?.name || '';
   const chain = document.getElementById('lm-chain')?.value || '';
   const launchDate = document.getElementById('lm-date')?.value || '';
 
   if (editingLanseringId) {
     const l = getLansering(editingLanseringId);
-    if (l) { l.name = name; l.brand = brand; l.chain = chain; l.launchDate = launchDate; }
+    if (l) { l.name = name; l.brandId = brandId; l.brand = brandName; l.chain = chain; l.launchDate = launchDate; }
     await saveLansering(editingLanseringId);
   } else {
     // Skapa nytt i Supabase (återanvänd create_project)
@@ -3457,7 +3465,7 @@ async function saveLanseringModal() {
         p_visibility: 'private'
       });
       if (error) throw error;
-      const newL = { id: pid, name, color: '#f59e0b', brand, chain, launchDate, checklist: {}, tasks: [], contactLog: [] };
+      const newL = { id: pid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [] };
       lanseringar.push(newL);
       selectedLanseringId = pid;
       // Spara extra data
@@ -3466,7 +3474,7 @@ async function saveLanseringModal() {
     } catch(e) {
       // Fallback: lokal id
       const lid = 'l_' + Date.now();
-      lanseringar.push({ id: lid, name, color: '#f59e0b', brand, chain, launchDate, checklist: {}, tasks: [], contactLog: [] });
+      lanseringar.push({ id: lid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [] });
       selectedLanseringId = lid;
     }
   }
@@ -4887,6 +4895,51 @@ function renderMobileQuick() {
 }
 
 
+
+// ── VARUMÄRKE ↔ LANSERING KOPPLING ──
+function renderBrandLanseringar(brand) {
+  const linked = lanseringar.filter(l => l.brandId === brand.id);
+  const chainColors = { coop: '#4ade80', ica: '#f87171', dagab: '#fb923c', multi: '#a78bfa' };
+  const chainLabels = { coop: 'Coop', ica: 'ICA', dagab: 'Dagab', multi: 'Flera kedjor' };
+
+  if (linked.length === 0) {
+    return `<div class="section-title" style="margin-bottom:10px">LANSERINGAR</div>
+      <div style="color:var(--muted);font-size:12px;padding:8px 0">
+        Inga lanseringar kopplade till detta varumärke.
+        <button class="inline-btn" style="margin-left:10px" onclick="openLanseringModalForBrand('${brand.id}')">+ Skapa lansering</button>
+      </div>`;
+  }
+
+  const items = linked.map(l => {
+    const pct = getLanseringProgress(l);
+    const daysToLaunch = l.launchDate ? Math.round((new Date(l.launchDate) - new Date()) / 86400000) : null;
+    const color = chainColors[l.chain] || '#a78bfa';
+    const chainLabel = chainLabels[l.chain] || l.chain || '—';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;margin-bottom:6px" onclick="showTab('lansering');selectedLanseringId='${l.id}';renderLansering()">
+      <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>
+      <span style="flex:1;font-size:12px;font-weight:500">${l.name}</span>
+      <span style="font-size:10px;color:${color}">${chainLabel}</span>
+      ${daysToLaunch !== null ? `<span style="font-size:10px;color:var(--muted)">${daysToLaunch >= 0 ? daysToLaunch+'d kvar' : 'Passerad'}</span>` : ''}
+      <div style="width:60px;background:var(--surface);border-radius:10px;height:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:#f59e0b;border-radius:10px"></div></div>
+      <span style="font-size:10px;color:var(--muted)">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="section-title" style="margin-bottom:10px">LANSERINGAR (${linked.length})</div>
+    ${items}
+    <button class="inline-btn" style="margin-top:4px" onclick="openLanseringModalForBrand('${brand.id}')">+ Ny lansering</button>`;
+}
+
+function openLanseringModalForBrand(brandId) {
+  openLanseringModal();
+  // Pre-select brand after modal renders
+  setTimeout(() => {
+    const sel = document.getElementById('lm-brand');
+    if (sel) sel.value = brandId;
+  }, 50);
+}
+
+
 authInit();
 
 // ── SETTINGS ──
@@ -5318,6 +5371,7 @@ function renderBrands() {
       </div>
 
       <div style="margin-top:28px">${renderArticleSection(brand)}</div>
+      <div style="margin-top:28px">${renderBrandLanseringar(brand)}</div>
       <div style="margin-top:28px">${windowsSection}</div>
     </div>`;
   }
