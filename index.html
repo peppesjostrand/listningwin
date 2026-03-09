@@ -2790,16 +2790,22 @@ async function loadBrands() {
     if (error) throw error;
 
     brands = (data || []).filter(p => {
-      const d = p.data && typeof p.data === 'object' ? p.data : {};
+      let d = p.data;
+      if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { d = {}; } }
+      if (!d || typeof d !== 'object') return true;
       return d.is_lansering !== true;
     }).map(p => {
-      // Support both old array format and new object format
+      // Support string, object, and legacy array formats
       let products = [], productGroups = [];
-      if (Array.isArray(p.data)) {
-        products = p.data;
-      } else if (p.data && typeof p.data === 'object') {
-        products = Array.isArray(p.data.products) ? p.data.products : [];
-        productGroups = Array.isArray(p.data.productGroups) ? p.data.productGroups : [];
+      let parsedData = p.data;
+      if (typeof parsedData === 'string') {
+        try { parsedData = JSON.parse(parsedData); } catch(e) { parsedData = null; }
+      }
+      if (Array.isArray(parsedData)) {
+        products = parsedData;
+      } else if (parsedData && typeof parsedData === 'object') {
+        products = Array.isArray(parsedData.products) ? parsedData.products : [];
+        productGroups = Array.isArray(parsedData.productGroups) ? parsedData.productGroups : [];
       }
       const brand = {
         id: p.id,           // använd project UUID som brand id
@@ -3169,16 +3175,14 @@ async function loadLanseringar() {
     if (error) throw error;
     // Lanseringar identifieras via is_lansering-flagga i data-fältet
     lanseringar = (data || [])
-      .filter(p => {
-        const d = p.data;
-        if (!d) return false;
-        const obj = typeof d === 'object' ? d : {};
-        return obj.is_lansering === true;
-      })
       .map(p => {
-        const d = typeof p.data === 'object' ? p.data : {};
-        return { id: p.id, name: p.name, color: p.color || '#f59e0b', ...d };
-      });
+        let d = p.data;
+        if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { d = {}; } }
+        if (!d || typeof d !== 'object') d = {};
+        return { ...p, data: d };
+      })
+      .filter(p => p.data.is_lansering === true)
+      .map(p => ({ id: p.id, name: p.name, color: p.color || '#f59e0b', ...p.data }));
   } catch(e) {
     console.error('loadLanseringar error', e);
     lanseringar = lanseringar || [];
