@@ -3577,14 +3577,15 @@ function restoreOpenGroups(brandId) {
   });
 }
 
-function addProductGroup(brandId) {
+async function addProductGroup(brandId) {
   const input = document.getElementById(`new-group-input-${brandId}`);
   const name = input?.value.trim();
   if (!name) return;
   const brand = brands.find(b => b.id === brandId);
-  if (!brand) return;
+  if (!brand) { console.error('addProductGroup: brand not found', brandId); return; }
+  console.log('addProductGroup: currentWorkspaceId=', currentWorkspaceId, 'brandId=', brandId);
   getOrInitGroups(brand).push({ name, articles: [] });
-  saveProject(brandId);
+  await saveProject(brandId);
   input.value = '';
   renderBrands();
 }
@@ -3599,16 +3600,19 @@ function deleteGroup(brandId, gi) {
   restoreOpenGroups(brandId);
 }
 
-function addArticle(brandId, gi) {
+async function addArticle(brandId, gi) {
   const brand = brands.find(b => b.id === brandId);
-  if (!brand) return;
+  if (!brand) { console.error('addArticle: brand not found', brandId); return; }
   const groups = getOrInitGroups(brand);
   const name = document.getElementById(`art-name-${brandId}-${gi}`)?.value.trim();
   const ean = document.getElementById(`art-ean-${brandId}-${gi}`)?.value.trim();
   if (!name) return;
+  if (!groups[gi]) { console.error('addArticle: group index not found', gi); return; }
   if (!groups[gi].articles) groups[gi].articles = [];
   groups[gi].articles.push({ id: uid(), name, ean });
-  saveProject(brandId);
+  console.log('addArticle: saving', brandId, 'groups:', JSON.stringify(groups));
+  await saveProject(brandId);
+  console.log('addArticle: saved OK');
   document.getElementById(`art-name-${brandId}-${gi}`).value = '';
   document.getElementById(`art-ean-${brandId}-${gi}`).value = '';
   renderBrands();
