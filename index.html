@@ -2622,7 +2622,7 @@ function toggleCustomer(key) {
 function togglePast() {
   state.showPast = !state.showPast;
   const btn = document.getElementById('btn-past');
-  btn.classList.toggle('active', state.showPast);
+  btn?.classList.toggle('active', state.showPast);
   renderAll();
 }
 
@@ -2812,8 +2812,9 @@ async function loadBrands() {
       return brand;
     });
   } catch(e) {
-    console.warn('loadBrands error', e);
+    console.error('loadBrands error', e);
     brands = [];
+    setTimeout(() => addNotif('⚠️ Kunde inte ladda varumärken: ' + e.message, 'error'), 500);
   }
   renderAll();
 }
@@ -2848,7 +2849,7 @@ async function createProject(name, color) {
     p_color: color,
     p_visibility: 'private'
   });
-  if (error) { console.warn('createProject error', error); return null; }
+  if (error) { console.error('createProject error', error); return null; }
   const newBrand = {
     id: projectId,
     name,
@@ -3168,8 +3169,9 @@ async function loadLanseringar() {
         return { id: p.id, name: p.name, color: p.color || '#f59e0b', ...d };
       });
   } catch(e) {
-    console.warn('loadLanseringar error', e);
+    console.error('loadLanseringar error', e);
     lanseringar = lanseringar || [];
+    setTimeout(() => addNotif('⚠️ Kunde inte ladda lanseringar: ' + e.message, 'error'), 500);
   }
   if (state.tab === 'lansering') renderLansering();
   if (state.tab === 'historik') renderHistorik();
@@ -3186,7 +3188,7 @@ async function saveLansering(lid) {
     p_project_id: id,
     p_data: JSON.stringify({ ...rest, is_lansering: true })
   });
-  if (error) console.warn('saveLansering error', error);
+  if (error) { console.error('saveLansering error', error); addNotif('⚠️ Kunde inte spara lansering: ' + error.message, 'error'); }
 }
 
 function getLansering(lid) { return lanseringar.find(x => x.id === lid); }
@@ -3480,7 +3482,7 @@ async function saveLanseringModal() {
     } catch(e) {
       // Fallback: lokal id
       const lid = 'l_' + Date.now();
-      lanseringar.push({ id: lid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [] });
+      lanseringar.push({ id: lid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [], is_lansering: true });
       selectedLanseringId = lid;
     }
   }
@@ -5654,21 +5656,7 @@ function selectBrand(id) {
 }
 
 // ─── PRODUCTS ───
-function addProduct(brandId) {
-  const input = document.getElementById('new-product-input');
-  const name = input.value.trim();
-  if (!name) return;
-  const brand = brands.find(b => b.id === brandId);
-  if (brand) { brand.products.push({ id: uid(), name, cats: [] }); saveProject(brandId); }
-  input.value = '';
-  renderBrands();
-}
-
-function deleteProduct(brandId, productId) {
-  const brand = brands.find(b => b.id === brandId);
-  if (brand) { brand.products = brand.products.filter(p => p.id !== productId); saveProject(brandId); }
-  renderBrands();
-}
+// addProduct/deleteProduct ersatt av addProductGroup/addArticle
 
 function removeCatFromProduct(brandId, productId, catName) {
   const brand = brands.find(b => b.id === brandId);
