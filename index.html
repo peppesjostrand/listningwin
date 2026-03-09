@@ -2786,6 +2786,7 @@ async function loadBrands() {
     const { data, error } = await supabaseClient
       .rpc('get_my_projects', { p_workspace_id: currentWorkspaceId });
     console.log('loadBrands: get_my_projects returned', data?.length, 'rows, error:', error?.message);
+    if (data) data.forEach(p => console.log('  projekt:', p.name, '| data:', JSON.stringify(p.data)?.slice(0,120)));
     if (error) throw error;
 
     brands = (data || []).filter(p => {
@@ -2972,6 +2973,7 @@ async function authRegister() {
 }
 
 async function authOnLogin(user) {
+  console.log('authOnLogin: user=', user?.email);
   currentUser = user;
   // Get workspace — use limit(1) instead of single() to avoid errors
   const { data: memberships } = await supabaseClient
@@ -3092,6 +3094,7 @@ async function showInviteBanner(token) {
 
 // Check session on load
 async function authInit() {
+  console.log('authInit: startar');
   const urlParams = new URLSearchParams(window.location.search);
   const inviteToken = urlParams.get('invite') || sessionStorage.getItem('pendingInviteToken');
   if (inviteToken) {
@@ -3117,6 +3120,7 @@ async function authInit() {
   });
 
   const { data: { session } } = await supabaseClient.auth.getSession();
+  console.log('authInit: session=', !!session, session?.user?.email);
   if (session && isRecovery) {
     // Visa reset-formuläret istället för att logga in direkt
     document.getElementById('auth-overlay').style.display = 'flex';
