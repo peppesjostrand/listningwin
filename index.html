@@ -2786,7 +2786,10 @@ async function loadBrands() {
       .rpc('get_my_projects', { p_workspace_id: currentWorkspaceId });
     if (error) throw error;
 
-    brands = (data || []).map(p => {
+    brands = (data || []).filter(p => {
+      const d = p.data && typeof p.data === 'object' ? p.data : {};
+      return d.is_lansering !== true;
+    }).map(p => {
       // Support both old array format and new object format
       let products = [], productGroups = [];
       if (Array.isArray(p.data)) {
@@ -3150,19 +3153,22 @@ async function loadLanseringar() {
   if (!currentWorkspaceId) return;
   try {
     const { data, error } = await supabaseClient
-      .from('projects')
-      .select('id, name, color, data')
-      .eq('workspace_id', currentWorkspaceId)
-      .eq('project_type', 'lansering');
+      .rpc('get_my_projects', { p_workspace_id: currentWorkspaceId });
     if (error) throw error;
-    lanseringar = (data || []).map(p => ({
-      id: p.id,
-      name: p.name,
-      color: p.color || '#f59e0b',
-      ...(p.data || {})
-    }));
+    // Lanseringar identifieras via is_lansering-flagga i data-fältet
+    lanseringar = (data || [])
+      .filter(p => {
+        const d = p.data;
+        if (!d) return false;
+        const obj = typeof d === 'object' ? d : {};
+        return obj.is_lansering === true;
+      })
+      .map(p => {
+        const d = typeof p.data === 'object' ? p.data : {};
+        return { id: p.id, name: p.name, color: p.color || '#f59e0b', ...d };
+      });
   } catch(e) {
-    // Tabell saknar project_type-kolumn ännu — fallback till lokal state
+    console.warn('loadLanseringar error', e);
     lanseringar = lanseringar || [];
   }
   if (state.tab === 'lansering') renderLansering();
@@ -3176,12 +3182,11 @@ async function saveLansering(lid) {
   const l = lanseringar.find(x => x.id === lid);
   if (!l || !currentWorkspaceId) return;
   const { id, name, color, ...rest } = l;
-  try {
-    await supabaseClient.rpc('save_project_data', {
-      p_project_id: id,
-      p_data: JSON.stringify(rest)
-    });
-  } catch(e) { console.warn('saveLansering error', e); }
+  const { error } = await supabaseClient.rpc('save_project_data', {
+    p_project_id: id,
+    p_data: JSON.stringify({ ...rest, is_lansering: true })
+  });
+  if (error) console.warn('saveLansering error', error);
 }
 
 function getLansering(lid) { return lanseringar.find(x => x.id === lid); }
@@ -3466,7 +3471,7 @@ async function saveLanseringModal() {
         p_visibility: 'private'
       });
       if (error) throw error;
-      const newL = { id: pid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [] };
+      const newL = { id: pid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [], is_lansering: true };
       lanseringar.push(newL);
       selectedLanseringId = pid;
       // Spara extra data
@@ -3547,7 +3552,7 @@ function renderArticleSection(brand) {
 const openGroups = new Set(); // håller reda på vilka grupper som är öppna
 
 function toggleGroup(brandId, gi) {
-  const key = `${brandId}-${gi}`;
+  const key = `${brandId}|${gi}`;
   const body = document.getElementById(`pgb-${brandId}-${gi}`);
   const toggle = document.getElementById(`pgt-${brandId}-${gi}`);
   if (!body) return;
@@ -3559,10 +3564,12 @@ function toggleGroup(brandId, gi) {
 
 function restoreOpenGroups(brandId) {
   openGroups.forEach(key => {
-    const [bid, gi] = key.split('-');
+    const sepIdx = key.indexOf('|');
+    const bid = key.slice(0, sepIdx);
+    const gi = key.slice(sepIdx + 1);
     if (bid !== brandId) return;
-    const body = document.getElementById(`pgb-${key}`);
-    const toggle = document.getElementById(`pgt-${key}`);
+    const body = document.getElementById(`pgb-${bid}-${gi}`);
+    const toggle = document.getElementById(`pgt-${bid}-${gi}`);
     if (body) { body.style.display = 'block'; }
     if (toggle) toggle.textContent = '▾';
   });
