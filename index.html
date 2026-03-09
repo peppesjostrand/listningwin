@@ -2096,7 +2096,7 @@ function renderHero() {
 
   // Collect all launch weeks relevant to the user's brands for each customer
   function brandLaunchWeeks(customerKey) {
-    const allCats = brands.flatMap(b => b.products.flatMap(p => p.cats));
+    const allCats = brands.flatMap(b => (b.productGroups||[]).flatMap(g => g.cats||[]).concat(b.products.flatMap(p => p.cats||[])));
     const relevant = allCats.filter(c => c.source === customerKey);
     const catDefs = relevant.map(c => CATEGORIES.find(cd => cd.name === c.catName && cd.source === customerKey)).filter(Boolean);
     return new Set(catDefs.flatMap(cd => cd.windows));
@@ -2268,15 +2268,16 @@ function renderOverview() {
   brands.forEach(b => {
     // Collect all cat rows across all products
     const allRows = [];
-    b.products.forEach(p => {
-      p.cats.forEach(c => {
+    // Produktgrupper (ny struktur)
+    (b.productGroups||[]).forEach(g => {
+      (g.cats||[]).forEach(c => {
         if (!state.active[c.source]) return;
         if (c.source === 'coop' && c.catName) {
           const catDef = CATEGORIES.find(cd => cd.name === c.catName && cd.source === 'coop');
           if (catDef && catDef.sub === 'Coop Hemma' && !state.active.coopHemma) return;
         }
         const dl = catDeadlines(c.catName, c.source);
-        allRows.push({ product: p.name, catName: c.catName, source: c.source, dl });
+        allRows.push({ product: g.name, catName: c.catName, source: c.source, dl });
       });
     });
 
@@ -3623,7 +3624,7 @@ function renderHistorik() {
 
   // Group by brand (products that have cats matching these rounds)
   const brandRows = brands.map(brand => {
-    const allCats = brand.products.flatMap(p => p.cats);
+    const allCats = (brand.productGroups||[]).flatMap(g => g.cats||[]).concat(brand.products.flatMap(p => p.cats||[]));
     const relevantRounds = filtered.filter(r => {
       return allCats.some(c => c.source === r.source);
     });
@@ -3640,8 +3641,8 @@ function renderHistorik() {
         ${rounds.map(r => {
           const dl = daysLeft(r.launchDate);
           const st = status(dl);
-          const relProducts = brand.products.filter(p => p.cats.some(c => c.source === r.source));
-          const prodNames = relProducts.map(p => p.name).join(', ') || '—';
+          const relProducts = (brand.productGroups||[]).filter(g => (g.cats||[]).some(c => c.source === r.source));
+          const prodNames = relProducts.map(g => g.name).join(', ') || '—';
           return `<tr>
             <td>${chainPill(r.source)}</td>
             <td style="font-weight:500">${r.name}</td>
@@ -3762,11 +3763,19 @@ function exportToExcel() {
       });
     }
     // Legacy products
-    brand.products.forEach(p => {
-      p.cats.forEach(c => {
-        rows.push([brand.name, p.name, '', '', c.catName, c.source]);
-      });
-      if (p.cats.length === 0) rows.push([brand.name, p.name, '', '', '', '']);
+    // Produktgrupper
+    (brand.productGroups||[]).forEach(g => {
+      const articles = g.articles || [];
+      const cats = g.cats || [];
+      if (articles.length > 0) {
+        articles.forEach(a => {
+          cats.forEach(c => rows.push([brand.name, g.name, a.name, a.ean||'', c.catName, c.source]));
+          if (cats.length === 0) rows.push([brand.name, g.name, a.name, a.ean||'', '', '']);
+        });
+      } else {
+        cats.forEach(c => rows.push([brand.name, g.name, '—', '', c.catName, c.source]));
+        if (cats.length === 0) rows.push([brand.name, g.name, '—', '', '', '']);
+      }
     });
   });
   rows.push(['']);
@@ -4792,12 +4801,12 @@ function renderGlobalSearch(q) {
   // Search brands
   brands.forEach(b => {
     if (b.name.toLowerCase().includes(q)) {
-      results.push({ icon: '◈', label: b.name, sub: `${b.products.length} produkter`, type: 'Varumärke', action: () => { showTab('brands'); /* select brand */ selectedBrandId = b.id; renderBrands(); } });
+      results.push({ icon: '◈', label: b.name, sub: `${(b.productGroups||[]).length} produktgrupper`, type: 'Varumärke', action: () => { showTab('brands'); /* select brand */ selectedBrandId = b.id; renderBrands(); } });
     }
     // Search products
-    b.products.forEach(p => {
-      if (p.name.toLowerCase().includes(q)) {
-        results.push({ icon: '📦', label: p.name, sub: `Varumärke: ${b.name}`, type: 'Produkt', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
+    (b.productGroups||[]).forEach(g => {
+      if (g.name.toLowerCase().includes(q)) {
+        results.push({ icon: '📦', label: g.name, sub: `Varumärke: ${b.name}`, type: 'Produktgrupp', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
       }
     });
     // Search articles
@@ -4937,6 +4946,106 @@ function openLanseringModalForBrand(brandId) {
     const sel = document.getElementById('lm-brand');
     if (sel) sel.value = brandId;
   }, 50);
+}
+
+
+
+// ─── PRODUKTGRUPPER (ny struktur) ───
+function renderProductGroups(brand) {
+  const groups = brand.productGroups || [];
+
+  const groupsHtml = groups.map((g, gi) => {
+    const articles = g.articles || [];
+    const cats = g.cats || [];
+
+    // Kategori-chips
+    const catChips = cats.map(c => {
+      const srcLabel = c.source === 'coop' ? 'Coop' : c.source === 'ica' ? 'ICA' : 'Dagab';
+      return `<span class="pcat-chip" title="Klicka för att ta bort"
+        onclick="removeCatFromGroup('${brand.id}',${gi},'${c.catName.replace(/'/g,"\'")}','${c.source}')">
+        ${c.catName} <span style="opacity:0.5;font-size:9px">${srcLabel}</span> ×
+      </span>`;
+    }).join('');
+
+    // Artikel-rader
+    const articleRows = articles.map((a, ai) => `
+      <div class="article-row">
+        <span class="article-row-name">${a.name}</span>
+        ${a.ean ? `<span class="article-row-ean">EAN: ${a.ean}</span>` : ''}
+        <button class="article-delete-btn" onclick="deleteArticle('${brand.id}',${gi},${ai})">×</button>
+      </div>`).join('');
+
+    const bodyId = `pgb-${brand.id}-${gi}`;
+    const toggleId = `pgt-${brand.id}-${gi}`;
+
+    return `<div class="product-group">
+      <div class="product-group-header" onclick="toggleGroup('${brand.id}',${gi})">
+        <span class="product-group-name">${g.name}</span>
+        <span style="font-size:10px;color:var(--muted)">${articles.length} artikel${articles.length!==1?'ar':''}</span>
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">${cats.length} kat.</span>
+        <span class="product-group-toggle" id="${toggleId}">▸</span>
+        <button onclick="event.stopPropagation();deleteGroup('${brand.id}',${gi})"
+          style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:13px;padding:0 2px">×</button>
+      </div>
+      <div class="product-group-body" id="${bodyId}" style="display:none">
+
+        <div style="margin-bottom:10px">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Kategorikopplingar</div>
+          <div class="product-cat-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+            ${catChips || '<span style="color:var(--muted);font-size:11px">Inga kategorier kopplade</span>'}
+          </div>
+          <button class="product-add-cat-btn" onclick="openCatModalForGroup('${brand.id}',${gi})">+ Koppla kategori</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Artiklar</div>
+          <div class="article-list">${articleRows || '<div style="color:var(--muted);font-size:11px;padding:4px 0">Inga artiklar ännu</div>'}</div>
+          <div class="article-add-row" style="margin-top:6px">
+            <input class="article-input" id="art-name-${brand.id}-${gi}" placeholder="Artikelnamn..." style="flex:2;min-width:120px">
+            <input class="article-input" id="art-ean-${brand.id}-${gi}" placeholder="EAN (valfritt)" style="width:130px">
+            <button class="inline-btn" onclick="addArticle('${brand.id}',${gi})">+ Artikel</button>
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div>
+    <div class="section-title" style="margin-bottom:10px">PRODUKTGRUPPER</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Varje produktgrupp kan ha kategorikopplingar mot kedjor och enskilda artiklar</div>
+    ${groupsHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga produktgrupper ännu — lägg till en nedan</div>'}
+    <div class="group-add-row" style="margin-top:10px">
+      <input class="inline-input" id="new-group-input-${brand.id}"
+        placeholder="Ny produktgrupp (t.ex. Müsli, Yoghurt, Snacks)..."
+        onkeydown="if(event.key==='Enter')addProductGroup('${brand.id}')">
+      <button class="inline-btn" onclick="addProductGroup('${brand.id}')">+ Lägg till grupp</button>
+    </div>
+  </div>`;
+}
+
+// Öppna kategorimodal för en produktgrupp
+function openCatModalForGroup(brandId, gi) {
+  const brand = brands.find(b => b.id === brandId);
+  const group = brand?.productGroups?.[gi];
+  if (!group) return;
+  catModalTarget = { brandId, groupIndex: gi };
+  catModalSelected = [...(group.cats || [])];
+  document.getElementById('cat-modal-sub').textContent = `Välj kategorier för "${group.name}"`;
+  document.getElementById('cat-modal-search').value = '';
+  document.getElementById('cat-modal').classList.add('open');
+  renderCatModal();
+}
+
+// Ta bort kategori från produktgrupp
+function removeCatFromGroup(brandId, gi, catName, source) {
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand?.productGroups?.[gi]) return;
+  brand.productGroups[gi].cats = (brand.productGroups[gi].cats || []).filter(
+    c => !(c.catName === catName && c.source === source)
+  );
+  saveProject(brandId);
+  renderBrands();
 }
 
 
@@ -5303,13 +5412,13 @@ function renderBrands() {
   const leftHtml = `
     <div class="brand-list">
       ${brands.map(b => {
-        const totalCats = b.products.reduce((n,p) => n + p.cats.length, 0);
+        const totalCats = (b.productGroups||[]).reduce((n,g) => n + (g.cats||[]).length, 0);
         const visIcon = { private: '🔒', shared: '👥', workspace: '🏢' }[b.visibility || 'private'];
         return `<div class="brand-card ${selectedBrandId===b.id?'selected':''}" onclick="selectBrand('${b.id}')">
           <span class="brand-color-dot" style="background:${b.color}"></span>
           <div style="flex:1;min-width:0;">
             ${b.logo ? `<img src="${b.logo}" style="max-height:20px;max-width:70px;object-fit:contain;padding:2px">` : `<div class="brand-name">${b.name}</div>`}
-            <div class="brand-meta">${b.products.length} produkt${b.products.length!==1?'er':''}</div>
+            <div class="brand-meta">${(b.productGroups||[]).length} produktgrupp${(b.productGroups||[]).length!==1?'er':''}</div>
           </div>
           <span style="font-size:12px;opacity:0.5;" title="${b.visibility||'private'}">${visIcon}</span>
           <span class="brand-cat-count">${totalCats} kat.</span>
@@ -5343,8 +5452,8 @@ function renderBrands() {
           </div>`;
         }).join('')}</div>`;
 
-    // Windows section: collect all cats for this brand
-    const allCats = brand.products.flatMap(p => p.cats);
+    // Windows section: collect all cats from productGroups
+    const allCats = (brand.productGroups||[]).flatMap(g => g.cats||[]);
     const windowsSection = renderBrandWindows(brand, allCats);
 
     rightHtml = `<div class="brand-detail-panel">
@@ -5363,14 +5472,7 @@ function renderBrands() {
         ` : `<span style="font-size:10px;opacity:0.4;padding:4px 8px;">Skrivskyddat</span>`}
       </div>
 
-      <div class="section-title" style="margin-bottom:12px">PRODUKTER</div>
-      ${productsHtml}
-      <div class="add-product-row">
-        <input class="inline-input" id="new-product-input" placeholder="Produktnamn eller artikelnamn..." onkeydown="if(event.key==='Enter')addProduct('${brand.id}')">
-        <button class="inline-btn" onclick="addProduct('${brand.id}')">+ Lägg till</button>
-      </div>
-
-      <div style="margin-top:28px">${renderArticleSection(brand)}</div>
+      <div style="margin-top:0">${renderProductGroups(brand)}</div>
       <div style="margin-top:28px">${renderBrandLanseringar(brand)}</div>
       <div style="margin-top:28px">${windowsSection}</div>
     </div>`;
