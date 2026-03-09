@@ -2363,7 +2363,7 @@ function renderOverview() {
 // RENDER CATEGORIES
 // ═══════════════════════════════════════════════
 function renderCategories() {
-  const q = document.getElementById('cat-search').value.toLowerCase();
+  const q = (document.getElementById('cat-search')?.value || '').toLowerCase();
   const activeSources = [];
   if (state.active.coop) activeSources.push('coop');
   if (state.active.ica) activeSources.push('ica');
@@ -2445,7 +2445,13 @@ function renderCategories() {
       + '</tr>' + sgPanel;
   }).join('');
 
-  const table = `<table class="cat-table">
+  const table = `<div style="padding:12px 20px 0">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:14px;color:var(--muted)">⌕</span>
+      <input style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;border-radius:6px;padding:6px 10px;width:260px" type="text" id="cat-search" placeholder="Sök kategori..." oninput="renderCategories()">
+    </div>
+  </div>
+  <table class="cat-table">
     <thead><tr>
       <th>Kund</th>
       <th>Grupp</th>
