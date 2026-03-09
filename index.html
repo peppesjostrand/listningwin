@@ -2782,8 +2782,10 @@ async function loadBrands() {
     '<div class="empty-state" style="margin-top:40px">⏳ Laddar data...</div>';
   try {
     if (!currentWorkspaceId) throw new Error('No workspace');
+    console.log('loadBrands: currentWorkspaceId=', currentWorkspaceId);
     const { data, error } = await supabaseClient
       .rpc('get_my_projects', { p_workspace_id: currentWorkspaceId });
+    console.log('loadBrands: get_my_projects returned', data?.length, 'rows, error:', error?.message);
     if (error) throw error;
 
     brands = (data || []).filter(p => {
@@ -2822,11 +2824,16 @@ async function loadBrands() {
 // Spara ett enskilt projekt
 async function saveProject(brandId) {
   const brand = brands.find(b => b.id === brandId);
-  if (!brand || !currentWorkspaceId) return;
-  const { error } = await supabaseClient.rpc('save_project_data', {
+  if (!brand || !currentWorkspaceId) {
+    console.error('saveProject: avbruten — brand:', !!brand, 'workspaceId:', currentWorkspaceId);
+    return;
+  }
+  console.log('saveProject: anropar RPC för', brandId);
+  const { data, error } = await supabaseClient.rpc('save_project_data', {
     p_project_id: brandId,
     p_data: JSON.stringify({ products: brand.products, productGroups: brand.productGroups || [] })
   });
+  console.log('saveProject: RPC svar — data:', data, 'error:', error);
   if (error) {
     console.error('saveProject error:', error);
     alert('Kunde inte spara: ' + error.message);
