@@ -3156,6 +3156,16 @@ async function authInit() {
 let lanseringar = [];
 let selectedLanseringId = null;
 
+
+const FREE_CUSTOMERS = [
+  { group: 'DVH', customers: ['Mathem', 'Lidl', 'Netto', 'Amazon Fresh'] },
+  { group: 'SVH', customers: ['OKQ8', 'Circle K', 'Reitan', 'St1', 'Preem'] },
+  { group: 'Apotek', customers: ['Apohem', 'Kronans Apotek', 'Apoteket', 'Lloyds'] },
+  { group: 'Övrigt', customers: ['Övrig kund'] },
+];
+const CHAIN_COLORS = { coop: '#4ade80', ica: '#f87171', dagab: '#fb923c' };
+const CHAIN_LABELS = { coop: 'Coop', ica: 'ICA', dagab: 'Dagab' };
+
 const CHECKLIST_ITEMS = [
   { id: 'validoo',    label: 'Artikeldata Validoo/Dabas' },
   { id: 'priskalkyl', label: 'Priskalkyl' },
@@ -3248,95 +3258,7 @@ function renderLansering() {
 
   const l = getLansering(selectedLanseringId);
   if (l) {
-    const checks = l.checklist || {};
-    const tasks = l.tasks || [];
-    const log = l.contactLog || [];
-
-    const checklistHtml = CHECKLIST_ITEMS.map(item => `
-      <div class="check-item ${checks[item.id] ? 'done' : ''}">
-        <input type="checkbox" ${checks[item.id] ? 'checked' : ''} onchange="toggleCheckItem('${l.id}','${item.id}',this.checked)">
-        <span class="check-item-label">${item.label}</span>
-        ${checks[item.id] ? `<span class="check-item-date">${checks[item.id]}</span>` : ''}
-      </div>`).join('');
-
-    const tasksHtml = tasks.map((t,i) => `
-      <div class="task-row">
-        <input class="task-name-input" value="${t.name||''}" placeholder="Uppgift..." onblur="updateTask('${l.id}',${i},'name',this.value)">
-        <input class="task-deadline-input task-deadline" value="${t.deadline||''}" type="date" onchange="updateTask('${l.id}',${i},'deadline',this.value)" title="Deadline">
-        <select class="task-status-select task-status" onchange="updateTask('${l.id}',${i},'status',this.value)">
-          ${TASK_STATUSES.map(s => `<option ${t.status===s?'selected':''}>${s}</option>`).join('')}
-        </select>
-        <input class="task-owner-input task-owner" value="${t.owner||''}" placeholder="Ansvarig..." onblur="updateTask('${l.id}',${i},'owner',this.value)">
-        <button class="task-delete-btn" onclick="deleteTask('${l.id}',${i})">×</button>
-      </div>`).join('');
-
-    const logHtml = log.slice().reverse().map((e,i) => `
-      <div class="contact-entry">
-        <div class="contact-entry-header">
-          <span class="contact-chain-badge ${e.chain}">${e.chainLabel||e.chain}</span>
-          <span class="contact-entry-date">${e.date}</span>
-          ${e.contact ? `<span style="font-size:10px;color:var(--muted)">${e.contact}</span>` : ''}
-          <button onclick="deleteContactEntry('${l.id}',${log.length-1-i})" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:12px;margin-left:auto">×</button>
-        </div>
-        <div class="contact-entry-text">${e.note}</div>
-        ${e.next ? `<div class="contact-entry-next">→ ${e.next}</div>` : ''}
-      </div>`).join('');
-
-    detailHtml = `<div class="lansering-detail">
-      <div class="lansering-detail-header">
-        <span style="width:14px;height:14px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
-        <span class="lansering-detail-name">${l.name}</span>
-        <button class="lansering-action-btn" onclick="openLanseringModal('${l.id}')">Redigera</button>
-        <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
-      </div>
-
-      <div class="section-block">
-        <div class="section-block-title">Checklista — Inför lansering</div>
-        <div class="checklist">${checklistHtml}</div>
-      </div>
-
-      <div class="section-block">
-        <div class="section-block-title">Projektuppgifter</div>
-        <div class="custom-tasks">${tasksHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga uppgifter ännu</div>'}</div>
-        <div class="task-add-row" style="margin-top:10px">
-          <button class="inline-btn" onclick="addTask('${l.id}')">+ Lägg till uppgift</button>
-        </div>
-        <div style="margin-top:10px">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Kolumner: Uppgift / Deadline / Status / Ansvarig</div>
-        </div>
-      </div>
-
-      <div class="section-block">
-        <div class="section-block-title">Kedjekontakt & momentlogg</div>
-        <div class="contact-add-form">
-          <div class="contact-form-row">
-            <select class="contact-chain-select" id="log-chain-${l.id}">
-              <option value="coop">Coop</option>
-              <option value="ica">ICA</option>
-              <option value="dagab">Dagab</option>
-              <option value="other">Övrigt</option>
-            </select>
-            <input class="contact-input" id="log-contact-${l.id}" placeholder="Kontaktperson...">
-            <input class="contact-input" id="log-date-${l.id}" type="date" value="${new Date().toISOString().slice(0,10)}">
-          </div>
-          <textarea class="contact-input" id="log-note-${l.id}" rows="2" placeholder="Vad gjordes / vad sades?..." style="resize:vertical"></textarea>
-          <input class="contact-input" id="log-next-${l.id}" placeholder="Nästa steg (valfritt)...">
-          <div style="display:flex;justify-content:flex-end">
-            <button class="inline-btn" onclick="addContactEntry('${l.id}')">+ Lägg till i logg</button>
-          </div>
-        </div>
-        <div class="contact-log" style="margin-top:12px">${logHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga loggade moment ännu</div>'}</div>
-      </div>
-
-      <div class="section-block">
-        <div class="section-block-title">Deadlines & tidslinje</div>
-        ${renderDeadlineTimeline(l)}
-      </div>
-
-      <div class="section-block">
-        ${renderComments(l.id)}
-      </div>
-    </div>`;
+    detailHtml = renderLanseringDetail(l);
   }
 
   el.innerHTML = `<div class="lansering-layout">${listHtml}${detailHtml}</div>`;
@@ -3423,81 +3345,111 @@ function openLanseringModal(lid = null) {
   const modal = document.createElement('div');
   modal.className = 'lansering-modal';
   modal.id = 'lansering-modal';
+
+  const brandOptions = brands.map(b =>
+    `<option value="${b.id}" ${l && l.brandId === b.id ? 'selected' : ''}>${b.name}</option>`
+  ).join('');
+
+  // Produktgrupper för valt varumärke
+  const selBrand = l ? brands.find(b => b.id === l.brandId) : null;
+  const groupOptions = selBrand
+    ? (selBrand.productGroups || []).map((g, gi) =>
+        `<option value="${gi}" ${l && l.groupIndex === gi ? 'selected' : ''}>${g.name}</option>`
+      ).join('')
+    : '';
+
   modal.innerHTML = `
     <div class="lansering-modal-box">
       <div class="lansering-modal-title">${l ? 'Redigera lansering' : 'Ny lansering'}</div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Namn</label>
-        <input class="lansering-form-input" id="lm-name" placeholder="T.ex. ICA Lansering Q2 2026" value="${l ? l.name : ''}">
-      </div>
-      <div class="lansering-form-group">
-        <label class="lansering-form-label">Kopplat varumärke</label>
-        <select class="lansering-form-input" id="lm-brand">
-          <option value="">Inget varumärke valt...</option>
-          ${brands.map(b => `<option value="${b.id}" ${(l && l.brandId === b.id) ? 'selected' : ''}>${b.name}</option>`).join('')}
+        <label class="lansering-form-label">Varumärke</label>
+        <select class="lansering-form-input" id="lm-brand" onchange="updateGroupDropdown()">
+          <option value="">Välj varumärke...</option>
+          ${brandOptions}
         </select>
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Kedja</label>
-        <select class="lansering-form-input" id="lm-chain">
-          <option value="">Välj kedja...</option>
-          <option value="coop" ${l&&l.chain==='coop'?'selected':''}>Coop</option>
-          <option value="ica" ${l&&l.chain==='ica'?'selected':''}>ICA</option>
-          <option value="dagab" ${l&&l.chain==='dagab'?'selected':''}>Dagab</option>
-          <option value="multi" ${l&&l.chain==='multi'?'selected':''}>Flera kedjor</option>
+        <label class="lansering-form-label">Produktgrupp</label>
+        <select class="lansering-form-input" id="lm-group">
+          <option value="">Välj produktgrupp...</option>
+          ${groupOptions}
         </select>
-      </div>
-      <div class="lansering-form-group">
-        <label class="lansering-form-label">Planerat lanseringsdatum</label>
-        <input class="lansering-form-input" id="lm-date" type="date" value="${l ? (l.launchDate||'') : ''}">
       </div>
       <div class="lansering-modal-btns">
         <button class="lansering-action-btn" onclick="closeLanseringModal()">Avbryt</button>
-        <button class="inline-btn" onclick="saveLanseringModal()">Spara</button>
+        <button class="inline-btn" onclick="saveLanseringModal()">Skapa lansering</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
-  document.getElementById('lm-name').focus();
 }
 
+function updateGroupDropdown() {
+  const brandId = document.getElementById('lm-brand')?.value;
+  const brand = brands.find(b => b.id === brandId);
+  const sel = document.getElementById('lm-group');
+  if (!sel) return;
+  if (!brand) { sel.innerHTML = '<option value="">Välj produktgrupp...</option>'; return; }
+  sel.innerHTML = '<option value="">Välj produktgrupp...</option>' +
+    (brand.productGroups || []).map((g, gi) => `<option value="${gi}">${g.name}</option>`).join('');
+}
 function closeLanseringModal() {
   const m = document.getElementById('lansering-modal');
   if (m) m.remove();
 }
 
 async function saveLanseringModal() {
-  const name = document.getElementById('lm-name')?.value.trim();
-  if (!name) return;
-  const brandId = document.getElementById('lm-brand')?.value || '';
-  const brandName = brands.find(b => b.id === brandId)?.name || '';
-  const chain = document.getElementById('lm-chain')?.value || '';
-  const launchDate = document.getElementById('lm-date')?.value || '';
+  const brandId = document.getElementById('lm-brand')?.value;
+  const groupIndex = document.getElementById('lm-group')?.value;
+  if (!brandId || groupIndex === '' || groupIndex === undefined) {
+    alert('Välj varumärke och produktgrupp');
+    return;
+  }
+  const brand = brands.find(b => b.id === brandId);
+  const gi = parseInt(groupIndex);
+  const group = brand?.productGroups?.[gi];
+  if (!brand || !group) return;
+
+  // Hämta kedjor från produktgruppens kategorikopplingar
+  const cats = group.cats || [];
+  const chains = [...new Set(cats.map(c => c.source))];
+  const name = `${brand.name} — ${group.name}`;
 
   if (editingLanseringId) {
     const l = getLansering(editingLanseringId);
-    if (l) { l.name = name; l.brandId = brandId; l.brand = brandName; l.chain = chain; l.launchDate = launchDate; }
+    if (l) {
+      l.name = name; l.brandId = brandId; l.brand = brand.name;
+      l.groupIndex = gi; l.groupName = group.name; l.chains = chains;
+    }
     await saveLansering(editingLanseringId);
   } else {
-    // Skapa nytt i Supabase (återanvänd create_project)
     if (!currentWorkspaceId) return;
     try {
       const { data: pid, error } = await supabaseClient.rpc('create_project', {
         p_workspace_id: currentWorkspaceId,
         p_name: name,
-        p_color: '#f59e0b',
+        p_color: brand.color || '#f59e0b',
         p_visibility: 'private'
       });
       if (error) throw error;
-      const newL = { id: pid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [], is_lansering: true };
+      const newL = {
+        id: pid, name, color: brand.color || '#f59e0b',
+        brandId, brand: brand.name, groupIndex: gi, groupName: group.name,
+        chains, customers: {}, checklist: {}, tasks: [], contactLog: [],
+        is_lansering: true, activeCustomerTab: chains[0] || 'coop'
+      };
       lanseringar.push(newL);
       selectedLanseringId = pid;
-      // Spara extra data
       const { id: _id, name: _n, color: _c, ...rest } = newL;
       await supabaseClient.rpc('save_project_data', { p_project_id: pid, p_data: JSON.stringify(rest) });
     } catch(e) {
-      // Fallback: lokal id
       const lid = 'l_' + Date.now();
-      lanseringar.push({ id: lid, name, color: '#f59e0b', brandId, brand: brandName, chain, launchDate, checklist: {}, tasks: [], contactLog: [], is_lansering: true });
+      const newL = {
+        id: lid, name, color: brand.color || '#f59e0b',
+        brandId, brand: brand.name, groupIndex: gi, groupName: group.name,
+        chains, customers: {}, checklist: {}, tasks: [], contactLog: [],
+        is_lansering: true, activeCustomerTab: chains[0] || 'coop'
+      };
+      lanseringar.push(newL);
       selectedLanseringId = lid;
     }
   }
@@ -5092,6 +5044,254 @@ function removeCatFromGroup(brandId, gi, catName, source) {
   );
   saveProject(brandId);
   renderBrands();
+}
+
+
+
+// ═══════════════════════════════════════════════
+// LANSERING DETAIL MED KUNDTABBAR
+// ═══════════════════════════════════════════════
+
+function getLanseringCustomers(l) {
+  // Kedjor från kategorikopplingar
+  const chainTabs = (l.chains || []).map(c => ({
+    id: c, label: CHAIN_LABELS[c] || c, color: CHAIN_COLORS[c] || '#a78bfa', type: 'chain'
+  }));
+  // Fria kunder tillagda manuellt
+  const freeTabs = (l.freeCustomers || []).map(c => ({
+    id: 'free_' + c.replace(/\s/g,'_'), label: c, color: '#a78bfa', type: 'free'
+  }));
+  return [...chainTabs, ...freeTabs];
+}
+
+function setLanseringTab(lid, tabId) {
+  const l = getLansering(lid);
+  if (!l) return;
+  l.activeCustomerTab = tabId;
+  renderLansering();
+}
+
+function addFreeCustomer(lid) {
+  const input = document.getElementById(`free-cust-input-${lid}`);
+  const name = input?.value.trim();
+  if (!name) return;
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.freeCustomers) l.freeCustomers = [];
+  if (!l.freeCustomers.includes(name)) l.freeCustomers.push(name);
+  saveLansering(lid);
+  renderLansering();
+}
+
+function removeFreeCustomer(lid, name) {
+  const l = getLansering(lid);
+  if (!l) return;
+  l.freeCustomers = (l.freeCustomers || []).filter(c => c !== name);
+  if (l.activeCustomerTab === 'free_' + name.replace(/\s/g,'_')) {
+    l.activeCustomerTab = (l.chains || [])[0] || null;
+  }
+  saveLansering(lid);
+  renderLansering();
+}
+
+function renderCustomerTabContent(l, tabId) {
+  const isChain = !tabId.startsWith('free_');
+  const custKey = tabId;
+  const custData = (l.customers || {})[custKey] || {};
+  const checks = custData.checklist || {};
+  const tasks = custData.tasks || [];
+  const log = (l.contactLog || []).filter(e => e.customerTab === custKey);
+  const allLog = l.contactLog || [];
+
+  const checklistHtml = CHECKLIST_ITEMS.map(item => `
+    <div class="check-item ${checks[item.id] ? 'done' : ''}">
+      <input type="checkbox" ${checks[item.id] ? 'checked' : ''} 
+        onchange="toggleCustomerCheckItem('${l.id}','${custKey}','${item.id}',this.checked)">
+      <span class="check-item-label">${item.label}</span>
+      ${checks[item.id] ? `<span class="check-item-date">${checks[item.id]}</span>` : ''}
+    </div>`).join('');
+
+  const tasksHtml = tasks.map((t, i) => `
+    <div class="task-row">
+      <input class="task-name-input" value="${t.name||''}" placeholder="Uppgift..."
+        onblur="updateCustomerTask('${l.id}','${custKey}',${i},'name',this.value)">
+      <input class="task-deadline-input task-deadline" value="${t.deadline||''}" type="date"
+        onchange="updateCustomerTask('${l.id}','${custKey}',${i},'deadline',this.value)">
+      <select class="task-status-select task-status"
+        onchange="updateCustomerTask('${l.id}','${custKey}',${i},'status',this.value)">
+        ${TASK_STATUSES.map(s => `<option ${t.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <input class="task-owner-input task-owner" value="${t.owner||''}" placeholder="Ansvarig..."
+        onblur="updateCustomerTask('${l.id}','${custKey}',${i},'owner',this.value)">
+      <button class="task-delete-btn" onclick="deleteCustomerTask('${l.id}','${custKey}',${i})">×</button>
+    </div>`).join('');
+
+  const logFiltered = allLog.filter(e => e.customerTab === custKey).slice().reverse();
+  const logHtml = logFiltered.map((e, i) => {
+    const origIdx = allLog.length - 1 - allLog.slice().reverse().findIndex(x => x === e);
+    return `<div class="contact-entry">
+      <div class="contact-entry-header">
+        <span class="contact-entry-date">${e.date}</span>
+        ${e.contact ? `<span style="font-size:10px;color:var(--muted)">${e.contact}</span>` : ''}
+        <button onclick="deleteContactEntry('${l.id}',${allLog.indexOf(e)})"
+          style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:12px;margin-left:auto">×</button>
+      </div>
+      <div class="contact-entry-text">${e.note}</div>
+      ${e.next ? `<div class="contact-entry-next">→ ${e.next}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Deadlines — bara för kedjor
+  const deadlineSection = isChain ? `
+    <div class="section-block">
+      <div class="section-block-title">Deadlines & tidslinje</div>
+      ${renderDeadlineTimeline(l)}
+    </div>` : '';
+
+  return `
+    <div class="section-block">
+      <div class="section-block-title">Checklista</div>
+      <div class="checklist">${checklistHtml}</div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-block-title">Projektuppgifter</div>
+      <div class="custom-tasks">${tasksHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga uppgifter ännu</div>'}</div>
+      <div class="task-add-row" style="margin-top:8px">
+        <button class="inline-btn" onclick="addCustomerTask('${l.id}','${custKey}')">+ Lägg till uppgift</button>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-block-title">Kontaktlogg</div>
+      <div class="contact-add-form">
+        <div class="contact-form-row">
+          <input class="contact-input" id="log-contact-${l.id}-${custKey}" placeholder="Kontaktperson...">
+          <input class="contact-input" id="log-date-${l.id}-${custKey}" type="date" value="${new Date().toISOString().slice(0,10)}">
+        </div>
+        <textarea class="contact-input" id="log-note-${l.id}-${custKey}" rows="2"
+          placeholder="Vad gjordes / vad sades?..." style="resize:vertical"></textarea>
+        <input class="contact-input" id="log-next-${l.id}-${custKey}" placeholder="Nästa steg (valfritt)...">
+        <div style="display:flex;justify-content:flex-end">
+          <button class="inline-btn" onclick="addCustomerContactEntry('${l.id}','${custKey}')">+ Lägg till i logg</button>
+        </div>
+      </div>
+      <div class="contact-log" style="margin-top:10px">${logHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga loggade moment ännu</div>'}</div>
+    </div>
+
+    ${deadlineSection}
+
+    <div class="section-block">
+      ${renderComments(l.id)}
+    </div>`;
+}
+
+function renderLanseringDetail(l) {
+  const customers = getLanseringCustomers(l);
+  const activeTab = l.activeCustomerTab || customers[0]?.id || '';
+
+  // Tabbar
+  const tabsHtml = customers.map(c => `
+    <button onclick="setLanseringTab('${l.id}','${c.id}')"
+      style="padding:7px 16px;border-radius:7px 7px 0 0;border:1px solid ${c.id===activeTab?'var(--border)':'transparent'};border-bottom:${c.id===activeTab?'1px solid var(--surface)':'none'};background:${c.id===activeTab?'var(--surface)':'transparent'};color:${c.id===activeTab?c.color:'var(--muted)'};cursor:pointer;font-family:var(--font);font-size:12px;font-weight:${c.id===activeTab?'700':'400'};transition:all 0.12s;white-space:nowrap">
+      ${c.id===activeTab?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${c.color};margin-right:5px;vertical-align:middle"></span>`:''}${c.label}
+      ${c.type==='free'?`<span onclick="event.stopPropagation();removeFreeCustomer('${l.id}','${c.label}')" style="opacity:0.4;margin-left:4px;cursor:pointer">×</span>`:''}
+    </button>`).join('');
+
+  // Lägg till kund-knapp
+  const addCustomerHtml = `
+    <div style="display:flex;align-items:center;gap:6px;margin-left:8px">
+      <input id="free-cust-input-${l.id}" class="contact-input"
+        placeholder="Lägg till kund..." style="width:140px;padding:5px 8px;font-size:11px"
+        onkeydown="if(event.key==='Enter')addFreeCustomer('${l.id}')">
+      <button class="inline-btn" style="padding:5px 10px;font-size:11px"
+        onclick="addFreeCustomer('${l.id}')">+</button>
+    </div>`;
+
+  const tabContent = activeTab ? renderCustomerTabContent(l, activeTab) : 
+    `<div style="color:var(--muted);font-size:13px;padding:20px">Inga kunder kopplade — lägg till via kategorierna på produktgruppen</div>`;
+
+  // Progress baserat på aktiv tab
+  const pct = getLanseringProgress(l);
+
+  return `<div class="lansering-detail">
+    <div class="lansering-detail-header">
+      <span style="width:14px;height:14px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
+      <span class="lansering-detail-name">${l.name}</span>
+      <button class="lansering-action-btn" onclick="openLanseringModal('${l.id}')">Redigera</button>
+      <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
+    </div>
+
+    <div style="padding:4px 0 0">
+      <div class="progress-bar-wrap" style="margin-bottom:12px"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div style="display:flex;align-items:flex-end;gap:0;border-bottom:1px solid var(--border);flex-wrap:wrap;padding:0 0 0 4px">
+      ${tabsHtml}
+      ${addCustomerHtml}
+    </div>
+
+    <div style="padding-top:4px">
+      ${tabContent}
+    </div>
+  </div>`;
+}
+
+// ── PER-KUND CHECKLISTA ──
+function toggleCustomerCheckItem(lid, custKey, itemId, checked) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.customers) l.customers = {};
+  if (!l.customers[custKey]) l.customers[custKey] = { checklist: {}, tasks: [] };
+  if (!l.customers[custKey].checklist) l.customers[custKey].checklist = {};
+  if (checked) l.customers[custKey].checklist[itemId] = new Date().toLocaleDateString('sv-SE');
+  else delete l.customers[custKey].checklist[itemId];
+  saveLansering(lid);
+  addActivity(checked ? '✅' : '⬜', `${CHECKLIST_ITEMS.find(i=>i.id===itemId)?.label} — ${l.name}`);
+  renderLansering();
+}
+
+// ── PER-KUND UPPGIFTER ──
+function addCustomerTask(lid, custKey) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.customers) l.customers = {};
+  if (!l.customers[custKey]) l.customers[custKey] = { checklist: {}, tasks: [] };
+  l.customers[custKey].tasks.push({ name: '', deadline: '', status: 'Ej påbörjad', owner: '' });
+  saveLansering(lid);
+  renderLansering();
+}
+
+function updateCustomerTask(lid, custKey, idx, field, value) {
+  const l = getLansering(lid);
+  const task = l?.customers?.[custKey]?.tasks?.[idx];
+  if (!task) return;
+  task[field] = value;
+  saveLansering(lid);
+}
+
+function deleteCustomerTask(lid, custKey, idx) {
+  const l = getLansering(lid);
+  if (!l?.customers?.[custKey]?.tasks) return;
+  l.customers[custKey].tasks.splice(idx, 1);
+  saveLansering(lid);
+  renderLansering();
+}
+
+// ── PER-KUND KONTAKTLOGG ──
+function addCustomerContactEntry(lid, custKey) {
+  const l = getLansering(lid);
+  if (!l) return;
+  const contact = document.getElementById(`log-contact-${lid}-${custKey}`)?.value.trim() || '';
+  const date = document.getElementById(`log-date-${lid}-${custKey}`)?.value || new Date().toISOString().slice(0,10);
+  const note = document.getElementById(`log-note-${lid}-${custKey}`)?.value.trim() || '';
+  const next = document.getElementById(`log-next-${lid}-${custKey}`)?.value.trim() || '';
+  if (!note) return;
+  if (!l.contactLog) l.contactLog = [];
+  l.contactLog.push({ customerTab: custKey, contact, date, note, next });
+  saveLansering(lid);
+  addActivity('📋', `Kontaktlogg: ${custKey} — ${note.slice(0,40)}`);
+  renderLansering();
 }
 
 
