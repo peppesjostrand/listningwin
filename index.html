@@ -5528,41 +5528,78 @@ function renderBrands() {
 }
 
 function renderBrandWindows(brand, allCats) {
-  if (allCats.length === 0) return `<div class="no-cats-msg">Koppla kategorier till produkter ovan för att se relevanta revideringsfönster här.</div>`;
+  if (allCats.length === 0) return '';
 
-  const customerGroups = [
-    { key:'coop', label:'Coop', rounds: [...COOP_FOOD_ROUNDS,...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])] },
-    { key:'ica',  label:'ICA',  rounds: ICA_ROUNDS },
-    { key:'dagab',label:'Dagab',rounds: DAGAB_ROUNDS },
-  ];
+  const roundsMap = {
+    coop:  [...COOP_FOOD_ROUNDS, ...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])],
+    ica:   ICA_ROUNDS,
+    dagab: DAGAB_ROUNDS,
+  };
+  const chainColors = { coop: '#4ade80', ica: '#f87171', dagab: '#fb923c' };
+  const chainLabels = { coop: 'Coop', ica: 'ICA', dagab: 'Dagab' };
 
-  let html = `<div class="section-title" style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
-    REVIDERINGSFÖNSTER FÖR
-    ${brand.logo
-      ? `<img src="${brand.logo}" alt="${brand.name}" style="max-height:20px;max-width:90px;object-fit:contain;padding:3px;vertical-align:middle">`
-      : `<span style="color:var(--text)">${brand.name.toUpperCase()}</span>`}
-  </div>`;
-
-  customerGroups.forEach(g => {
-    const relevantCats = allCats.filter(c => c.source === g.key);
-    if (relevantCats.length === 0) return;
-
-    // Get unique launch windows from these cats
-    const catDefs = relevantCats.map(c => CATEGORIES.find(cd => cd.name === c.catName && cd.source === c.source)).filter(Boolean);
-    const launchWeeks = [...new Set(catDefs.flatMap(cd => cd.windows))];
-    const relevantRounds = g.rounds.filter(r => launchWeeks.includes(r.launch));
-    const upcoming = state.showPast ? relevantRounds : relevantRounds.filter(r => daysLeft(r.launchDate) >= -21);
-
-    html += `<div class="bw-section">
-      <div class="bw-section-title">
-        <img src="${LOGOS[g.key]}" style="height:13px;object-fit:contain;opacity:1;max-width:36px">
-        ${relevantCats.map(c=>`<span style="font-size:10px;color:var(--muted2)">${c.catName}</span>`).join(' · ')}
-      </div>
-      ${upcoming.length ? upcoming.map(renderRoundCard).join('') : '<div class="no-cats-msg">Inga kommande omgångar</div>'}
-    </div>`;
+  // Bygg en rad per unik (kategori, kedja) — visa nästa kommande fönster
+  const rows = [];
+  // Gruppera per produktgrupp för tydlighet
+  const groups = brand.productGroups || [];
+  groups.forEach(g => {
+    const cats = g.cats || [];
+    cats.forEach(c => {
+      const catDef = CATEGORIES.find(cd => cd.name === c.catName && cd.source === c.source);
+      if (!catDef) return;
+      const rounds = roundsMap[c.source] || [];
+      // Hitta nästa kommande avisering för den här kategorin
+      const catRounds = rounds.filter(r => catDef.windows.includes(r.launch));
+      const next = catRounds
+        .map(r => ({ r, step: r.steps.find(s => s.primary && s.days >= 0) }))
+        .filter(x => x.step)
+        .sort((a, b) => a.step.days - b.step.days)[0];
+      if (!next) return;
+      rows.push({
+        group: g.name,
+        catName: c.catName,
+        source: c.source,
+        avWeek: next.step.week,
+        avDays: next.step.days,
+        launchWeek: next.r.launch,
+        launchDate: next.r.launchDate,
+      });
+    });
   });
 
-  return html;
+  if (rows.length === 0) return '';
+
+  // Sortera på närmast avisering
+  rows.sort((a, b) => a.avDays - b.avDays);
+
+  const tableRows = rows.map(r => {
+    const d = r.avDays;
+    const urgency = d <= 14 ? '#f87171' : d <= 42 ? '#f59e0b' : 'var(--muted)';
+    return `<tr>
+      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">${r.group}</td>
+      <td style="padding:7px 10px;font-size:11px">
+        <span style="display:inline-flex;align-items:center;gap:5px">
+          <img src="${LOGOS[r.source]}" style="height:11px;object-fit:contain;max-width:30px">
+          ${r.catName}
+        </span>
+      </td>
+      <td style="padding:7px 10px;font-size:11px;color:${urgency};font-weight:500">v.${r.avWeek} <span style="font-size:10px;opacity:0.7">(${d}d)</span></td>
+      <td style="padding:7px 10px;font-size:11px;color:var(--muted)">v.${r.launchWeek}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="section-title" style="margin-bottom:10px">NÄSTA REVIDERINGSFÖNSTER</div>
+  <table style="width:100%;border-collapse:collapse">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border)">
+        <th style="padding:6px 10px;font-size:10px;color:var(--muted);text-align:left;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Produktgrupp</th>
+        <th style="padding:6px 10px;font-size:10px;color:var(--muted);text-align:left;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Kategori</th>
+        <th style="padding:6px 10px;font-size:10px;color:var(--muted);text-align:left;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Avisering</th>
+        <th style="padding:6px 10px;font-size:10px;color:var(--muted);text-align:left;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Lansering</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>`;
 }
 
 // ─── BRAND MODAL ───
