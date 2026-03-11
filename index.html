@@ -3389,8 +3389,9 @@ function updateGroupDropdown() {
   const sel = document.getElementById('lm-group');
   if (!sel) return;
   if (!brand) { sel.innerHTML = '<option value="">Välj produktgrupp...</option>'; return; }
+  const groups = getOrInitGroups(brand);
   sel.innerHTML = '<option value="">Välj produktgrupp...</option>' +
-    (brand.productGroups || []).map((g, gi) => `<option value="${gi}">${g.name}</option>`).join('');
+    groups.map((g, gi) => `<option value="${gi}">${g.name}</option>`).join('');
 }
 function closeLanseringModal() {
   const m = document.getElementById('lansering-modal');
@@ -3475,7 +3476,11 @@ async function deleteLansering(lid) {
 // ═══════════════════════════════════════════════
 
 function getOrInitGroups(brand) {
-  if (!brand.productGroups) brand.productGroups = [];
+  // Hantera om productGroups är en JSON-sträng
+  if (typeof brand.productGroups === 'string') {
+    try { brand.productGroups = JSON.parse(brand.productGroups); } catch(e) { brand.productGroups = []; }
+  }
+  if (!Array.isArray(brand.productGroups)) brand.productGroups = [];
   return brand.productGroups;
 }
 
@@ -5052,9 +5057,24 @@ function removeCatFromGroup(brandId, gi, catName, source) {
 // LANSERING DETAIL MED KUNDTABBAR
 // ═══════════════════════════════════════════════
 
+
+function removeChainTab(lid, chainId) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.removedChains) l.removedChains = [];
+  if (!l.removedChains.includes(chainId)) l.removedChains.push(chainId);
+  if (l.activeCustomerTab === chainId) {
+    const remaining = getLanseringCustomers(l).filter(c => c.id !== chainId);
+    l.activeCustomerTab = remaining[0]?.id || null;
+  }
+  saveLansering(lid);
+  renderLansering();
+}
+
 function getLanseringCustomers(l) {
   // Kedjor från kategorikopplingar
-  const chainTabs = (l.chains || []).map(c => ({
+  const removed = l.removedChains || [];
+  const chainTabs = (l.chains || []).filter(c => !removed.includes(c)).map(c => ({
     id: c, label: CHAIN_LABELS[c] || c, color: CHAIN_COLORS[c] || '#a78bfa', type: 'chain'
   }));
   // Fria kunder tillagda manuellt
@@ -5195,7 +5215,7 @@ function renderLanseringDetail(l) {
     <button onclick="setLanseringTab('${l.id}','${c.id}')"
       style="padding:7px 16px;border-radius:7px 7px 0 0;border:1px solid ${c.id===activeTab?'var(--border)':'transparent'};border-bottom:${c.id===activeTab?'1px solid var(--surface)':'none'};background:${c.id===activeTab?'var(--surface)':'transparent'};color:${c.id===activeTab?c.color:'var(--muted)'};cursor:pointer;font-family:var(--font);font-size:12px;font-weight:${c.id===activeTab?'700':'400'};transition:all 0.12s;white-space:nowrap">
       ${c.id===activeTab?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${c.color};margin-right:5px;vertical-align:middle"></span>`:''}${c.label}
-      ${c.type==='free'?`<span onclick="event.stopPropagation();removeFreeCustomer('${l.id}','${c.label}')" style="opacity:0.4;margin-left:4px;cursor:pointer">×</span>`:''}
+      <span onclick="event.stopPropagation();${c.type==='free'?`removeFreeCustomer('${l.id}','${c.label}')`:`removeChainTab('${l.id}','${c.id}')`}" style="opacity:0.3;margin-left:4px;cursor:pointer">×</span>
     </button>`).join('');
 
   // Lägg till kund-knapp
