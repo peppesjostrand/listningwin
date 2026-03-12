@@ -1399,7 +1399,7 @@ function weekYear(w) {
 }
 
 function isoWeekToDate(w) {
-  return weekDate(w, weekYear(w), 1); // måndag i den veckan
+  return weekDate(w, weekYear(w), 5); // fredag i den veckan
 }
 
 const CW = isoWeek(TODAY);
