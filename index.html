@@ -4414,42 +4414,98 @@ function renderDashWidgets() {
 }
 
 // ── 3. KOPPLING LANSERING ↔ AVISERINGSFÖNSTER + DEADLINERÄKNARE ──
-function getLanseringDeadlines(l) {
-  if (!l.launchDate) return [];
-  const launch = new Date(l.launchDate);
-  const steps = [
-    { name: 'Artikeldata Validoo/Dabas', daysBefore: 42, key: 'validoo' },
-    { name: 'Priskalkyl klar', daysBefore: 35, key: 'priskalkyl' },
-    { name: 'Varuprover till kedja', daysBefore: 28, key: 'varuprover' },
-    { name: 'Mötesbokning kedja', daysBefore: 21, key: 'mote' },
-    { name: 'Presentation klar', daysBefore: 14, key: 'presentation' },
-    { name: 'Offert till kedja', daysBefore: 7, key: 'offert' },
-    { name: '🚀 Lansering', daysBefore: 0, key: '__launch__' },
-  ];
-  return steps.map(s => {
+const DEADLINE_STEPS = [
+  { name: 'Artikeldata Validoo/Dabas', daysBefore: 42, key: 'validoo' },
+  { name: 'Priskalkyl klar',           daysBefore: 35, key: 'priskalkyl' },
+  { name: 'Varuprover till kedja',     daysBefore: 28, key: 'varuprover' },
+  { name: 'Mötesbokning kedja',        daysBefore: 21, key: 'mote' },
+  { name: 'Presentation klar',         daysBefore: 14, key: 'presentation' },
+  { name: 'Offert till kedja',         daysBefore: 7,  key: 'offert' },
+  { name: '🚀 Lansering',             daysBefore: 0,  key: '__launch__' },
+];
+
+const ROUNDS_BY_CHAIN = {
+  coop:  () => [...COOP_FOOD_ROUNDS, ...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])],
+  ica:   () => ICA_ROUNDS,
+  dagab: () => DAGAB_ROUNDS,
+};
+
+// Hämta nästa relevanta aviseringsfönster för en lansering + kedja
+// baserat på produktgruppens kategorikopplingar
+function getNextWindowForChain(l, chainId) {
+  const brand = brands.find(b => b.id === l.brandId);
+  const group = brand?.productGroups?.[l.groupIndex];
+  if (!group) return null;
+
+  const cats = (group.cats || []).filter(c => c.source === chainId);
+  if (cats.length === 0) return null;
+
+  const rounds = (ROUNDS_BY_CHAIN[chainId] || (() => []))();
+  const catDefs = cats.map(c => CATEGORIES.find(cd => cd.name === c.catName && cd.source === chainId)).filter(Boolean);
+  const validWindows = [...new Set(catDefs.flatMap(cd => cd.windows))];
+
+  const upcoming = rounds
+    .filter(r => validWindows.includes(r.launch) && daysLeft(r.launchDate) >= -7)
+    .sort((a, b) => new Date(a.launchDate) - new Date(b.launchDate));
+
+  return upcoming[0] || null;
+}
+
+// Bygg deadlines bakåt från ett lanseringsdatum
+function buildDeadlineSteps(launchDateStr, custChecklist) {
+  const launch = new Date(launchDateStr);
+  return DEADLINE_STEPS.map(s => {
     const deadline = new Date(launch);
     deadline.setDate(deadline.getDate() - s.daysBefore);
     const daysUntil = Math.round((deadline - new Date()) / 86400000);
-    const done = l.checklist && l.checklist[s.key];
+    const done = custChecklist && custChecklist[s.key];
     return { ...s, deadline: deadline.toLocaleDateString('sv-SE'), daysUntil, done };
   });
 }
 
-function renderDeadlineTimeline(l) {
-  const steps = getLanseringDeadlines(l);
-  if (!l.launchDate) return `<div style="color:var(--muted);font-size:11px;padding:8px 0">Sätt ett lanseringsdatum för att se deadlines</div>`;
+// Sammanfattningsbanner högst upp i kundtabb
+function renderChainDeadlineBanner(l, chainId) {
+  const win = getNextWindowForChain(l, chainId);
+  if (!win) return `<div style="padding:10px 0;font-size:11px;color:var(--muted)">Ingen kategori kopplad till ${CHAIN_LABELS[chainId]||chainId} — lägg till kategori på produktgruppen.</div>`;
 
-  // Find matching avisering window
-  const matchingWindow = l.chain ? allRounds().filter(r => r.source === l.chain).sort((a,b) => {
-    const la = new Date(l.launchDate), ra = new Date(a.launchDate), rb = new Date(b.launchDate);
-    return Math.abs(ra-la) - Math.abs(rb-la);
-  })[0] : null;
+  const avStep = win.steps?.find(s => s.primary);
+  const avDate = avStep ? `v.${avStep.week}` : '—';
+  const d = daysLeft(win.launchDate);
+  const urgency = d <= 14 ? '#f87171' : d <= 42 ? '#f59e0b' : '#4ade80';
 
-  const windowBadge = matchingWindow ? `
-    <div style="display:flex;align-items:center;gap:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:6px;padding:7px 12px;margin-bottom:12px;font-size:11px">
-      <span>📅</span>
-      <span>Närmaste aviseringsfönster: <strong>${matchingWindow.name}</strong> — lansering ${matchingWindow.launchDate}</span>
-    </div>` : '';
+  return `<div style="display:flex;gap:20px;align-items:center;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px">
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Avisering</div>
+      <div style="font-size:16px;font-weight:700;color:#f59e0b">${avDate}</div>
+    </div>
+    <div style="width:1px;height:36px;background:var(--border)"></div>
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Lansering</div>
+      <div style="font-size:16px;font-weight:700;color:${urgency}">${win.launchDate}</div>
+    </div>
+    <div style="width:1px;height:36px;background:var(--border)"></div>
+    <div style="flex:1">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Omgång</div>
+      <div style="font-size:12px;color:var(--text)">${win.name || win.launch || '—'}</div>
+    </div>
+    <div style="font-size:11px;color:${urgency};font-weight:600">${d > 0 ? d + 'd kvar' : d === 0 ? 'Idag' : Math.abs(d) + 'd sedan'}</div>
+  </div>`;
+}
+
+function getLanseringDeadlines(l) {
+  // Legacy — används ej längre, behålls för bakåtkompatibilitet
+  if (!l.launchDate) return [];
+  return buildDeadlineSteps(l.launchDate, l.checklist);
+}
+
+function renderDeadlineTimeline(l, chainId, custChecklist) {
+  // Ny version: chainId och custChecklist skickas från kundtabb
+  const win = chainId ? getNextWindowForChain(l, chainId) : null;
+  if (!win) {
+    return `<div style="color:var(--muted);font-size:11px;padding:8px 0">Ingen matchande kategori hittad — koppla en kategori till produktgruppen för att se deadlines.</div>`;
+  }
+
+  const steps = buildDeadlineSteps(win.launchDate, custChecklist || {});
 
   const stepsHtml = steps.map(s => {
     const cls = s.done ? 'done' : s.daysUntil < 0 ? 'late' : s.daysUntil <= 7 ? 'due' : 'future';
@@ -4463,7 +4519,7 @@ function renderDeadlineTimeline(l) {
     </div>`;
   }).join('');
 
-  return windowBadge + `<div class="deadline-timeline">${stepsHtml}</div>`;
+  return `<div class="deadline-timeline">${stepsHtml}</div>`;
 }
 
 // ── 4. NOTERINGAR PER AVISERINGSFÖNSTER ──
@@ -5162,13 +5218,17 @@ function renderCustomerTabContent(l, tabId) {
   }).join('');
 
   // Deadlines — bara för kedjor
+  const chainId = isChain ? tabId : null;
   const deadlineSection = isChain ? `
     <div class="section-block">
       <div class="section-block-title">Deadlines & tidslinje</div>
-      ${renderDeadlineTimeline(l)}
+      ${renderDeadlineTimeline(l, chainId, custData.checklist)}
     </div>` : '';
 
+  const bannerHtml = isChain ? renderChainDeadlineBanner(l, chainId) : '';
+
   return `
+    ${bannerHtml}
     <div class="section-block">
       <div class="section-block-title">Checklista</div>
       <div class="checklist">${checklistHtml}</div>
