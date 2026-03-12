@@ -1391,7 +1391,15 @@ function daysLeft(d) {
   return Math.round((d - TODAY) / 86400000);
 }
 function weekYear(w) {
-  return w >= 36 ? 2025 : 2026;
+  // Om veckan redan passerat i år, ta nästa år
+  const thisYear = TODAY.getFullYear();
+  const thisWeek = isoWeek(TODAY);
+  if (w >= thisWeek) return thisYear;
+  return thisYear + 1;
+}
+
+function isoWeekToDate(w) {
+  return weekDate(w, weekYear(w), 1); // måndag i den veckan
 }
 
 const CW = isoWeek(TODAY);
@@ -4445,8 +4453,18 @@ function getNextWindowForChain(l, chainId) {
   const validWindows = [...new Set(catDefs.flatMap(cd => cd.windows))];
 
   const upcoming = rounds
-    .filter(r => validWindows.includes(r.launch) && daysLeft(r.launchDate) >= -7)
-    .sort((a, b) => new Date(a.launchDate) - new Date(b.launchDate));
+    .filter(r => {
+      if (!validWindows.includes(r.launch)) return false;
+      // Visa bara om aviseringen inte passerat (primärt steg)
+      const avStep = r.steps?.find(s => s.primary);
+      if (avStep) return avStep.days >= 0;
+      return daysLeft(r.launchDate) >= 0;
+    })
+    .sort((a, b) => {
+      const avA = a.steps?.find(s => s.primary)?.days ?? 9999;
+      const avB = b.steps?.find(s => s.primary)?.days ?? 9999;
+      return avA - avB;
+    });
 
   return upcoming[0] || null;
 }
@@ -4469,26 +4487,23 @@ function renderChainDeadlineBanner(l, chainId) {
   if (!win) return `<div style="padding:10px 0;font-size:11px;color:var(--muted)">Ingen kategori kopplad till ${CHAIN_LABELS[chainId]||chainId} — lägg till kategori på produktgruppen.</div>`;
 
   const avStep = win.steps?.find(s => s.primary);
-  const avDate = avStep ? `v.${avStep.week}` : '—';
-  const d = daysLeft(win.launchDate);
-  const urgency = d <= 14 ? '#f87171' : d <= 42 ? '#f59e0b' : '#4ade80';
+  const avWeek = avStep ? `v.${avStep.week}` : '—';
+  const dToAv = avStep ? Math.round((isoWeekToDate(avStep.week) - new Date()) / 86400000) : null;
+  const urgency = dToAv !== null && dToAv <= 14 ? '#f87171' : dToAv !== null && dToAv <= 42 ? '#f59e0b' : '#4ade80';
+  const dToAvStr = dToAv === null ? '' : dToAv > 0 ? `${dToAv}d kvar` : dToAv === 0 ? 'Idag' : `${Math.abs(dToAv)}d sedan`;
 
   return `<div style="display:flex;gap:20px;align-items:center;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px">
     <div>
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Avisering</div>
-      <div style="font-size:16px;font-weight:700;color:#f59e0b">${avDate}</div>
+      <div style="font-size:16px;font-weight:700;color:#f59e0b">${avWeek}</div>
     </div>
     <div style="width:1px;height:36px;background:var(--border)"></div>
     <div>
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Lansering</div>
-      <div style="font-size:16px;font-weight:700;color:${urgency}">${win.launchDate}</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text)">v.${win.launch}</div>
     </div>
     <div style="width:1px;height:36px;background:var(--border)"></div>
-    <div style="flex:1">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Omgång</div>
-      <div style="font-size:12px;color:var(--text)">${win.name || win.launch || '—'}</div>
-    </div>
-    <div style="font-size:11px;color:${urgency};font-weight:600">${d > 0 ? d + 'd kvar' : d === 0 ? 'Idag' : Math.abs(d) + 'd sedan'}</div>
+    <div style="font-size:13px;color:${urgency};font-weight:600">${dToAvStr}</div>
   </div>`;
 }
 
