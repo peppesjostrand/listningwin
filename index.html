@@ -1399,7 +1399,9 @@ function weekYear(w) {
 }
 
 function isoWeekToDate(w) {
-  return weekDate(w, weekYear(w), 5); // fredag i den veckan
+  const d = weekDate(w, weekYear(w), 5); // fredag i den veckan
+  d.setUTCHours(23, 59, 59, 999); // slutet av fredagen
+  return d;
 }
 
 const CW = isoWeek(TODAY);
