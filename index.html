@@ -4449,15 +4449,19 @@ const ROUNDS_BY_CHAIN = {
 // baserat på produktgruppens kategorikopplingar
 function getNextWindowForChain(l, chainId) {
   const brand = brands.find(b => b.id === l.brandId);
-  const group = brand?.productGroups?.[l.groupIndex];
-  if (!group) return null;
+  if (!brand) { console.warn('getNextWindowForChain: brand not found', l.brandId); return null; }
+  const groups = getOrInitGroups(brand);
+  const group = groups[l.groupIndex];
+  if (!group) { console.warn('getNextWindowForChain: group not found', l.groupIndex, groups.length); return null; }
 
   const cats = (group.cats || []).filter(c => c.source === chainId);
-  if (cats.length === 0) return null;
+  if (cats.length === 0) { console.warn('getNextWindowForChain: no cats for chain', chainId, group.cats); return null; }
 
   const rounds = (ROUNDS_BY_CHAIN[chainId] || (() => []))();
   const catDefs = cats.map(c => CATEGORIES.find(cd => cd.name === c.catName && cd.source === chainId)).filter(Boolean);
+  if (catDefs.length === 0) { console.warn('getNextWindowForChain: no catDefs matched', cats); return null; }
   const validWindows = [...new Set(catDefs.flatMap(cd => cd.windows))];
+  console.log('getNextWindowForChain: validWindows', validWindows, 'chainId', chainId);
 
   const upcoming = rounds
     .filter(r => {
@@ -4521,22 +4525,23 @@ function getLanseringDeadlines(l) {
 }
 
 function renderDeadlineTimeline(l, chainId, custChecklist) {
-  // Ny version: chainId och custChecklist skickas från kundtabb
   const win = chainId ? getNextWindowForChain(l, chainId) : null;
   if (!win) {
     return `<div style="color:var(--muted);font-size:11px;padding:8px 0">Ingen matchande kategori hittad — koppla en kategori till produktgruppen för att se deadlines.</div>`;
   }
 
-  const steps = buildDeadlineSteps(win.launchDate, custChecklist || {});
-
-  const stepsHtml = steps.map(s => {
-    const cls = s.done ? 'done' : s.daysUntil < 0 ? 'late' : s.daysUntil <= 7 ? 'due' : 'future';
-    const dateStr = s.daysUntil === 0 ? 'Idag' : s.daysUntil > 0 ? `${s.daysUntil}d kvar` : `${Math.abs(s.daysUntil)}d sedan`;
+  const checks = custChecklist || {};
+  const stepsHtml = win.steps.map(s => {
+    const d = daysLeft(s.date);
+    const done = checks[s.key];
+    const cls = done ? 'done' : d < 0 ? 'late' : d <= 7 ? 'due' : 'future';
+    const dateStr = d === 0 ? 'Idag' : d > 0 ? `${d}d kvar` : `${Math.abs(d)}d sedan`;
+    const dateLabel = s.date.toLocaleDateString('sv-SE', { day:'numeric', month:'short' });
     return `<div class="dl-step">
       <div class="dl-dot ${cls}"></div>
       <div class="dl-step-body">
-        <div class="dl-step-name ${s.done?'done-text':''}">${s.name}</div>
-        <div class="dl-step-date">${s.deadline} · <span style="color:${cls==='late'?'#f87171':cls==='due'?'#f59e0b':cls==='done'?'#4ade80':'var(--muted)'}">${dateStr}</span></div>
+        <div class="dl-step-name ${done?'done-text':''}">${s.label}</div>
+        <div class="dl-step-date">${dateLabel} · <span style="color:${cls==='late'?'#f87171':cls==='due'?'#f59e0b':cls==='done'?'#4ade80':'var(--muted)'}">${dateStr}</span></div>
       </div>
     </div>`;
   }).join('');
