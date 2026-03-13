@@ -3229,12 +3229,17 @@ async function saveLansering(lid) {
 function getLansering(lid) { return lanseringar.find(x => x.id === lid); }
 
 function getLanseringProgress(l) {
-  const checks = l.checklist || {};
-  const done = CHECKLIST_ITEMS.filter(i => checks[i.id]).length;
-  const tasks = l.tasks || [];
-  const tasksDone = tasks.filter(t => t.status === 'Klar').length;
-  const total = CHECKLIST_ITEMS.length + tasks.length;
-  const totalDone = done + tasksDone;
+  const customers = getLanseringCustomers(l);
+  if (customers.length === 0) return 0;
+  let totalDone = 0, total = 0;
+  customers.forEach(c => {
+    const custData = (l.customers || {})[c.id] || {};
+    const checks = custData.checklist || {};
+    const tasks = custData.tasks || [];
+    totalDone += CHECKLIST_ITEMS.filter(i => checks[i.id]).length;
+    totalDone += tasks.filter(t => t.status === 'Klar').length;
+    total += CHECKLIST_ITEMS.length + tasks.length;
+  });
   return total === 0 ? 0 : Math.round((totalDone / total) * 100);
 }
 
