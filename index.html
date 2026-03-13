@@ -4462,14 +4462,19 @@ function getNextWindowForChain(l, chainId) {
   if (catDefs.length === 0) { console.warn('getNextWindowForChain: no catDefs matched', cats); return null; }
   const validWindows = [...new Set(catDefs.flatMap(cd => cd.windows))];
   console.log('getNextWindowForChain: validWindows', validWindows, 'chainId', chainId);
+  const matchingRounds = rounds.filter(r => validWindows.includes(r.launch));
+  matchingRounds.forEach(r => {
+    const av = r.steps?.find(s => s.primary);
+    console.log('  round v.' + r.launch + ' avStep.days=', av?.days, 'date=', av?.date?.toISOString?.());
+  });
 
-  const upcoming = rounds
+  const validRounds = rounds.filter(r => validWindows.includes(r.launch));
+
+  // Försök hitta nästa kommande runda (aviseringen ej passerad)
+  const upcoming = validRounds
     .filter(r => {
-      if (!validWindows.includes(r.launch)) return false;
-      // Visa bara om aviseringen inte passerat (primärt steg)
       const avStep = r.steps?.find(s => s.primary);
-      if (avStep) return avStep.days >= 0;
-      return daysLeft(r.launchDate) >= 0;
+      return avStep ? daysLeft(avStep.date) >= 0 : daysLeft(r.launchDate) >= 0;
     })
     .sort((a, b) => {
       const avA = a.steps?.find(s => s.primary)?.days ?? 9999;
@@ -4477,7 +4482,14 @@ function getNextWindowForChain(l, chainId) {
       return avA - avB;
     });
 
-  return upcoming[0] || null;
+  if (upcoming[0]) return upcoming[0];
+
+  // Fallback: visa den senaste passerade rundan
+  const past = validRounds
+    .filter(r => daysLeft(r.launchDate) < 0)
+    .sort((a, b) => daysLeft(b.launchDate) - daysLeft(a.launchDate));
+
+  return past[0] || validRounds[0] || null;
 }
 
 // Bygg deadlines bakåt från ett lanseringsdatum
