@@ -104,7 +104,12 @@
 
   .sidebar-section {
     padding: 0 14px;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
+  }
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 14px 10px;
   }
   .sidebar-label {
     font-size: 9px;

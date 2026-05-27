@@ -1016,11 +1016,11 @@ function togglePast() {
 
 function showTab(tab) {
   state.tab = tab;
-  ['overview','categories','timeline','brands','lansering','historik','kalkyl','paminnelser','agenda'].forEach(t => {
+  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
     document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
   });
-  const titles = { overview: 'Översikt', categories: 'Per kategori', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Lansering', historik: 'Historik & Export', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', agenda: 'Agenda & Möten' };
+  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser' };
   document.getElementById('page-title').textContent = titles[tab];
   closeMobileMenu();
   renderAll();
@@ -1034,10 +1034,9 @@ function renderAll() {
   if (state.tab === 'timeline') renderTimeline();
   if (state.tab === 'brands') renderBrands();
   if (state.tab === 'lansering') renderLansering();
-  if (state.tab === 'historik') renderHistorik();
+  if (state.tab === 'arkiv') renderArkiv();
   if (state.tab === 'kalkyl') renderKalkyl();
   if (state.tab === 'paminnelser') renderPaminnelser();
-  if (state.tab === 'agenda') renderAgenda();
 }
 
 // ═══════════════════════════════════════════════
@@ -1587,10 +1586,9 @@ async function loadLanseringar() {
     setTimeout(() => addNotif('⚠️ Kunde inte ladda lanseringar: ' + e.message, 'error'), 500);
   }
   if (state.tab === 'lansering') renderLansering();
-  if (state.tab === 'historik') renderHistorik();
+  if (state.tab === 'arkiv') renderArkiv();
   if (state.tab === 'kalkyl') renderKalkyl();
   if (state.tab === 'paminnelser') renderPaminnelser();
-  if (state.tab === 'agenda') renderAgenda();
 }
 
 async function saveLansering(lid) {
@@ -1998,8 +1996,8 @@ function deleteArticle(brandId, gi, ai) {
 // SJOK 2B: AVISERINGSHISTORIK
 // ═══════════════════════════════════════════════
 
-function renderHistorik() {
-  const el = document.getElementById('historik-content');
+function renderArkiv() {
+  const el = document.getElementById('arkiv-content');
   if (!el) return;
 
   const allRoundsAll = allRounds();
@@ -2074,16 +2072,16 @@ function renderHistorik() {
 
   el.innerHTML = `<div class="history-section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-      <div style="font-family:var(--display);font-size:18px;font-weight:700">Aviseringshistorik & Export</div>
+      <div style="font-family:var(--display);font-size:18px;font-weight:700">Arkiv & Export</div>
       <button class="export-btn" onclick="exportToExcel()">⬇ Exportera till Excel</button>
     </div>
 
     <div class="history-filter-bar">
-      <select class="history-filter-select" id="hist-filter-view" onchange="renderHistorik()">
+      <select class="history-filter-select" id="hist-filter-view" onchange="renderArkiv()">
         <option value="past">Passerade aviseringar</option>
         <option value="upcoming">Kommande aviseringar</option>
       </select>
-      <select class="history-filter-select" id="hist-filter-chain" onchange="renderHistorik()">
+      <select class="history-filter-select" id="hist-filter-chain" onchange="renderArkiv()">
         <option value="all">Alla kedjor</option>
         <option value="coop">Coop</option>
         <option value="ica">ICA</option>
@@ -2798,7 +2796,7 @@ function renderDashWidgets() {
       <div class="dash-widget-label">Öppna uppgifter</div>
       <div class="dash-widget-sub">Ej avklarade projektuppgifter</div>
     </div>
-    <div class="dash-widget" onclick="showTab('agenda')">
+    <div class="dash-widget" onclick="showTab('brands')">
       <div class="dash-widget-value" style="color:#a78bfa">${brands.length}</div>
       <div class="dash-widget-label">Varumärken</div>
       <div class="dash-widget-sub">${(brands.reduce((n,b) => n+(b.productGroups||[]).reduce((m,g)=>m+(g.articles||[]).length,0),0))} artiklar registrerade</div>

@@ -42,16 +42,29 @@
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-label">Vyer</div>
-      <button class="nav-btn active" onclick="showTab('overview')" id="nav-overview"><span class="icon">◉</span> Översikt</button>
-      <button class="nav-btn" onclick="showTab('categories')" id="nav-categories"><span class="icon">⊞</span> Per kategori</button>
+      <button class="nav-btn active" onclick="showTab('overview')" id="nav-overview"><span class="icon">◉</span> Hem</button>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Planera</div>
+      <button class="nav-btn" onclick="showTab('categories')" id="nav-categories"><span class="icon">⊞</span> Fönster & Kategorier</button>
       <button class="nav-btn" onclick="showTab('timeline')" id="nav-timeline"><span class="icon">▷</span> Tidslinje</button>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
       <button class="nav-btn" onclick="showTab('brands')" id="nav-brands"><span class="icon">◈</span> Varumärken</button>
-      <button class="nav-btn" onclick="showTab('lansering')" id="nav-lansering"><span class="icon">🚀</span> Lansering</button>
-      <button class="nav-btn" onclick="showTab('historik')" id="nav-historik"><span class="icon">📋</span> Historik</button>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Lanseringar</div>
+      <button class="nav-btn" onclick="showTab('lansering')" id="nav-lansering"><span class="icon">🚀</span> Aktiva</button>
+      <button class="nav-btn" onclick="showTab('arkiv')" id="nav-arkiv"><span class="icon">📦</span> Arkiv</button>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Verktyg</div>
       <button class="nav-btn" onclick="showTab('kalkyl')" id="nav-kalkyl"><span class="icon">🧮</span> Kalkyl</button>
       <button class="nav-btn" onclick="showTab('paminnelser')" id="nav-paminnelser"><span class="icon">🔔</span> Påminnelser</button>
-      <button class="nav-btn" onclick="showTab('agenda')" id="nav-agenda"><span class="icon">📅</span> Agenda</button>
     </div>
 
     <div class="sidebar-section">
@@ -109,7 +122,7 @@
     <div id="tab-timeline" style="display:none"><div id="timeline-content"></div></div>
   <div id="tab-brands" style="display:none"><div id="brands-content"></div></div>
   <div id="tab-lansering" style="display:none"><div id="lansering-content"></div></div>
-  <div id="tab-historik" style="display:none"><div id="historik-content"></div></div>
+  <div id="tab-arkiv" style="display:none"><div id="arkiv-content"></div></div>
   <div id="tab-kalkyl" style="display:none"><div id="kalkyl-content"></div></div>
   <div id="tab-paminnelser" style="display:none"><div id="paminnelser-content"></div></div>
   <div id="tab-agenda" style="display:none"><div id="agenda-content"></div></div>
