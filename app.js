@@ -1424,6 +1424,7 @@ async function authOnLogin(user) {
   loadAgenda();
   loadActivityLog();
   subscribeActivityLog();
+  supabaseClient.rpc('clean_old_activity_log').then(() => {});
   // Slight delay to allow data to load before checking
   setTimeout(() => {
     checkAndGenerateNotifs();
