@@ -3198,14 +3198,16 @@ function addActivity(icon, text) {
   activityLog.unshift({ icon, text, time: new Date(), user_email: currentUser?.email });
   if (activityLog.length > 100) activityLog.pop();
   if (currentWorkspaceId && currentUser) {
-    supabaseClient.from('activity_log').insert({
-      workspace_id: currentWorkspaceId,
-      user_id: currentUser.id,
+    const row = {
+      workspace_id: String(currentWorkspaceId),
+      user_id: String(currentUser.id),
       user_email: currentUser.email,
-      icon,
+      emoji: icon,
       action: text
-    }).then(({ error }) => {
-      if (error) console.error('addActivity INSERT failed:', error.message, { workspace_id: currentWorkspaceId, user_id: currentUser?.id });
+    };
+    console.log('addActivity INSERT body:', row);
+    supabaseClient.from('activity_log').insert(row).then(({ error }) => {
+      if (error) console.error('addActivity INSERT failed:', error.message, row);
       else console.log('addActivity INSERT ok:', icon, text);
     });
   } else {
@@ -3217,13 +3219,13 @@ async function loadActivityLog() {
   if (!currentWorkspaceId) return;
   const { data } = await supabaseClient
     .from('activity_log')
-    .select('icon, action, user_email, created_at')
+    .select('emoji, action, user_email, created_at')
     .eq('workspace_id', currentWorkspaceId)
     .order('created_at', { ascending: false })
     .limit(100);
   if (data) {
     activityLog = data.map(r => ({
-      icon: r.icon || '•',
+      icon: r.emoji || '•',
       text: r.action,
       time: new Date(r.created_at),
       user_email: r.user_email
@@ -3245,7 +3247,7 @@ function subscribeActivityLog() {
       const r = payload.new;
       // Avoid duplicate if this client just inserted it
       if (!activityLog.some(a => a.time.toISOString() === r.created_at && a.text === r.action)) {
-        activityLog.unshift({ icon: r.icon || '•', text: r.action, time: new Date(r.created_at), user_email: r.user_email });
+        activityLog.unshift({ icon: r.emoji || '•', text: r.action, time: new Date(r.created_at), user_email: r.user_email });
         if (activityLog.length > 100) activityLog.pop();
       }
       if (state.tab === 'aktivitetslogg') renderAktivitetslogg();
