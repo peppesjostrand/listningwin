@@ -3247,15 +3247,9 @@ function subscribeActivityLog() {
 }
 
 function formatActivityTime(date) {
-  const now = new Date();
-  const diff = now - date;
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Just nu';
-  if (minutes < 60) return `${minutes} min sedan`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} h sedan`;
-  return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' +
-    date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  const d = date.toLocaleDateString('sv-SE');
+  const t = date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  return `${d} ${t}`;
 }
 
 function renderAktivitetslogg() {
@@ -3619,6 +3613,8 @@ function removeChainTab(lid, chainId) {
     const remaining = getLanseringCustomers(l).filter(c => c.id !== chainId);
     l.activeCustomerTab = remaining[0]?.id || null;
   }
+  const chainLabel = { coop: 'Coop', ica: 'ICA', dagab: 'Dagab' }[chainId] || chainId;
+  addActivity('🗂️', `Kundtabb "${chainLabel}" arkiverad i "${l.name}"`);
   saveLansering(lid);
   renderLansering();
 }
