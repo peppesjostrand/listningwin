@@ -21,21 +21,23 @@ The product is built and maintained by Peter Sjöstrand at Foodster AB (makers o
 - Use clear Swedish-friendly commit messages describing what changed
 - Verify that the site still works after each significant change
 
-## Architecture Note
+## Architecture
 
-The application is split into separate files:
-- `index.html` — HTML skeleton (~371 lines)
-- `styles.css` — all CSS (~1 239 lines)
-- `app.js` — all JavaScript (~4 503 lines)
-- `data/windows/coop.json` — COOP_FOOD_RAW + COOP_HEMMA_RAW (Coop Food & Hemma round data)
-- `data/windows/ica.json` — ICA_ALL_STEPS, launchWeeks, stepLabels
-- `data/windows/dagab.json` — DAGAB_ALL_STEPS, raw entries, stepLabels
+The application is split into three files:
+- `index.html` — HTML skeleton (~358 lines)
+- `styles.css` — all CSS (~1 234 lines)
+- `app.js` — all JavaScript (~4 500 lines)
 
-Retailer calendar data is loaded dynamically via `loadWindowData()` at startup (fetch + Promise.all). Dates are stored as `[d, m, y]` tuples in JSON and reconstructed via `icaDate()`/`dagabDate()` which apply roll-forward logic. `CATEGORIES` remains in `app.js`.
+Retailer calendar data lives in:
+- `data/windows/coop.json` — COOP_FOOD_RAW + COOP_HEMMA_RAW
+- `data/windows/ica.json` — 12 launch windows × 8 steps
+- `data/windows/dagab.json` — 12 launch windows × 9 steps
+
+Loaded dynamically via `loadWindowData()` at startup before `authInit()` runs.
 
 ## Development
 
-There is no build step. To develop locally, serve `index.html` over HTTP:
+No build step. Serve over HTTP (required for Supabase auth):
 
 ```powershell
 npx serve .
@@ -43,33 +45,67 @@ npx serve .
 python -m http.server 8080
 ```
 
-Do not open `index.html` directly as a `file://` URL — Supabase auth will fail.
+Never open `index.html` as `file://` — Supabase auth will fail.
 
 ## Tech Stack
 
-- **Frontend**: Vanilla JavaScript (ES6+), no framework, all DOM manipulation is imperative
-- **Backend**: Supabase — PostgreSQL via RPC calls, email/password auth
-- **Hosting**: GitHub Pages (static), custom domain via CNAME (listingwin.com)
+- **Frontend**: Vanilla JavaScript (ES6+), no framework, imperative DOM
+- **Backend**: Supabase — PostgreSQL via RPC, email/password auth, realtime subscriptions
+- **Hosting**: GitHub Pages, custom domain via CNAME (listingwin.com)
 
-## Supabase Structure
+## Supabase Tables
 
-### Tables
-- `workspaces` — one per company/team
-- `workspace_members` — users belonging to a workspace (roles: owner, member)
-- `projects` — both brands and lanseringar stored here
-- `project_members` — access control per project (roles: owner, editor, viewer)
+| Table | Purpose |
+|---|---|
+| `workspaces` | One per company/team |
+| `workspace_members` | Users in workspace (roles: owner, member) |
+| `projects` | Both brands and lanseringar |
+| `project_members` | Per-project access (roles: owner, editor, viewer) |
+| `activity_log` | Workspace activity feed — workspace_id, user_id, user_email, emoji, action, created_at |
 
 ### Key RPC Functions
-- `create_workspace_for_user(workspace_name, user_id)` — creates workspace + admin member
-- `create_project(p_workspace_id, p_name, p_color, p_visibility)` — creates a project
-- `get_my_projects(p_workspace_id)` — returns all projects the current user has access to
-- `save_project_data(p_project_id, p_data)` — saves JSON data blob to project
-- `my_project_permission(p_project_id)` — returns current user's permission level
+- `create_workspace_for_user(workspace_name, user_id)`
+- `create_project(p_workspace_id, p_name, p_color, p_visibility)`
+- `get_my_projects(p_workspace_id)`
+- `save_project_data(p_project_id, p_data)`
+- `my_project_permission(p_project_id)`
+- `clean_old_activity_log()` — deletes activity_log entries older than 12 months, called at login
 
 ### Data Storage Pattern
-All application data is stored as a JSON blob in the `data` column (type: text, sometimes returns as string — always parse with JSON.parse). Two types of projects exist:
-- **Brands** (`is_lansering !== true`): contain `productGroups`, `products`, `cats`, logo, color
-- **Lanseringar** (`is_lansering: true`): contain `brandId`, `groupIndex`, `chains`, `customers`, `contactLog`, etc.
+All app data stored as JSON blob in `data` column (type: text — **always parse defensively**):
+```javascript
+if (typeof data === 'string') data = JSON.parse(data);
+```
+- **Brands** (`is_lansering !== true`): productGroups, products, cats, logo, color
+- **Lanseringar** (`is_lansering: true`): brandId, groupIndex, chains, customers, contactLog
+
+## Navigation Structure
+
+Sidebar is grouped into sections:
+
+```
+HEM
+─────────────
+PLANERA
+  → Fönster & Kategorier  (tab: categories)
+  → Tidslinje              (tab: timeline)
+─────────────
+VARUMÄRKEN                 (tab: brands)
+─────────────
+LANSERINGAR
+  → Aktiva                 (tab: lansering)
+  → Arkiv                  (tab: arkiv)
+─────────────
+VERKTYG
+  → Kalkyl                 (tab: kalkyl)
+  → Påminnelser            (tab: paminnelser)
+─────────────
+  Inställningar
+  Aktivitetslogg           (tab: aktivitetslogg)
+```
+
+Removed tabs: `historik` (replaced by arkiv), `agenda` (removed entirely).
+Undo/redo functionality has been removed entirely — do not re-add it.
 
 ## Global State
 
@@ -82,79 +118,41 @@ let currentWorkspaceId = null;
 let currentUserRole = 'owner' | 'member';
 let selectedBrandId = null;
 let selectedLanseringId = null;
-const openGroups = new Set();    // format: "brandId|groupIndex"
+const openGroups = new Set();    // format: "brandId|groupIndex" (pipe, not dash)
 ```
 
 ## Data Flow
 
-1. `loadWindowData()` → fetch JSON files → populate raw data + build ROUNDS constants
-2. `authInit()` → check session → `authOnLogin(user)` → load workspace → `loadBrands()` + `loadLanseringar()`
-3. All reads/writes via Supabase RPC
-4. `renderAll()` reads `state.tab` and calls the appropriate `render*()` function
-5. `saveProject(brandId)` and `saveLansering(lid)` handle persistence
-
-## Navigation Structure
-
-Sidebar is grouped into sections with dividers:
-
-```
-HEM
-  overview       → Hem (startsida med widgets, aktiva lanseringar, akuta fönster)
-
-PLANERA
-  categories     → Fönster & Kategorier
-  timeline       → Tidslinje
-
-VARUMÄRKEN
-  brands         → Varumärken
-
-LANSERINGAR
-  lansering      → Aktiva
-  arkiv          → Arkiv  (tidigare "historik")
-
-VERKTYG
-  kalkyl         → Kalkyl
-  paminnelser    → Påminnelser
-```
-
-`showTab(tab)` manages tab visibility and sets `page-title`. `renderAll()` dispatches to the correct `render*()` function. The `agenda` tab is no longer in the menu (its render function still exists as dead code).
-
-## Retailer Calendar Data
-
-Stored in `data/windows/*.json` and loaded at startup. **All dates roll forward automatically to next year when passed** — do not revert this logic.
-
-- `data/windows/coop.json` → `COOP_FOOD_RAW`, `COOP_HEMMA_RAW` → `buildCoopRounds()` — week-based
-- `data/windows/ica.json` → `ICA_ALL_STEPS` → `buildIcaRounds()` — dates via `icaDate(d, m, y)`
-- `data/windows/dagab.json` → `DAGAB_ALL_STEPS` → `buildDagabRounds()` — dates via `dagabDate(d, m, y)`
-- `CATEGORIES` — maps category names to chains and launch windows (still in `app.js`)
-
-To update retailer schedules, edit the JSON files. Dates use `[day, month(0-indexed), year]` format. Never hard-code years.
+1. `loadWindowData()` — fetches 3 JSON files, builds ROUNDS constants
+2. `authInit()` → session check → `authOnLogin(user)`
+3. `authOnLogin()` → load workspace → `loadBrands()` + `loadLanseringar()` + `loadActivityLog()`
+4. `subscribeActivityLog()` — realtime channel for team activity feed
+5. `renderAll()` reads `state.tab` → calls appropriate `render*()` function
+6. `saveProject(brandId)` and `saveLansering(lid)` handle persistence
 
 ## Key Data Structures
 
-### Brand (project)
+### Brand
 ```javascript
 {
   id, name, color, logo,
-  productGroups: [
-    {
-      name: 'Pizzaslice',
-      articles: [{ id, name, ean }],
-      cats: [{ catName, source }]  // source = 'coop' | 'ica' | 'dagab'
-    }
-  ],
-  products: []  // legacy, largely unused
+  productGroups: [{
+    name: 'Pizzaslice',
+    articles: [{ id, name, ean }],
+    cats: [{ catName, source }]  // source = 'coop' | 'ica' | 'dagab'
+  }],
+  products: []  // legacy, unused
 }
 ```
 
-### Lansering (project with is_lansering: true)
+### Lansering
 ```javascript
 {
   id, name, color,
   brandId, brand, groupIndex, groupName,
-  chains: ['coop', 'ica'],         // auto-derived from productGroup.cats
-  removedChains: [],               // chains manually removed by user
-  freeCustomers: ['Mathem'],       // manually added free-text customers
+  chains: ['coop', 'ica'],
+  removedChains: [],
+  freeCustomers: ['Mathem'],
   activeCustomerTab: 'coop',
   customers: {
     coop: {
@@ -167,35 +165,49 @@ To update retailer schedules, edit the JSON files. Dates use `[day, month(0-inde
 }
 ```
 
+## Retailer Calendar Data
+
+All dates roll forward automatically — never hard-code years.
+
+- `buildCoopRounds()` — dynamic year via `weekYear(w)`
+- `icaDate(d, m, y)` — auto-advances if date has passed
+- `dagabDate(d, m, y)` — auto-advances if date has passed
+- `isoWeekToDate(w)` — returns Friday 23:59 of that week
+- `weekYear(w)` — returns current year if week hasn't passed, else next year
+
 ## UI Conventions
 
-- Dark theme; CSS variables define colors at top of `styles.css`
+- Dark theme; CSS variables in `styles.css`
 - Chain colors: Coop `#4ade80`, ICA `#f87171`, Dagab `#fb923c`
 - Notifications: `addNotif(message, type)` — types: `'success'`, `'error'`, `'info'`
-- Activity log: `addActivity(emoji, text)`
-- Always use `getOrInitGroups(brand)` to access productGroups — handles JSON string parsing
+- Activity log: `addActivity(emoji, text)` — saves to Supabase, shown in Aktivitetslogg tab
+- Always use `getOrInitGroups(brand)` to access productGroups
 
-## Important Quirks
+## Completed Work
 
-- `data` column from Supabase sometimes returns as a JSON string — always parse defensively:
-  ```javascript
-  if (typeof data === 'string') data = JSON.parse(data);
-  ```
-- `weekYear(w)` is dynamic — if week has passed this year, returns next year
-- `isoWeekToDate(w)` returns Friday 23:59 of that week
-- `getOrInitGroups(brand)` handles both string and array formats for productGroups
-- `openGroups` Set uses `"brandId|groupIndex"` format (pipe separator, not dash, because UUIDs contain dashes)
+- ✅ Split index.html → index.html + styles.css + app.js
+- ✅ Retailer data extracted to data/windows/*.json
+- ✅ CLAUDE.md created and maintained
+- ✅ Navigation restructured into grouped sections
+- ✅ Historik replaced by Arkiv, Agenda removed
+- ✅ Chain toggle buttons removed from sidebar
+- ✅ Hero/countdown only shown on HEM
+- ✅ Activity log with Supabase persistence, realtime, 12-month retention
+- ✅ Undo/redo removed
 
 ## Planned Work (Priority Order)
 
-1. UX improvements — onboarding, empty states, navigation clarity
-2. Frontend redesign — consistent typography, spacing, component library
-3. Landing page for non-logged-in visitors (pricing, features, CTA)
-4. Legal — Terms of Service, Privacy Policy (GDPR), cookie banner
-5. Payment integration — Stripe, workspace model (2 000 kr + 500 kr/user)
+### UX
+1. Tomma tillstånd + onboarding — guide new users step by step
+2. Dashboard actionable — urgent actions, active lanseringar, upcoming windows
+3. Arkiv — archive customers per lansering, auto-move to arkiv when all archived
+4. Förenkla varumärkes/lanseringsflödet
+5. Mobiloptimering
 
-## Completed Refactoring
+### Design
+6. Visuell upplyftning — typography, spacing, component consistency
 
-- Split `index.html` into `index.html` + `styles.css` + `app.js`
-- Moved retailer calendar data to `data/windows/*.json`, loaded dynamically
-- Navigation rebuilt with grouped sidebar sections (HEM / PLANERA / VARUMÄRKEN / LANSERINGAR / VERKTYG)
+### Product
+7. Landningssida — for non-logged-in visitors (pricing, features, CTA)
+8. Juridik — Terms of Service, Privacy Policy (GDPR), cookie banner
+9. Betalning — Stripe integration, workspace model (2 000 kr + 500 kr/user)
