@@ -3194,21 +3194,21 @@ document.addEventListener('click', (e) => {
 // ── 7. AKTIVITETSLOGG ──
 let activityLog = [];
 
-function addActivity(icon, text) {
-  activityLog.unshift({ icon, text, time: new Date(), user_email: currentUser?.email });
+function addActivity(emoji, text) {
+  activityLog.unshift({ icon: emoji, text, time: new Date(), user_email: currentUser?.email });
   if (activityLog.length > 100) activityLog.pop();
   if (currentWorkspaceId && currentUser) {
     const row = {
       workspace_id: String(currentWorkspaceId),
       user_id: String(currentUser.id),
       user_email: currentUser.email,
-      emoji: icon,
+      emoji,
       action: text
     };
     console.log('addActivity INSERT body:', row);
     supabaseClient.from('activity_log').insert(row).then(({ error }) => {
       if (error) console.error('addActivity INSERT failed:', error.message, row);
-      else console.log('addActivity INSERT ok:', icon, text);
+      else console.log('addActivity INSERT ok:', emoji, text);
     });
   } else {
     console.warn('addActivity skipped — missing workspace_id or user:', { currentWorkspaceId, userId: currentUser?.id });
