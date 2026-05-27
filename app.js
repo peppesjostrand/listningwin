@@ -1098,38 +1098,6 @@ document.getElementById('week-badge').textContent = `${TODAY.toLocaleDateString(
   if (el) el.src = LOGOS[k];
 });
 
-// ═══════════════════════════════════════════════
-// UNDO HISTORY — up to 5 states
-// ═══════════════════════════════════════════════
-const UNDO_MAX = 5;
-let undoStack = []; // [{snapshot: JSON string, label: string}]
-
-function pushUndo(label) {
-  undoStack.push({ snapshot: JSON.stringify(brands), label });
-  if (undoStack.length > UNDO_MAX) undoStack.shift();
-  renderUndoBar();
-}
-
-function undoAction() {
-  if (!undoStack.length) return;
-  const { snapshot } = undoStack.pop();
-  brands = JSON.parse(snapshot);
-  saveBrands();
-  renderBrands();
-  renderOverview();
-  renderUndoBar();
-}
-
-function renderUndoBar() {
-  const btn = document.getElementById('undo-btn');
-  const label = document.getElementById('undo-label');
-  if (!btn) return;
-  btn.disabled = undoStack.length === 0;
-  // Label
-  label.textContent = undoStack.length
-    ? 'Senaste: ' + undoStack[undoStack.length - 1].label
-    : '';
-}
 
 
 // ═══════════════════════════════════════════════

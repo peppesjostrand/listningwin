@@ -172,7 +172,6 @@ To update retailer schedules, edit the JSON files. Dates use `[day, month(0-inde
 - Dark theme; CSS variables define colors at top of `styles.css`
 - Chain colors: Coop `#4ade80`, ICA `#f87171`, Dagab `#fb923c`
 - Notifications: `addNotif(message, type)` — types: `'success'`, `'error'`, `'info'`
-- Undo/redo: `pushUndo(snapshot)`, `undoAction()`
 - Activity log: `addActivity(emoji, text)`
 - Always use `getOrInitGroups(brand)` to access productGroups — handles JSON string parsing
 

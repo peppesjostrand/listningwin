@@ -818,26 +818,6 @@
   .logo-preview-wrap .remove-logo:hover { color: #f87171; }
   .bov-brand-logo { max-height: 24px; max-width: 80px; object-fit: contain; }
 
-  /* ── UNDO ── */
-  .undo-bar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 0 20px; height: 36px;
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    font-size: 11px; color: var(--muted);
-  }
-  .undo-btn {
-    display: flex; align-items: center; gap: 5px;
-    background: var(--surface2); border: 1px solid var(--border2);
-    color: #ffffff; padding: 4px 10px; border-radius: 5px;
-    cursor: pointer; font-family: var(--font); font-size: 11px;
-    transition: all 0.12s;
-  }
-  .undo-btn:hover:not(:disabled) { color: var(--text); border-color: #a78bfa; }
-  .undo-btn:disabled { opacity: 0.3; cursor: default; }
-  .undo-steps { display: flex; gap: 4px; }
-  .undo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); transition: background 0.15s; }
-  .undo-dot.used { background: #a78bfa; }
-  .undo-label { color: var(--muted); font-size: 10px; flex: 1; text-align: right; font-style: italic; }
   /* ── BRANDS ── */
   .brands-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
   @media (max-width: 900px) { .brands-layout { grid-template-columns: 1fr; } }
