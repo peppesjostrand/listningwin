@@ -1305,6 +1305,7 @@ async function authLogin() {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) return authShowError('auth-login-error', 'Fel email eller lösenord.');
   await authOnLogin(data.user);
+  addActivity('🔑', `Inloggad som ${data.user.email}`);
 }
 
 async function authRegister() {
@@ -1429,7 +1430,6 @@ async function authOnLogin(user) {
   setTimeout(() => {
     checkAndGenerateNotifs();
     startOnboarding();
-    addActivity('🔑', `Inloggad som ${currentUser?.email || 'användare'}`);
   }, 1200);
 }
 
@@ -3204,7 +3204,12 @@ function addActivity(icon, text) {
       user_email: currentUser.email,
       icon,
       action: text
-    }).then(() => {});
+    }).then(({ error }) => {
+      if (error) console.error('addActivity INSERT failed:', error.message, { workspace_id: currentWorkspaceId, user_id: currentUser?.id });
+      else console.log('addActivity INSERT ok:', icon, text);
+    });
+  } else {
+    console.warn('addActivity skipped — missing workspace_id or user:', { currentWorkspaceId, userId: currentUser?.id });
   }
 }
 
