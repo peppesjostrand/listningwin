@@ -15,11 +15,23 @@ The product is built and maintained by Peter Sjöstrand at Foodster AB (makers o
 - **Core value proposition**: The ECR revision window concept — knowing exactly when to act to get a product listed at each chain
 - **Language**: All UI text is Swedish. Code comments are English.
 
-## Critical Architecture Note
+## Working Instructions
 
-The entire application is a **single monolithic `index.html`** (~640 KB) with all JavaScript and CSS inlined. There is no build system, no `package.json`, no source directory — only the final artifact. All changes must be made directly in `index.html`.
+- **Always commit and push to GitHub automatically** when a task is complete — do not wait for Peter to ask
+- Use clear Swedish-friendly commit messages describing what changed
+- Verify that the site still works after each significant change
 
-A future goal is to split this into separate files (HTML, CSS, JS modules, data files) — but this has not been done yet.
+## Architecture Note
+
+The application is split into separate files:
+- `index.html` — HTML skeleton (~371 lines)
+- `styles.css` — all CSS (~1 239 lines)
+- `app.js` — all JavaScript (~4 503 lines)
+- `data/windows/coop.json` — COOP_FOOD_RAW + COOP_HEMMA_RAW (Coop Food & Hemma round data)
+- `data/windows/ica.json` — ICA_ALL_STEPS, launchWeeks, stepLabels
+- `data/windows/dagab.json` — DAGAB_ALL_STEPS, raw entries, stepLabels
+
+Retailer calendar data is loaded dynamically via `loadWindowData()` at startup (fetch + Promise.all). Dates are stored as `[d, m, y]` tuples in JSON and reconstructed via `icaDate()`/`dagabDate()` which apply roll-forward logic. `CATEGORIES` remains in `app.js`.
 
 ## Development
 
@@ -75,27 +87,48 @@ const openGroups = new Set();    // format: "brandId|groupIndex"
 
 ## Data Flow
 
-1. `authInit()` → check session → `authOnLogin(user)` → load workspace → `loadBrands()` + `loadLanseringar()`
-2. All reads/writes via Supabase RPC
-3. `renderAll()` reads `state.tab` and calls the appropriate `render*()` function
-4. `saveProject(brandId)` and `saveLansering(lid)` handle persistence
+1. `loadWindowData()` → fetch JSON files → populate raw data + build ROUNDS constants
+2. `authInit()` → check session → `authOnLogin(user)` → load workspace → `loadBrands()` + `loadLanseringar()`
+3. All reads/writes via Supabase RPC
+4. `renderAll()` reads `state.tab` and calls the appropriate `render*()` function
+5. `saveProject(brandId)` and `saveLansering(lid)` handle persistence
 
-## Navigation Tabs
+## Navigation Structure
+
+Sidebar is grouped into sections with dividers:
 
 ```
-overview | categories | timeline | brands | lansering | historik | kalkyl | paminnelser | agenda
+HEM
+  overview       → Hem (startsida med widgets, aktiva lanseringar, akuta fönster)
+
+PLANERA
+  categories     → Fönster & Kategorier
+  timeline       → Tidslinje
+
+VARUMÄRKEN
+  brands         → Varumärken
+
+LANSERINGAR
+  lansering      → Aktiva
+  arkiv          → Arkiv  (tidigare "historik")
+
+VERKTYG
+  kalkyl         → Kalkyl
+  paminnelser    → Påminnelser
 ```
+
+`showTab(tab)` manages tab visibility and sets `page-title`. `renderAll()` dispatches to the correct `render*()` function. The `agenda` tab is no longer in the menu (its render function still exists as dead code).
 
 ## Retailer Calendar Data
 
-Hard-coded near the top of index.html. **All dates now roll forward automatically to next year when passed** — do not revert this logic.
+Stored in `data/windows/*.json` and loaded at startup. **All dates roll forward automatically to next year when passed** — do not revert this logic.
 
-- `COOP_FOOD_RAW`, `COOP_HEMMA_RAW` → `buildCoopRounds()` — week-based, dynamic year assignment
-- `ICA_ALL_STEPS` → `buildIcaRounds()` — explicit dates via `icaDate(d, m, y)` which auto-advances
-- `DAGAB_ALL_STEPS` → `buildDagabRounds()` — explicit dates via `dagabDate(d, m, y)` which auto-advances
-- `CATEGORIES` — maps category names to chains and launch windows
+- `data/windows/coop.json` → `COOP_FOOD_RAW`, `COOP_HEMMA_RAW` → `buildCoopRounds()` — week-based
+- `data/windows/ica.json` → `ICA_ALL_STEPS` → `buildIcaRounds()` — dates via `icaDate(d, m, y)`
+- `data/windows/dagab.json` → `DAGAB_ALL_STEPS` → `buildDagabRounds()` — dates via `dagabDate(d, m, y)`
+- `CATEGORIES` — maps category names to chains and launch windows (still in `app.js`)
 
-To update retailer schedules, edit the raw data arrays. Never hard-code years.
+To update retailer schedules, edit the JSON files. Dates use `[day, month(0-indexed), year]` format. Never hard-code years.
 
 ## Key Data Structures
 
@@ -136,7 +169,7 @@ To update retailer schedules, edit the raw data arrays. Never hard-code years.
 
 ## UI Conventions
 
-- Dark theme; CSS variables define colors at top of `<style>`
+- Dark theme; CSS variables define colors at top of `styles.css`
 - Chain colors: Coop `#4ade80`, ICA `#f87171`, Dagab `#fb923c`
 - Notifications: `addNotif(message, type)` — types: `'success'`, `'error'`, `'info'`
 - Undo/redo: `pushUndo(snapshot)`, `undoAction()`
@@ -156,9 +189,14 @@ To update retailer schedules, edit the raw data arrays. Never hard-code years.
 
 ## Planned Work (Priority Order)
 
-1. Split index.html into separate files (HTML / CSS / JS modules / data JSON)
-2. UX improvements — onboarding, empty states, navigation clarity
-3. Frontend redesign — consistent typography, spacing, component library
-4. Landing page for non-logged-in visitors (pricing, features, CTA)
-5. Legal — Terms of Service, Privacy Policy (GDPR), cookie banner
-6. Payment integration — Stripe, workspace model (2 000 kr + 500 kr/user)
+1. UX improvements — onboarding, empty states, navigation clarity
+2. Frontend redesign — consistent typography, spacing, component library
+3. Landing page for non-logged-in visitors (pricing, features, CTA)
+4. Legal — Terms of Service, Privacy Policy (GDPR), cookie banner
+5. Payment integration — Stripe, workspace model (2 000 kr + 500 kr/user)
+
+## Completed Refactoring
+
+- Split `index.html` into `index.html` + `styles.css` + `app.js`
+- Moved retailer calendar data to `data/windows/*.json`, loaded dynamically
+- Navigation rebuilt with grouped sidebar sections (HEM / PLANERA / VARUMÄRKEN / LANSERINGAR / VERKTYG)
