@@ -735,17 +735,6 @@ function renderOverview() {
 
   document.getElementById('overview-content').innerHTML = html;
 
-  // Aktivitetslogg widget (om det finns logg)
-  if (activityLog.length > 0) {
-    const logDiv = document.createElement('div');
-    logDiv.style.cssText = 'padding:0 20px 20px';
-    logDiv.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:16px">
-      <div style="font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Senaste aktivitet</div>
-      <div id="activity-log-widget"></div>
-    </div>`;
-    document.getElementById('overview-content').appendChild(logDiv);
-    renderActivityLog('activity-log-widget');
-  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1016,12 +1005,13 @@ function togglePast() {
 
 function showTab(tab) {
   state.tab = tab;
-  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser'].forEach(t => {
+  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser','aktivitetslogg'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
-    document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+    const navEl = document.getElementById(`nav-${t}`);
+    if (navEl) navEl.classList.toggle('active', t === tab);
   });
-  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser' };
-  document.getElementById('page-title').textContent = titles[tab];
+  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', aktivitetslogg: 'Aktivitetslogg' };
+  document.getElementById('page-title').textContent = titles[tab] || tab;
   closeMobileMenu();
   renderAll();
 }
@@ -1038,6 +1028,7 @@ function renderAll() {
   if (state.tab === 'arkiv') renderArkiv();
   if (state.tab === 'kalkyl') renderKalkyl();
   if (state.tab === 'paminnelser') renderPaminnelser();
+  if (state.tab === 'aktivitetslogg') renderAktivitetslogg();
 }
 
 // ═══════════════════════════════════════════════
@@ -1430,6 +1421,8 @@ async function authOnLogin(user) {
   loadLanseringar();
   loadWindowNotes();
   loadAgenda();
+  loadActivityLog();
+  subscribeActivityLog();
   // Slight delay to allow data to load before checking
   setTimeout(() => {
     checkAndGenerateNotifs();
@@ -3181,24 +3174,90 @@ document.addEventListener('click', (e) => {
 let activityLog = [];
 
 function addActivity(icon, text) {
-  activityLog.unshift({ icon, text, time: new Date() });
+  activityLog.unshift({ icon, text, time: new Date(), user_email: currentUser?.email });
   if (activityLog.length > 100) activityLog.pop();
+  if (currentWorkspaceId && currentUser) {
+    supabaseClient.from('activity_log').insert({
+      workspace_id: currentWorkspaceId,
+      user_id: currentUser.id,
+      user_email: currentUser.email,
+      icon,
+      action: text
+    }).then(() => {});
+  }
 }
 
-function renderActivityLog(containerId) {
-  const el = document.getElementById(containerId);
+async function loadActivityLog() {
+  if (!currentWorkspaceId) return;
+  const { data } = await supabaseClient
+    .from('activity_log')
+    .select('icon, action, user_email, created_at')
+    .eq('workspace_id', currentWorkspaceId)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (data) {
+    activityLog = data.map(r => ({
+      icon: r.icon || '•',
+      text: r.action,
+      time: new Date(r.created_at),
+      user_email: r.user_email
+    }));
+  }
+}
+
+function subscribeActivityLog() {
+  if (!currentWorkspaceId) return;
+  supabaseClient
+    .channel('activity_log_realtime')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'activity_log',
+      filter: `workspace_id=eq.${currentWorkspaceId}`
+    }, payload => {
+      const r = payload.new;
+      // Avoid duplicate if this client just inserted it
+      if (!activityLog.some(a => a.time.toISOString() === r.created_at && a.text === r.action)) {
+        activityLog.unshift({ icon: r.icon || '•', text: r.action, time: new Date(r.created_at), user_email: r.user_email });
+        if (activityLog.length > 100) activityLog.pop();
+      }
+      if (state.tab === 'aktivitetslogg') renderAktivitetslogg();
+    })
+    .subscribe();
+}
+
+function formatActivityTime(date) {
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'Just nu';
+  if (minutes < 60) return `${minutes} min sedan`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h sedan`;
+  return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }) + ' ' +
+    date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderAktivitetslogg() {
+  const el = document.getElementById('aktivitetslogg-content');
   if (!el) return;
   if (activityLog.length === 0) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Ingen aktivitet ännu</div>';
+    el.innerHTML = '<div style="padding:60px 20px;color:var(--muted);font-size:13px;text-align:center;">Ingen aktivitet ännu</div>';
     return;
   }
-  el.innerHTML = `<div class="activity-feed">
-    ${activityLog.slice(0,20).map(a => `
-      <div class="activity-item">
-        <div class="activity-icon">${a.icon}</div>
-        <div class="activity-body">${a.text}</div>
-        <div class="activity-time">${a.time.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
-      </div>`).join('')}
+  el.innerHTML = `<div style="padding:20px;max-width:680px;">
+    <div style="font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:0.45;margin-bottom:16px;">Aktivitetslogg</div>
+    <div class="activity-feed">
+      ${activityLog.map(a => `
+        <div class="activity-item">
+          <div class="activity-icon">${a.icon || '•'}</div>
+          <div class="activity-body">
+            <div>${a.text}</div>
+            ${a.user_email ? `<div style="font-size:11px;opacity:0.4;margin-top:2px;">${a.user_email}</div>` : ''}
+          </div>
+          <div class="activity-time">${formatActivityTime(a.time)}</div>
+        </div>`).join('')}
+    </div>
   </div>`;
 }
 
