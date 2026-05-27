@@ -1027,7 +1027,8 @@ function showTab(tab) {
 }
 
 function renderAll() {
-  renderHero();
+  if (state.tab === 'overview') renderHero();
+  else document.getElementById('hero-area').innerHTML = '';
   renderDashWidgets();
   if (state.tab === 'overview') renderOverview();
   if (state.tab === 'categories') renderCategories();
