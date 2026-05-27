@@ -3223,6 +3223,7 @@ async function loadActivityLog() {
       time: new Date(r.created_at),
       user_email: r.user_email
     }));
+    if (state.tab === 'aktivitetslogg') renderAktivitetslogg();
   }
 }
 
