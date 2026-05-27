@@ -1085,6 +1085,7 @@ function removeCompanyLogo(e) {
       .update({ logo: null })
       .eq('id', currentWorkspaceId);
   }
+  addActivity('🖼️', 'Företagslogga borttagen');
 }
 // Load saved company logo on startup
 // Company logo loaded per workspace in authOnLogin
@@ -1677,6 +1678,7 @@ function addTask(lid) {
   if (!l.tasks) l.tasks = [];
   l.tasks.push({ name: '', deadline: '', status: 'Ej påbörjad', owner: '' });
   saveLansering(lid);
+  addActivity('📌', `Uppgift tillagd i "${l.name}"`);
   renderLansering();
 }
 
@@ -1685,14 +1687,19 @@ function updateTask(lid, idx, field, val) {
   if (!l || !l.tasks || !l.tasks[idx]) return;
   l.tasks[idx][field] = val;
   saveLansering(lid);
-  if (field === 'status') renderLansering();
+  if (field === 'status') {
+    addActivity('🔄', `Uppgift "${l.tasks[idx].name || 'Namnlös'}" → ${val} — ${l.name}`);
+    renderLansering();
+  }
 }
 
 function deleteTask(lid, idx) {
   const l = getLansering(lid);
   if (!l || !l.tasks) return;
+  const taskName = l.tasks[idx]?.name || 'Namnlös';
   l.tasks.splice(idx, 1);
   saveLansering(lid);
+  addActivity('🗑️', `Uppgift "${taskName}" borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -1718,6 +1725,7 @@ function deleteContactEntry(lid, idx) {
   if (!l || !l.contactLog) return;
   l.contactLog.splice(idx, 1);
   saveLansering(lid);
+  addActivity('🗑️', `Kontaktloggpost borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -1846,11 +1854,14 @@ async function saveLanseringModal() {
 
 async function deleteLansering(lid) {
   if (!confirm('Ta bort denna lansering?')) return;
+  const l = getLansering(lid);
+  const name = l?.name || 'Okänd lansering';
   try {
     await supabaseClient.from('projects').delete().eq('id', lid);
   } catch(e) {}
   lanseringar = lanseringar.filter(x => x.id !== lid);
   if (selectedLanseringId === lid) selectedLanseringId = null;
+  addActivity('🗑️', `Lansering "${name}" borttagen`);
   renderLansering();
 }
 
@@ -1944,6 +1955,7 @@ async function addProductGroup(brandId) {
   getOrInitGroups(brand).push({ name, articles: [] });
   await saveProject(brandId);
   input.value = '';
+  addActivity('📦', `Produktgrupp "${name}" skapad i "${brand.name}"`);
   renderBrands();
 }
 
@@ -1951,8 +1963,10 @@ function deleteGroup(brandId, gi) {
   const brand = brands.find(b => b.id === brandId);
   if (!brand) return;
   const groups = getOrInitGroups(brand);
+  const groupName = groups[gi]?.name || 'Okänd grupp';
   groups.splice(gi, 1);
   saveProject(brandId);
+  addActivity('🗑️', `Produktgrupp "${groupName}" borttagen från "${brand.name}"`);
   renderBrands();
   restoreOpenGroups(brandId);
 }
@@ -1972,6 +1986,7 @@ async function addArticle(brandId, gi) {
   console.log('addArticle: saved OK');
   document.getElementById(`art-name-${brandId}-${gi}`).value = '';
   document.getElementById(`art-ean-${brandId}-${gi}`).value = '';
+  addActivity('➕', `Artikel "${name}" tillagd i "${groups[gi].name}" (${brand.name})`);
   renderBrands();
   restoreOpenGroups(brandId);
 }
@@ -1980,8 +1995,11 @@ function deleteArticle(brandId, gi, ai) {
   const brand = brands.find(b => b.id === brandId);
   if (!brand) return;
   const groups = getOrInitGroups(brand);
+  const articleName = groups[gi]?.articles?.[ai]?.name || 'Okänd artikel';
+  const groupName = groups[gi]?.name || 'Okänd grupp';
   groups[gi].articles.splice(ai, 1);
   saveProject(brandId);
+  addActivity('🗑️', `Artikel "${articleName}" borttagen från "${groupName}" (${brand.name})`);
   renderBrands();
   restoreOpenGroups(brandId);
 }
@@ -3074,8 +3092,10 @@ function addAgendaItem() {
 }
 
 function deleteAgendaItem(id) {
+  const item = agendaItems.find(i => i.id === id);
   agendaItems = agendaItems.filter(i => i.id !== id);
   saveAgenda();
+  addActivity('🗑️', `Agendahändelse "${item?.title || 'Okänd'}" borttagen`);
   renderAgenda();
 }
 
@@ -3306,6 +3326,7 @@ function deleteComment(lid, idx) {
   if (!l?.comments) return;
   l.comments.splice(idx, 1);
   saveLansering(lid);
+  addActivity('🗑️', `Kommentar borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -3631,6 +3652,7 @@ function addFreeCustomer(lid) {
   if (!l.freeCustomers) l.freeCustomers = [];
   if (!l.freeCustomers.includes(name)) l.freeCustomers.push(name);
   saveLansering(lid);
+  addActivity('👤', `Kund "${name}" tillagd i "${l.name}"`);
   renderLansering();
 }
 
@@ -3642,6 +3664,7 @@ function removeFreeCustomer(lid, name) {
     l.activeCustomerTab = (l.chains || [])[0] || null;
   }
   saveLansering(lid);
+  addActivity('🗑️', `Kund "${name}" borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -3814,6 +3837,7 @@ function addCustomerTask(lid, custKey) {
   if (!l.customers[custKey]) l.customers[custKey] = { checklist: {}, tasks: [] };
   l.customers[custKey].tasks.push({ name: '', deadline: '', status: 'Ej påbörjad', owner: '' });
   saveLansering(lid);
+  addActivity('📌', `Uppgift tillagd för ${custKey} i "${l.name}"`);
   renderLansering();
 }
 
@@ -3823,13 +3847,18 @@ function updateCustomerTask(lid, custKey, idx, field, value) {
   if (!task) return;
   task[field] = value;
   saveLansering(lid);
+  if (field === 'status') {
+    addActivity('🔄', `Uppgift "${task.name || 'Namnlös'}" → ${value} (${custKey}, ${l.name})`);
+  }
 }
 
 function deleteCustomerTask(lid, custKey, idx) {
   const l = getLansering(lid);
   if (!l?.customers?.[custKey]?.tasks) return;
+  const taskName = l.customers[custKey].tasks[idx]?.name || 'Namnlös';
   l.customers[custKey].tasks.splice(idx, 1);
   saveLansering(lid);
+  addActivity('🗑️', `Uppgift "${taskName}" borttagen (${custKey}, ${l.name})`);
   renderLansering();
 }
 
@@ -3971,6 +4000,7 @@ async function sendInvitation() {
       fb.style.color = '#4ade80';
       fb.textContent = 'Inbjudan skickad till ' + email + '!';
       document.getElementById('invite-email').value = '';
+      addActivity('✉️', `Inbjudan skickad till ${email}`);
     } else {
       throw new Error(result.message || 'Okänt fel');
     }
@@ -3986,6 +4016,7 @@ function toggleCoopHemmaSettings() {
   state.active.coopHemma = !state.active.coopHemma;
   const el = document.getElementById('settings-hemma-toggle');
   if (el) el.classList.toggle('on', state.active.coopHemma);
+  addActivity('⚙️', `Coop Hemma-fönster ${state.active.coopHemma ? 'aktiverat' : 'inaktiverat'}`);
   renderAll();
 }
 
@@ -4049,13 +4080,6 @@ async function saveNewPassword() {
     }, 1500);
   }
 }
-function toggleCoopHemmaSettings() {
-  state.active.coopHemma = !state.active.coopHemma;
-  const el = document.getElementById('settings-hemma-toggle');
-  if (el) el.classList.toggle('on', state.active.coopHemma);
-  renderAll();
-}
-
 function toggleMobileMenu() {
   const sidebar = document.getElementById('app-sidebar');
   const overlay = document.getElementById('mobile-overlay');
@@ -4151,13 +4175,15 @@ function closeShareModal() {
 async function setProjectVisibility(brandId, visibility) {
   const ok = await updateProjectVisibility(brandId, visibility);
   if (ok) {
+    const brand = brands.find(b => b.id === brandId);
+    const visLabels = { private: 'Privat', shared: 'Delade kollegor', workspace: 'Hela workspace' };
+    addActivity('🔒', `Synlighet för "${brand?.name || 'projekt'}" ändrad till ${visLabels[visibility] || visibility}`);
     renderBrands();
-    openShareModal(brandId); // uppdatera modal
+    openShareModal(brandId);
   }
 }
 
 async function updateSharePermission(brandId, userId, permission) {
-  // Uppdatera cache och rendera om direkt — ingen delay
   if (!permission) {
     delete cachedMemberMap[userId];
   } else {
@@ -4165,14 +4191,18 @@ async function updateSharePermission(brandId, userId, permission) {
   }
   renderShareMembersList(brandId);
 
-  // Spara till Supabase i bakgrunden
+  const brand = brands.find(b => b.id === brandId);
+  const member = workspaceMembers.find(m => m.user_id === userId);
   if (!permission) {
+    addActivity('🔓', `Åtkomst till "${brand?.name || 'projekt'}" borttagen för ${member?.email || userId}`);
     supabaseClient.from('project_members')
       .delete()
       .eq('project_id', brandId)
       .eq('user_id', userId)
       .neq('permission', 'owner');
   } else {
+    const permLabels = { viewer: 'kan se', editor: 'kan redigera' };
+    addActivity('🤝', `${member?.email || userId} fick behörighet "${permLabels[permission] || permission}" på "${brand?.name || 'projekt'}"`);
     supabaseClient.rpc('share_project', {
       p_project_id: brandId,
       p_user_id: userId,
@@ -4431,21 +4461,20 @@ async function saveBrand() {
   const color = selectedSwatch ? selectedSwatch.dataset.color : BRAND_COLORS[0];
 
   if (editingBrandId) {
-    // Uppdatera namn/färg/logo lokalt + spara
     const b = brands.find(b => b.id === editingBrandId);
     if (b) {
       b.name = name; b.color = color; b.logo = pendingLogoDataUrl || null;
-      // Uppdatera name+color i Supabase direkt
       await supabaseClient.from('projects')
         .update({ name, color })
         .eq('id', editingBrandId);
+      addActivity('✏️', `Varumärke "${name}" uppdaterat`);
     }
   } else {
-    // Skapa nytt projekt via Supabase
     const newBrand = await createProject(name, color);
     if (!newBrand) { alert('Kunde inte skapa projekt'); return; }
     newBrand.logo = pendingLogoDataUrl || null;
     selectedBrandId = newBrand.id;
+    addActivity('🆕', `Varumärke "${name}" skapat`);
   }
   closeBrandModal();
   renderBrands();
@@ -4453,10 +4482,12 @@ async function saveBrand() {
 
 async function deleteBrand(id) {
   if (!confirm('Ta bort detta projekt? Det kan inte ångras.')) return;
+  const brandName = brands.find(b => b.id === id)?.name || 'Okänt varumärke';
   const { error } = await supabaseClient.from('projects').delete().eq('id', id);
   if (error) { alert('Kunde inte ta bort: ' + error.message); return; }
   brands = brands.filter(b => b.id !== id);
   if (selectedBrandId === id) selectedBrandId = brands[0]?.id || null;
+  addActivity('🗑️', `Varumärke "${brandName}" borttaget`);
   renderBrands();
   if (state.tab === 'overview') renderOverview();
 }
@@ -4537,17 +4568,20 @@ function saveCatModal() {
   if (!catModalTarget) return;
   const brand = brands.find(b => b.id === catModalTarget.brandId);
   if (catModalTarget.groupIndex !== undefined) {
-    // Ny struktur — spara på produktgrupp
     const group = brand?.productGroups?.[catModalTarget.groupIndex];
     if (group) {
       group.cats = [...catModalSelected];
       saveProject(catModalTarget.brandId);
+      addActivity('🏷️', `Kategorier uppdaterade på "${group.name}" (${brand?.name || ''}): ${catModalSelected.map(c=>c.catName).join(', ') || 'inga'}`);
       restoreOpenGroups(catModalTarget.brandId);
     }
   } else {
-    // Legacy — spara på produkt
     const product = brand?.products.find(p => p.id === catModalTarget.productId);
-    if (product) { product.cats = [...catModalSelected]; saveProject(catModalTarget.brandId); }
+    if (product) {
+      product.cats = [...catModalSelected];
+      saveProject(catModalTarget.brandId);
+      addActivity('🏷️', `Kategorier uppdaterade på "${product.name}" (${brand?.name || ''})`);
+    }
   }
   closeCatModal();
   renderBrands();
