@@ -1812,10 +1812,10 @@ const CATEGORIES = [
 // ═══════════════════════════════════════════════
 function buildCoopRounds(rawArr, subname) {
   return rawArr.map(r => {
-    // All launches are 2026. Steps count backwards from launch.
-    // If a step week number is > launch week, it wraps around from previous year (2025).
-    // If step week < launch week, same year as launch (2026).
-    const launchYear = 2026;
+    // Dynamically assign year — if the launch week has passed this year, use next year
+    const thisYear = TODAY.getFullYear();
+    const thisWeek = isoWeek(TODAY);
+    const launchYear = r.launch >= thisWeek ? thisYear : thisYear + 1;
     const launchD = weekDate(r.launch, launchYear, 1);
 
     function stepDate(w, isFri=true) {
@@ -1837,7 +1837,14 @@ function buildCoopRounds(rawArr, subname) {
 }
 
 // ICA all steps — explicit Date objects, all launches 2026
-function icaDate(d, m, y) { return new Date(Date.UTC(y, m, d)); }
+function icaDate(d, m, y) {
+  const base = new Date(Date.UTC(y, m, d));
+  // Om datumet redan passerat, flytta fram ett år
+  if (base < TODAY) {
+    base.setUTCFullYear(base.getUTCFullYear() + 1);
+  }
+  return base;
+}
 const ICA_ALL_STEPS = {
    4: { dates: [icaDate(26,8,2025),icaDate(17,9,2025),icaDate(14,10,2025),icaDate(21,10,2025),icaDate(28,10,2025),icaDate(5,11,2025),icaDate(19,11,2025),icaDate(12,0,2026)] },
    7: { dates: [icaDate(17,9,2025),icaDate(7,10,2025),icaDate(5,11,2025),icaDate(12,11,2025),icaDate(19,11,2025),icaDate(9,0,2026),icaDate(23,0,2026),icaDate(2,1,2026)] },
@@ -1884,7 +1891,13 @@ function buildIcaRounds() {
 
 // Full Dagab step dates from PDF — explicit dates per step
 // Format: [day, month(0-indexed), year]
-function dagabDate(d, m, y) { return new Date(Date.UTC(y, m, d)); }
+function dagabDate(d, m, y) {
+  const base = new Date(Date.UTC(y, m, d));
+  if (base < TODAY) {
+    base.setUTCFullYear(base.getUTCFullYear() + 1);
+  }
+  return base;
+}
 const DAGAB_ALL_STEPS = {
    4: { dates: [
      dagabDate(26,8,2025),  // s1 avisering
