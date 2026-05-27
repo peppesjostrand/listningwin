@@ -1,0 +1,29 @@
+{
+  "coopFood": [
+    {"id":"CF1","launch":4,"av":39,"ks":48,"sort":50},
+    {"id":"CF2","launch":7,"av":42,"ks":51,"sort":2},
+    {"id":"CF3","launch":11,"av":46,"ks":5,"sort":6},
+    {"id":"CF4","launch":16,"av":51,"ks":10,"sort":12},
+    {"id":"CF5","launch":19,"av":3,"ks":12,"sort":15},
+    {"id":"CF6","launch":34,"av":14,"ks":24,"sort":26},
+    {"id":"CF7","launch":37,"av":18,"ks":31,"sort":32},
+    {"id":"CF8","launch":40,"av":21,"ks":34,"sort":35},
+    {"id":"CF9","launch":42,"av":23,"ks":36,"sort":37},
+    {"id":"CF10","launch":46,"av":23,"ks":36,"sort":37}
+  ],
+  "coopHemma": [
+    {"id":"CH1","launch":1,"av":36,"ks":46,"sort":48},
+    {"id":"CH2","launch":5,"av":38,"ks":49,"sort":51},
+    {"id":"CH3","launch":9,"av":44,"ks":2,"sort":4},
+    {"id":"CH4","launch":12,"av":46,"ks":5,"sort":7},
+    {"id":"CH5","launch":18,"av":1,"ks":11,"sort":13},
+    {"id":"CH6","launch":22,"av":5,"ks":15,"sort":17},
+    {"id":"CH7","launch":27,"av":10,"ks":17,"sort":19},
+    {"id":"CH8","launch":32,"av":13,"ks":23,"sort":25},
+    {"id":"CH9","launch":34,"av":15,"ks":24,"sort":27},
+    {"id":"CH10","launch":35,"av":16,"ks":26,"sort":28},
+    {"id":"CH11","launch":38,"av":19,"ks":29,"sort":33},
+    {"id":"CH12","launch":41,"av":22,"ks":34,"sort":36},
+    {"id":"CH13","launch":46,"av":29,"ks":39,"sort":41}
+  ]
+}

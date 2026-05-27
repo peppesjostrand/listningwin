@@ -53,142 +53,35 @@ function isoWeekToDate(w) {
 const CW = isoWeek(TODAY);
 
 // ═══════════════════════════════════════════════
-// DATA — COOP
+// DATA — loaded from data/windows/*.json
 // ═══════════════════════════════════════════════
-// Steps per round: avisering, ks, sortiment, launch
-// Coop Food rounds (launch week: deadline weeks)
-const COOP_FOOD_RAW = [
-  { id:'CF1',  launch:4,  av:39, ks:48, sort:50 },
-  { id:'CF2',  launch:7,  av:42, ks:51, sort:2  },
-  { id:'CF3',  launch:11, av:46, ks:5,  sort:6  },
-  { id:'CF4',  launch:16, av:51, ks:10, sort:12 },
-  { id:'CF5',  launch:19, av:3,  ks:12, sort:15 },
-  { id:'CF6',  launch:34, av:14, ks:24, sort:26 },
-  { id:'CF7',  launch:37, av:18, ks:31, sort:32 },
-  { id:'CF8',  launch:40, av:21, ks:34, sort:35 },
-  { id:'CF9',  launch:42, av:23, ks:36, sort:37 },
-  { id:'CF10', launch:46, av:23, ks:36, sort:37 },
-];
-const COOP_HEMMA_RAW = [
-  { id:'CH1',  launch:1,  av:36, ks:46, sort:48 },
-  { id:'CH2',  launch:5,  av:38, ks:49, sort:51 },
-  { id:'CH3',  launch:9,  av:44, ks:2,  sort:4  },
-  { id:'CH4',  launch:12, av:46, ks:5,  sort:7  },
-  { id:'CH5',  launch:18, av:1,  ks:11, sort:13 },
-  { id:'CH6',  launch:22, av:5,  ks:15, sort:17 },
-  { id:'CH7',  launch:27, av:10, ks:17, sort:19 },
-  { id:'CH8',  launch:32, av:13, ks:23, sort:25 },
-  { id:'CH9',  launch:34, av:15, ks:24, sort:27 },
-  { id:'CH10', launch:35, av:16, ks:26, sort:28 },
-  { id:'CH11', launch:38, av:19, ks:29, sort:33 },
-  { id:'CH12', launch:41, av:22, ks:34, sort:36 },
-  { id:'CH13', launch:46, av:29, ks:39, sort:41 },
-];
+let COOP_FOOD_RAW, COOP_HEMMA_RAW;
+let ICA_LAUNCH_WEEKS, ICA_ALL_STEPS, ICA_STEP_LABELS;
+let DAGAB_RAW, DAGAB_ALL_STEPS, DAGAB_STEP_LABELS;
 
-// ═══════════════════════════════════════════════
-// DATA — ICA (12 revision windows)
-// From PDF: Steps 1-8 with dates
-// Revision weeks: v4,v7,v10,v12,v16,v19,v22,v35,v37,v39,v42,v45
-// ═══════════════════════════════════════════════
-// ICA steps (from table):
-// 1. Notify + item info → step1 date
-// 2. Supplier presentation → step2 date
-// 3. Preliminary listing decision → step3 date
-// 4. Complete trade item info + QA order → step4 date
-// 5. QA approved → step5 date
-// 6. Detailed listing decision + forecast → step6 date
-// 7. Barcode QA approved → step7 date
-// 8. Store shelves start → step8/launch date
-
-// I'll parse the key dates from the PDF table
-// Rows: step, then dates for each revision window
-const ICA_LAUNCH_WEEKS = [4,7,10,12,16,19,22,35,37,39,42,45];
-
-// Step week numbers read directly from ICA PDF table (row 1 = s1 week number)
-// launch week → s1 (avisering) week number
-const ICA_S1_WEEKS = {
-   4: 39,  // 2025
-   7: 42,  // 2025
-  10: 45,  // 2025
-  12: 47,  // 2025
-  16: 50,  // 2025
-  19:  3,  // 2026
-  22:  6,  // 2026
-  35: 16,  // 2026
-  37: 18,  // 2026
-  39: 20,  // 2026
-  42: 23,  // 2026
-  45: 23,  // 2026
-};
-
-// Dates still needed for launch date calculation
-const ICA_STEP_DATES = {
-   4: { s1:'26-sep', launch:'12-jan' },
-   7: { s1:'17-okt', launch:'02-feb' },
-  10: { s1:'07-nov', launch:'23-feb' },
-  12: { s1:'21-nov', launch:'09-mar' },
-  16: { s1:'12-dec', launch:'13-apr' },
-  19: { s1:'16-jan', launch:'04-maj' },
-  22: { s1:'06-feb', launch:'18-maj' },
-  35: { s1:'17-apr', launch:'17-aug' },
-  37: { s1:'30-apr', launch:'31-aug' },
-  39: { s1:'15-maj', launch:'14-sep' },
-  42: { s1:'05-jun', launch:'05-okt' },
-  45: { s1:'05-jun', launch:'26-okt' },
-};
-
-// Parse Swedish date string like "26-sep" to Date object (2025 or 2026)
-const SV_MONTHS = { jan:0, feb:1, mar:2, apr:3, maj:4, jun:5, jul:6, aug:7, sep:8, okt:9, nov:10, dec:11 };
-function parseSvDate(s, forceYear) {
-  const [day, mon] = s.split('-');
-  const month = SV_MONTHS[mon.toLowerCase()];
-  // All launches are 2026. Steps before launch count backwards:
-  // Sep(8), Oct(9), Nov(10), Dec(11) = 2025 unless forced
-  const y = forceYear || (month >= 8 ? 2025 : 2026);
-  return new Date(Date.UTC(y, month, parseInt(day)));
+async function loadWindowData() {
+  const [coop, ica, dagab] = await Promise.all([
+    fetch('data/windows/coop.json').then(r => r.json()),
+    fetch('data/windows/ica.json').then(r => r.json()),
+    fetch('data/windows/dagab.json').then(r => r.json()),
+  ]);
+  COOP_FOOD_RAW  = coop.coopFood;
+  COOP_HEMMA_RAW = coop.coopHemma;
+  ICA_LAUNCH_WEEKS = ica.launchWeeks;
+  ICA_STEP_LABELS  = ica.stepLabels;
+  ICA_ALL_STEPS = Object.fromEntries(
+    Object.entries(ica.allSteps).map(([lw, v]) => [+lw, { dates: v.dates.map(([d,m,y]) => icaDate(d,m,y)) }])
+  );
+  DAGAB_RAW         = dagab.raw;
+  DAGAB_STEP_LABELS = dagab.stepLabels;
+  DAGAB_ALL_STEPS = Object.fromEntries(
+    Object.entries(dagab.allSteps).map(([lw, v]) => [+lw, { dates: v.dates.map(([d,m,y]) => dagabDate(d,m,y)) }])
+  );
+  COOP_FOOD_ROUNDS  = buildCoopRounds(COOP_FOOD_RAW, 'Coop Food');
+  COOP_HEMMA_ROUNDS = buildCoopRounds(COOP_HEMMA_RAW, 'Coop Hemma');
+  ICA_ROUNDS   = buildIcaRounds();
+  DAGAB_ROUNDS = buildDagabRounds();
 }
-
-// Parse with explicit year
-function pd(s, y) {
-  const [day, mon] = s.split('-');
-  const month = SV_MONTHS[mon.toLowerCase()];
-  return new Date(Date.UTC(y, month, parseInt(day)));
-}
-
-// ═══════════════════════════════════════════════
-// DATA — DAGAB (11 revision windows)
-// 9 steps, launch weeks: 4,7,11,13,16,19,34,37,40,42,45(nov)
-// From PDF table
-// ═══════════════════════════════════════════════
-const DAGAB_S1_WEEKS = {
-   4: 39,  // 26-sep-2025
-   7: 42,  // 17-okt-2025
-  11: 46,  // 14-nov-2025
-  13: 48,  // 28-nov-2025
-  16: 50,  // 12-dec-2025
-  19:  3,  // 16-jan-2026
-  34: 15,  // 10-apr-2026
-  37: 18,  // 30-apr-2026
-  39: 20,  // 15-maj-2026
-  40: 21,  // 22-maj-2026
-  42: 23,  // 05-jun-2026
-  45: 24,  // 12-jun-2026
-};
-
-const DAGAB_RAW = [
-  { id:'DG1',  launch:4,   s1:'26-sep', ldate:'19-jan' },
-  { id:'DG2',  launch:7,   s1:'17-okt', ldate:'09-feb' },
-  { id:'DG3',  launch:11,  s1:'14-nov', ldate:'09-mar' },
-  { id:'DG4',  launch:13,  s1:'28-nov', ldate:'23-mar' },
-  { id:'DG5',  launch:16,  s1:'12-dec', ldate:'13-apr' },
-  { id:'DG6',  launch:19,  s1:'16-jan', ldate:'04-maj' },
-  { id:'DG7',  launch:34,  s1:'10-apr', ldate:'17-aug' },
-  { id:'DG8',  launch:37,  s1:'30-apr', ldate:'07-sep' },
-  { id:'DG9',  launch:39,  s1:'15-maj', ldate:'21-sep' },
-  { id:'DG10', launch:40,  s1:'22-maj', ldate:'28-sep' },
-  { id:'DG11', launch:42,  s1:'05-jun', ldate:'12-okt' },
-  { id:'DG12', launch:45,  s1:'12-jun', ldate:'02-nov' },
-];
 
 // ═══════════════════════════════════════════════
 // CATEGORIES
@@ -491,31 +384,6 @@ function icaDate(d, m, y) {
   }
   return base;
 }
-const ICA_ALL_STEPS = {
-   4: { dates: [icaDate(26,8,2025),icaDate(17,9,2025),icaDate(14,10,2025),icaDate(21,10,2025),icaDate(28,10,2025),icaDate(5,11,2025),icaDate(19,11,2025),icaDate(12,0,2026)] },
-   7: { dates: [icaDate(17,9,2025),icaDate(7,10,2025),icaDate(5,11,2025),icaDate(12,11,2025),icaDate(19,11,2025),icaDate(9,0,2026),icaDate(23,0,2026),icaDate(2,1,2026)] },
-  10: { dates: [icaDate(7,10,2025),icaDate(28,10,2025),icaDate(9,0,2026),icaDate(16,0,2026),icaDate(23,0,2026),icaDate(30,0,2026),icaDate(13,1,2026),icaDate(23,1,2026)] },
-  12: { dates: [icaDate(21,10,2025),icaDate(12,11,2025),icaDate(23,0,2026),icaDate(30,0,2026),icaDate(6,1,2026),icaDate(13,1,2026),icaDate(27,1,2026),icaDate(9,2,2026)] },
-  16: { dates: [icaDate(12,11,2025),icaDate(16,0,2026),icaDate(13,1,2026),icaDate(20,1,2026),icaDate(27,1,2026),icaDate(6,2,2026),icaDate(20,2,2026),icaDate(6,3,2026)] },
-  19: { dates: [icaDate(16,0,2026),icaDate(6,1,2026),icaDate(6,2,2026),icaDate(13,2,2026),icaDate(20,2,2026),icaDate(27,2,2026),icaDate(17,3,2026),icaDate(27,3,2026)] },
-  22: { dates: [icaDate(6,1,2026),icaDate(27,1,2026),icaDate(27,2,2026),icaDate(10,3,2026),icaDate(17,3,2026),icaDate(24,3,2026),icaDate(8,4,2026),icaDate(18,4,2026)] },
-  35: { dates: [icaDate(17,3,2026),icaDate(8,4,2026),icaDate(5,5,2026),icaDate(12,5,2026),icaDate(26,5,2026),icaDate(3,6,2026),icaDate(7,7,2026),icaDate(17,7,2026)] },
-  37: { dates: [icaDate(30,3,2026),icaDate(22,4,2026),icaDate(26,5,2026),icaDate(3,6,2026),icaDate(14,7,2026),icaDate(21,7,2026),icaDate(4,8,2026),icaDate(31,7,2026)] },
-  39: { dates: [icaDate(15,4,2026),icaDate(5,5,2026),icaDate(3,6,2026),icaDate(7,7,2026),icaDate(25,8,2026),icaDate(21,7,2026),icaDate(4,8,2026),icaDate(14,8,2026)] },
-  42: { dates: [icaDate(5,5,2026),icaDate(3,6,2026),icaDate(21,7,2026),icaDate(28,7,2026),icaDate(4,8,2026),icaDate(11,8,2026),icaDate(25,8,2026),icaDate(5,9,2026)] },
-  45: { dates: [icaDate(5,5,2026),icaDate(3,6,2026),icaDate(11,8,2026),icaDate(18,8,2026),icaDate(25,8,2026),icaDate(2,9,2026),icaDate(16,9,2026),icaDate(26,9,2026)] },
-};
-
-const ICA_STEP_LABELS = [
-  'Avisering + artikelinfo till ICA',
-  'Leverantörspresentation för kategoriansvarig',
-  'Preliminärt listningsbesked',
-  'Komplett artikelinfo + produktbild (GS1 QA)',
-  'Artikelinfo & bild GS1-godkänd',
-  'Detaljerat listningsbesked + prognos',
-  'Streckkod GS1-godkänd',
-  'Start butikshylla',
-];
 
 function buildIcaRounds() {
   return ICA_LAUNCH_WEEKS.map((lw) => {
@@ -544,152 +412,6 @@ function dagabDate(d, m, y) {
   }
   return base;
 }
-const DAGAB_ALL_STEPS = {
-   4: { dates: [
-     dagabDate(26,8,2025),  // s1 avisering
-     dagabDate(17,9,2025),  // s2 leverantörspresentation
-     dagabDate(14,10,2025), // s3 listningsbesked
-     dagabDate(21,10,2025), // s4 komplett info
-     dagabDate(28,10,2025), // s5 QA godkänd
-     dagabDate(5,11,2025),  // s6 detaljerat besked
-     dagabDate(19,11,2025), // s7 streckkod QA
-     dagabDate(12,0,2026),  // s8 förberedelse
-     dagabDate(19,0,2026),  // launch
-   ]},
-   7: { dates: [
-     dagabDate(17,9,2025),
-     dagabDate(7,10,2025),
-     dagabDate(5,11,2025),
-     dagabDate(12,11,2025),
-     dagabDate(19,11,2025),
-     dagabDate(9,0,2026),
-     dagabDate(23,0,2026),
-     dagabDate(2,1,2026),
-     dagabDate(9,1,2026),
-   ]},
-  11: { dates: [
-     dagabDate(14,10,2025),
-     dagabDate(5,11,2025),
-     dagabDate(16,0,2026),
-     dagabDate(23,0,2026),
-     dagabDate(30,0,2026),
-     dagabDate(6,1,2026),
-     dagabDate(13,1,2026),
-     dagabDate(2,2,2026),
-     dagabDate(9,2,2026),
-  ]},
-  13: { dates: [
-     dagabDate(28,10,2025),
-     dagabDate(19,11,2025),
-     dagabDate(30,0,2026),
-     dagabDate(6,1,2026),
-     dagabDate(13,1,2026),
-     dagabDate(27,1,2026),
-     dagabDate(6,2,2026),
-     dagabDate(20,2,2026),
-     dagabDate(23,2,2026),
-  ]},
-  16: { dates: [
-     dagabDate(12,11,2025),
-     dagabDate(16,0,2026),
-     dagabDate(27,1,2026),
-     dagabDate(6,1,2026),
-     dagabDate(20,1,2026),
-     dagabDate(13,2,2026),
-     dagabDate(20,2,2026),
-     dagabDate(6,3,2026),
-     dagabDate(13,3,2026),
-  ]},
-  19: { dates: [
-     dagabDate(16,0,2026),
-     dagabDate(6,1,2026),
-     dagabDate(6,2,2026),
-     dagabDate(20,1,2026),
-     dagabDate(13,2,2026),
-     dagabDate(27,2,2026),
-     dagabDate(17,3,2026),
-     dagabDate(27,3,2026),
-     dagabDate(4,4,2026),
-  ]},
-  34: { dates: [
-     dagabDate(10,3,2026),
-     dagabDate(30,3,2026),
-     dagabDate(29,4,2026),
-     dagabDate(5,5,2026),
-     dagabDate(12,5,2026),
-     dagabDate(6,2,2026),
-     dagabDate(31,6,2026),
-     dagabDate(10,7,2026),
-     dagabDate(17,7,2026),
-  ]},
-  37: { dates: [
-     dagabDate(30,3,2026),
-     dagabDate(22,4,2026),
-     dagabDate(26,5,2026),
-     dagabDate(14,7,2026),
-     dagabDate(28,7,2026),
-     dagabDate(21,7,2026),
-     dagabDate(4,8,2026),
-     dagabDate(22,7,2026),
-     dagabDate(7,8,2026),
-  ]},
-  39: { dates: [
-     dagabDate(15,4,2026),
-     dagabDate(5,5,2026),
-     dagabDate(3,6,2026),
-     dagabDate(28,7,2026),
-     dagabDate(25,8,2026),
-     dagabDate(28,7,2026),
-     dagabDate(11,8,2026),
-     dagabDate(10,7,2026),
-     dagabDate(21,8,2026),
-  ]},
-  40: { dates: [
-     dagabDate(22,4,2026),
-     dagabDate(12,5,2026),
-     dagabDate(10,6,2026),
-     dagabDate(25,8,2026),
-     dagabDate(2,9,2026),
-     dagabDate(25,8,2026),
-     dagabDate(2,9,2026),
-     dagabDate(21,8,2026),
-     dagabDate(28,8,2026),
-  ]},
-  42: { dates: [
-     dagabDate(5,5,2026),
-     dagabDate(26,5,2026),
-     dagabDate(21,7,2026),
-     dagabDate(25,8,2026),
-     dagabDate(2,9,2026),
-     dagabDate(2,9,2026),
-     dagabDate(16,9,2026),
-     dagabDate(5,9,2026),
-     dagabDate(12,9,2026),
-  ]},
-  45: { dates: [
-     dagabDate(12,5,2026),
-     dagabDate(3,6,2026),
-     dagabDate(11,8,2026),
-     dagabDate(25,8,2026),
-     dagabDate(16,9,2026),
-     dagabDate(2,9,2026),
-     dagabDate(16,9,2026),
-     dagabDate(26,9,2026),
-     dagabDate(2,10,2026),
-  ]},
-};
-
-const DAGAB_STEP_LABELS = [
-  'Avisering + artikelinfo till Dagab',
-  'Leverantörspresentation',
-  'Listningsbesked till leverantör',
-  'Komplett artikelinfo + produktbild (GS1 QA)',
-  'Artikelinfo & bild GS1-godkänd',
-  'Detaljerat listningsbesked + prognos + artikelnummer',
-  'Streckkod GS1-godkänd',
-  'Förberedelse för lansering/utfasning',
-  'Revideringsvecka',
-];
 
 function buildDagabRounds() {
   return DAGAB_RAW.map(r => {
@@ -709,10 +431,7 @@ function buildDagabRounds() {
   });
 }
 
-const COOP_FOOD_ROUNDS = buildCoopRounds(COOP_FOOD_RAW, 'Coop Food');
-const COOP_HEMMA_ROUNDS = buildCoopRounds(COOP_HEMMA_RAW, 'Coop Hemma');
-const ICA_ROUNDS = buildIcaRounds();
-const DAGAB_ROUNDS = buildDagabRounds();
+let COOP_FOOD_ROUNDS, COOP_HEMMA_ROUNDS, ICA_ROUNDS, DAGAB_ROUNDS;
 
 // ═══════════════════════════════════════════════
 // STATE
@@ -4073,7 +3792,7 @@ function addCustomerContactEntry(lid, custKey) {
 }
 
 
-authInit();
+loadWindowData().then(() => authInit());
 
 // ── SETTINGS ──
 function openSettings() {
