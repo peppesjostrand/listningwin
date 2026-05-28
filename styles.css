@@ -1,9 +1,9 @@
 ﻿  :root {
     /* Backgrounds — three levels of depth */
-    --bg: #F0F2F5;
+    --bg: linear-gradient(to bottom, #F4F6F9, #EEF1F5);
     --surface: #FFFFFF;
     --surface2: #E8ECF2;
-    --sidebar-bg: #FFFFFF;
+    --sidebar-bg: linear-gradient(to bottom, #DFE5EF, #D4DCE8);
     /* Borders */
     --border: #0A1F44;
     --border2: #B8C4D4;
@@ -43,10 +43,10 @@
   }
   body.dark {
     /* Backgrounds — three clear levels */
-    --bg: #071530;
+    --bg: linear-gradient(to bottom, #071530, #050F20);
     --surface: #0A1F44;
     --surface2: #0F2A5A;
-    --sidebar-bg: #071530;
+    --sidebar-bg: linear-gradient(to bottom, #0A1F44, #071530);
     /* Borders */
     --border: #F0F4F8;
     --border2: #244880;
@@ -262,8 +262,15 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 28px;
     flex-wrap: wrap;
+    background: #E8ECF2;
+    border-bottom: 1px solid #C8D0DC;
+    margin: -28px -32px 28px;
+    padding: 20px 32px;
+  }
+  body.dark .topbar {
+    background: #0A1F44;
+    border-bottom-color: #1A3A6E;
   }
   .page-title {
     font-family: var(--display);
