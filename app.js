@@ -2221,6 +2221,7 @@ async function completeWizard() {
   }
 
   renderLansering();
+  renderBrands();
 }
 
 async function saveLanseringModal() {
@@ -4689,10 +4690,22 @@ function renderBrands() {
   }
 
   const cards = brands.map(brand => {
-    const groups = brand.productGroups || [];
     const linked = lanseringar.filter(l => l.brandId === brand.id);
     const canDelete = brand.permission === 'owner' && linked.length === 0;
     const canEdit   = brand.permission === 'owner' || brand.permission === 'editor';
+
+    // Aggregate product groups dynamically from linked lanseringar
+    const groupMap = new Map();
+    for (const l of linked) {
+      if (!l.groupName) continue;
+      if (!groupMap.has(l.groupName)) groupMap.set(l.groupName, []);
+      const existing = groupMap.get(l.groupName);
+      const existingIds = new Set(existing.map(a => a.id));
+      for (const a of (l.articles || [])) {
+        if (!existingIds.has(a.id)) { existing.push(a); existingIds.add(a.id); }
+      }
+    }
+    const groups = Array.from(groupMap.entries()).map(([name, arts]) => ({ name, articles: arts }));
 
     const groupsHtml = groups.length === 0
       ? `<span style="color:var(--muted);font-size:12px">Inga produktgrupper</span>`
