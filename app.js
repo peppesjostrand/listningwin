@@ -947,14 +947,27 @@ function renderTimeline() {
     }).join('');
   }
 
+  // Build categories for selected launch week
+  const catSource = tlSelectedCustomer === 'coop' ? COOP_CATS : tlSelectedCustomer === 'ica' ? ICA_CATS : DAGAB_CATS;
+  const weekCats = round ? catSource.filter(c => c.fonster.includes(String(tlSelectedWindow))) : [];
+  const catsHtml = weekCats.length
+    ? weekCats.map(c => `<div class="tl-week-cat-row">${c.cat}</div>`).join('')
+    : `<div style="color:var(--muted);font-size:12px">Inga kategorier för denna vecka</div>`;
+
   document.getElementById('timeline-content').innerHTML = `
     <div class="tl-new-wrap">
       <div class="tl-cust-tabs">${custTabs}</div>
       <div class="tl-window-bar">
-        <label class="tl-window-label">Fönster</label>
+        <label class="tl-window-label">Lanseringsvecka</label>
         <select class="tl-window-select" onchange="tlSetWindow(parseInt(this.value))">${windowOpts}</select>
       </div>
-      <div class="tl-tree">${treeHtml || '<div class="empty-state">Inget fönster valt</div>'}</div>
+      <div class="tl-detail-wrap">
+        <div class="tl-tree">${treeHtml || '<div class="empty-state">Inget fönster valt</div>'}</div>
+        <div class="tl-week-cats">
+          <div class="tl-week-cats-title">Kategorier denna vecka</div>
+          ${catsHtml}
+        </div>
+      </div>
     </div>`;
 }
 
