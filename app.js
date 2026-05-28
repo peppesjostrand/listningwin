@@ -4623,76 +4623,68 @@ function renderShareMembersList(brandId) {
 
 // ─── RENDER BRANDS TAB ───
 function renderBrands() {
-  const leftHtml = `
-    <div class="brand-list">
-      ${brands.map(b => {
-        const totalCats = (b.productGroups||[]).reduce((n,g) => n + (g.cats||[]).length, 0);
-        const visIcon = { private: '🔒', shared: '👥', workspace: '🏢' }[b.visibility || 'private'];
-        return `<div class="brand-card ${selectedBrandId===b.id?'selected':''}" onclick="selectBrand('${b.id}')">
-          <span class="brand-color-dot" style="background:${b.color}"></span>
-          <div style="flex:1;min-width:0;">
-            ${b.logo ? `<img src="${b.logo}" style="max-height:20px;max-width:70px;object-fit:contain;padding:2px">` : `<div class="brand-name">${b.name}</div>`}
-            <div class="brand-meta">${(b.productGroups||[]).length} produktgrupp${(b.productGroups||[]).length!==1?'er':''}</div>
-          </div>
-          <span style="font-size:12px;opacity:0.5;" title="${b.visibility||'private'}">${visIcon}</span>
-          <span class="brand-cat-count">${totalCats} kat.</span>
-        </div>`;
-      }).join('')}
-      <button class="brand-add-btn" onclick="openBrandModal()">+ Lägg till varumärke</button>
-    </div>`;
+  const el = document.getElementById('brands-content');
+  if (!el) return;
 
-  let rightHtml = `<div class="brand-detail-panel" style="display:flex;align-items:center;justify-content:center;min-height:200px">
-    <span style="color:var(--muted);font-size:13px">← Välj ett varumärke eller skapa ett nytt</span>
-  </div>`;
-
-  const brand = brands.find(b => b.id === selectedBrandId);
-  if (brand) {
-    const productsHtml = brand.products.length === 0
-      ? `<div class="no-cats-msg">Inga produkter ännu. Lägg till en nedan.</div>`
-      : `<div class="product-list">${brand.products.map(p => {
-          const chips = p.cats.map(c => {
-            const srcLabel = c.source === 'coop' ? 'Coop' : c.source === 'ica' ? 'ICA' : 'Dagab';
-            return `<span class="pcat-chip" title="Klicka för att ta bort" onclick="removeCatFromProduct('${brand.id}','${p.id}','${c.catName.replace(/'/g,"\'")}')">
-              ${c.catName} <span style="opacity:0.5;font-size:9px">${srcLabel}</span> ×
-            </span>`;
-          }).join('');
-          return `<div class="product-row">
-            <span class="product-name-text">${p.name}</span>
-            <div class="product-cat-chips">
-              ${chips}
-              <button class="product-add-cat-btn" onclick="openCatModal('${brand.id}','${p.id}')">+ Kategori</button>
-            </div>
-            <button class="product-delete-btn" title="Ta bort produkt" onclick="deleteProduct('${brand.id}','${p.id}')">×</button>
-          </div>`;
-        }).join('')}</div>`;
-
-    // Windows section: collect all cats from productGroups
-    const allCats = (brand.productGroups||[]).flatMap(g => g.cats||[]);
-    const windowsSection = renderBrandWindows(brand, allCats);
-
-    rightHtml = `<div class="brand-detail-panel">
-      <div class="brand-detail-header">
-        ${brand.logo
-          ? `<img src="${brand.logo}" alt="${brand.name}" style="max-height:32px;max-width:120px;object-fit:contain;padding:4px">`
-          : `<span class="brand-color-dot" style="background:${brand.color};width:14px;height:14px"></span>
-        <span class="brand-detail-name">${brand.name}</span>`}
-        ${renderVisibilityBadge(brand)}
-        ${brand.permission === 'owner' ? `
-          <button class="brand-action-btn" onclick="openShareModal('${brand.id}')">🔗 Dela</button>
-          <button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>
-          <button class="brand-action-btn danger" onclick="deleteBrand('${brand.id}')">Ta bort</button>
-        ` : brand.permission === 'editor' ? `
-          <button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>
-        ` : `<span style="font-size:10px;opacity:0.4;padding:4px 8px;">Skrivskyddat</span>`}
-      </div>
-
-      <div style="margin-top:0">${renderProductGroups(brand)}</div>
-      <div style="margin-top:28px">${renderBrandLanseringar(brand)}</div>
-      <div style="margin-top:28px">${windowsSection}</div>
-    </div>`;
+  if (brands.length === 0) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+        <div style="font-size:36px;margin-bottom:16px;opacity:0.4">◈</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text)">Inga varumärken ännu</div>
+        <div style="font-size:13px;margin-bottom:24px;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.6">
+          Varumärken skapas automatiskt när du skapar din första lansering via wizarden.
+        </div>
+        <button class="inline-btn" onclick="openLanseringWizard()">+ Skapa lansering</button>
+      </div>`;
+    return;
   }
 
-  document.getElementById('brands-content').innerHTML = `<div class="brands-layout">${leftHtml}${rightHtml}</div>`;
+  const cards = brands.map(brand => {
+    const groups = brand.productGroups || [];
+    const linked = lanseringar.filter(l => l.brandId === brand.id);
+    const canDelete = brand.permission === 'owner' && linked.length === 0;
+    const canEdit   = brand.permission === 'owner' || brand.permission === 'editor';
+
+    const groupsHtml = groups.length === 0
+      ? `<span style="color:var(--muted);font-size:12px">Inga produktgrupper</span>`
+      : groups.map(g => {
+          const arts = g.articles || [];
+          return `<div class="brand-group-row">
+            <span class="brand-group-name">${g.name}</span>
+            <span class="brand-group-meta">${arts.length} artikel${arts.length !== 1 ? 'ar' : ''}</span>
+          </div>`;
+        }).join('');
+
+    const pillsHtml = linked.length > 0
+      ? linked.map(l => `<span class="brand-lansering-pill"
+          onclick="showTab('lansering');selectedLanseringId='${l.id}';renderLansering()">${l.name}</span>`).join('')
+      : `<span style="color:var(--muted);font-size:12px">Inga aktiva lanseringar</span>`;
+
+    return `<div class="brand-register-card">
+      <div class="brand-register-header">
+        <span class="brand-color-dot" style="background:${brand.color}"></span>
+        ${brand.logo
+          ? `<img src="${brand.logo}" alt="${brand.name}" style="max-height:22px;max-width:90px;object-fit:contain;">`
+          : `<span class="brand-register-name">${brand.name}</span>`}
+        <div style="flex:1"></div>
+        ${canEdit   ? `<button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>` : ''}
+        ${canDelete ? `<button class="brand-action-btn danger" onclick="deleteBrand('${brand.id}')">Ta bort</button>` : ''}
+      </div>
+      <div class="brand-register-body">
+        <div class="brand-register-col">
+          <div class="brand-register-section-title">PRODUKTGRUPPER</div>
+          <div class="brand-group-list">${groupsHtml}</div>
+        </div>
+        <div class="brand-register-col">
+          <div class="brand-register-section-title">AKTIVA LANSERINGAR</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px">${pillsHtml}</div>
+          <button class="brand-new-lansering-btn" onclick="openLanseringModalForBrand('${brand.id}')">+ Ny lansering</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="brand-register">${cards}</div>`;
 }
 
 function renderBrandWindows(brand, allCats) {
@@ -4864,7 +4856,12 @@ async function saveBrand() {
 }
 
 async function deleteBrand(id) {
-  if (!confirm('Ta bort detta projekt? Det kan inte ångras.')) return;
+  const linked = lanseringar.filter(l => l.brandId === id);
+  if (linked.length > 0) {
+    addNotif(`Kan inte ta bort — ${linked.length} aktiv${linked.length !== 1 ? 'a' : ''} lansering${linked.length !== 1 ? 'ar' : ''} är kopplade till varumärket`, 'error');
+    return;
+  }
+  if (!confirm('Ta bort detta varumärke? Det kan inte ångras.')) return;
   const brandName = brands.find(b => b.id === id)?.name || 'Okänt varumärke';
   const { error } = await supabaseClient.from('projects').delete().eq('id', id);
   if (error) { alert('Kunde inte ta bort: ' + error.message); return; }
