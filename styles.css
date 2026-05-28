@@ -1206,6 +1206,245 @@
   .comment-textarea { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 8px 10px; resize: none; min-height: 38px; }
   .comment-textarea:focus { outline: none; border-color: #f59e0b; }
 
+  /* ═══════════════════════════════════════════════
+     LANSERING WIZARD
+     ═══════════════════════════════════════════════ */
+
+  .wz-box {
+    max-width: 580px;
+    width: 100%;
+  }
+
+  .wz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .wz-close-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+  }
+  .wz-close-btn:hover { opacity: 1; }
+
+  /* Steg-indikatorer */
+  .wz-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 24px;
+  }
+
+  .wz-step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .wz-step-dot.active {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #000;
+  }
+  .wz-step-dot.done {
+    background: #4ade80;
+    border-color: #4ade80;
+    color: #000;
+  }
+
+  .wz-step-line {
+    height: 2px;
+    width: 52px;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .wz-step-line.done { background: #4ade80; }
+
+  /* Sammanfattningsrad */
+  .wz-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+  .wz-summary-item { opacity: 0.85; }
+
+  /* Step-innehåll */
+  .wz-content { min-height: 160px; }
+
+  .wz-step-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    font-family: var(--display);
+    letter-spacing: 0.02em;
+  }
+
+  .wz-step-sub {
+    font-size: 12px;
+    color: var(--muted);
+    opacity: 0.7;
+    margin-top: -10px;
+    margin-bottom: 14px;
+  }
+
+  /* Navigering */
+  .wz-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Kedjeknappar */
+  .wz-chain-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .wz-chain-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .wz-chain-btn.active {
+    border-color: var(--chain-col);
+    background: color-mix(in srgb, var(--chain-col) 12%, transparent);
+    color: var(--chain-col);
+  }
+
+  .wz-chain-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Kedjesektion i steg 3 */
+  .wz-chain-section {
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--border);
+    border-radius: 0 6px 6px 0;
+    background: var(--surface2);
+  }
+
+  .wz-chain-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Veckonummer-badges */
+  .wz-badges { margin-top: 8px; }
+
+  .wz-badge-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .wz-badge-lbl {
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.7;
+    width: 72px;
+    flex-shrink: 0;
+  }
+
+  .wz-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .wz-badge.fonster  { background: rgba(99,102,241,.22); color: #a5b4fc; }
+  .wz-badge.avisering { background: rgba(245,158,11,.2); color: #fbbf24; }
+
+  /* Artikelrader */
+  .wz-article-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .wz-article-row .lansering-form-input { flex: 1; }
+
+  .wz-remove-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .wz-remove-btn:hover { border-color: #f87171; color: #f87171; }
+
+  .wz-add-article-btn {
+    background: none;
+    border: 1px dashed var(--border2);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    margin-top: 4px;
+    width: 100%;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .wz-add-article-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+
   /* MOBIL SNABBVY */
   .mobile-quick { display: none; }
   @media (max-width: 768px) {

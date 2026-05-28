@@ -58,15 +58,22 @@ const CW = isoWeek(TODAY);
 let COOP_FOOD_RAW, COOP_HEMMA_RAW;
 let ICA_LAUNCH_WEEKS, ICA_ALL_STEPS, ICA_STEP_LABELS;
 let DAGAB_RAW, DAGAB_ALL_STEPS, DAGAB_STEP_LABELS;
+let COOP_CATS = [], ICA_CATS = [], DAGAB_CATS = [];
 
 async function loadWindowData() {
-  const [coop, ica, dagab] = await Promise.all([
+  const [coop, ica, dagab, coopCats, icaCats, dagabCats] = await Promise.all([
     fetch('data/windows/coop.json').then(r => r.json()),
     fetch('data/windows/ica.json').then(r => r.json()),
     fetch('data/windows/dagab.json').then(r => r.json()),
+    fetch('data/windows/coop-cats.json').then(r => r.json()),
+    fetch('data/windows/ica-cats.json').then(r => r.json()),
+    fetch('data/windows/dagab-cats.json').then(r => r.json()),
   ]);
   COOP_FOOD_RAW  = coop.coopFood;
   COOP_HEMMA_RAW = coop.coopHemma;
+  COOP_CATS  = coopCats;
+  ICA_CATS   = icaCats;
+  DAGAB_CATS = dagabCats;
   ICA_LAUNCH_WEEKS = ica.launchWeeks;
   ICA_STEP_LABELS  = ica.stepLabels;
   ICA_ALL_STEPS = Object.fromEntries(
@@ -1698,12 +1705,13 @@ function deleteContactEntry(lid, idx) {
   renderLansering();
 }
 
-// ── LANSERING MODAL ──
+// ── LANSERING MODAL (redigera befintlig) ──
 let editingLanseringId = null;
 
-function openLanseringModal(lid = null) {
+function openLanseringModal(lid) {
+  if (!lid) { openLanseringWizard(); return; }
   editingLanseringId = lid;
-  const l = lid ? getLansering(lid) : null;
+  const l = getLansering(lid);
   const modal = document.createElement('div');
   modal.className = 'lansering-modal';
   modal.id = 'lansering-modal';
@@ -1712,112 +1720,447 @@ function openLanseringModal(lid = null) {
     `<option value="${b.id}" ${l && l.brandId === b.id ? 'selected' : ''}>${b.name}</option>`
   ).join('');
 
-  // Produktgrupper för valt varumärke
-  const selBrand = l ? brands.find(b => b.id === l.brandId) : null;
-  const groupOptions = selBrand
-    ? (selBrand.productGroups || []).map((g, gi) =>
-        `<option value="${gi}" ${l && l.groupIndex === gi ? 'selected' : ''}>${g.name}</option>`
-      ).join('')
-    : '';
-
   modal.innerHTML = `
     <div class="lansering-modal-box">
-      <div class="lansering-modal-title">${l ? 'Redigera lansering' : 'Ny lansering'}</div>
+      <div class="lansering-modal-title">Redigera lansering</div>
       <div class="lansering-form-group">
         <label class="lansering-form-label">Varumärke</label>
-        <select class="lansering-form-input" id="lm-brand" onchange="updateGroupDropdown()">
+        <select class="lansering-form-input" id="lm-brand">
           <option value="">Välj varumärke...</option>
           ${brandOptions}
         </select>
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Produktgrupp</label>
-        <select class="lansering-form-input" id="lm-group">
-          <option value="">Välj produktgrupp...</option>
-          ${groupOptions}
-        </select>
+        <label class="lansering-form-label">Namn</label>
+        <input class="lansering-form-input" id="lm-name" value="${l ? l.name || '' : ''}" placeholder="Namn på lansering">
       </div>
       <div class="lansering-modal-btns">
         <button class="lansering-action-btn" onclick="closeLanseringModal()">Avbryt</button>
-        <button class="inline-btn" onclick="saveLanseringModal()">Skapa lansering</button>
+        <button class="inline-btn" onclick="saveLanseringModal()">Spara</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
 }
 
-function updateGroupDropdown() {
-  const brandId = document.getElementById('lm-brand')?.value;
-  const brand = brands.find(b => b.id === brandId);
-  const sel = document.getElementById('lm-group');
-  if (!sel) return;
-  if (!brand) { sel.innerHTML = '<option value="">Välj produktgrupp...</option>'; return; }
-  const groups = getOrInitGroups(brand);
-  sel.innerHTML = '<option value="">Välj produktgrupp...</option>' +
-    groups.map((g, gi) => `<option value="${gi}">${g.name}</option>`).join('');
-}
 function closeLanseringModal() {
-  const m = document.getElementById('lansering-modal');
-  if (m) m.remove();
+  document.getElementById('lansering-modal')?.remove();
 }
 
-async function saveLanseringModal() {
-  const brandId = document.getElementById('lm-brand')?.value;
-  const groupIndex = document.getElementById('lm-group')?.value;
-  if (!brandId || groupIndex === '' || groupIndex === undefined) {
-    alert('Välj varumärke och produktgrupp');
+// ═══════════════════════════════════════════════
+// LANSERING WIZARD (4-stegs skapandeflöde)
+// ═══════════════════════════════════════════════
+
+let wizardData = null;
+
+function openLanseringWizard(prefillBrandId = null) {
+  wizardData = {
+    step: 1,
+    brandId: prefillBrandId || '',
+    newBrandName: '',
+    useNewBrand: false,
+    groupName: '',
+    chains: [],
+    categories: { coop: null, ica: null, dagab: null },
+    articles: ['']
+  };
+  renderWizardModal();
+}
+
+function closeWizard() {
+  document.getElementById('lansering-wizard')?.remove();
+  wizardData = null;
+}
+
+function renderWizardModal() {
+  document.getElementById('lansering-wizard')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'lansering-modal';
+  overlay.id = 'lansering-wizard';
+  overlay.innerHTML = buildWizardHTML();
+  document.body.appendChild(overlay);
+}
+
+function buildWizardHTML() {
+  const { step } = wizardData;
+  const stepLabels = ['Varumärke', 'Grupp & kedjor', 'Kategori', 'Artiklar'];
+
+  const dots = stepLabels.map((lbl, i) => {
+    const n = i + 1;
+    const cls = n < step ? 'done' : n === step ? 'active' : '';
+    const line = n < stepLabels.length
+      ? `<div class="wz-step-line${n < step ? ' done' : ''}"></div>`
+      : '';
+    return `<div class="wz-step-dot ${cls}" title="${lbl}">${n < step ? '✓' : n}</div>${line}`;
+  }).join('');
+
+  let summaryHTML = '';
+  if (step >= 2) {
+    const brandName = wizardData.useNewBrand
+      ? (wizardData.newBrandName || '—')
+      : (brands.find(b => b.id === wizardData.brandId)?.name || '—');
+    const parts = [`<span class="wz-summary-item">🏷️ ${brandName}</span>`];
+    if (step >= 3 && wizardData.groupName)
+      parts.push(`<span class="wz-summary-item">📦 ${wizardData.groupName}</span>`);
+    if (step >= 3 && wizardData.chains.length)
+      parts.push(...wizardData.chains.map(c => {
+        const col = c === 'coop' ? '#4ade80' : c === 'ica' ? '#f87171' : '#fb923c';
+        const lbl = c === 'coop' ? 'Coop' : c === 'ica' ? 'ICA' : 'Dagab';
+        return `<span class="wz-summary-item" style="color:${col}">${lbl}</span>`;
+      }));
+    summaryHTML = `<div class="wz-summary">${parts.join('')}</div>`;
+  }
+
+  let content = '';
+  if (step === 1) content = buildWizardStep1();
+  else if (step === 2) content = buildWizardStep2();
+  else if (step === 3) content = buildWizardStep3();
+  else if (step === 4) content = buildWizardStep4();
+
+  const backBtn = step > 1
+    ? `<button class="lansering-action-btn" onclick="wizardPrev()">← Tillbaka</button>`
+    : `<button class="lansering-action-btn" onclick="closeWizard()">Avbryt</button>`;
+  const nextLabel = step === 4 ? 'Skapa lansering 🚀' : 'Nästa →';
+  const nextFn = step === 4 ? 'completeWizard()' : 'wizardNext()';
+
+  return `
+    <div class="lansering-modal-box wz-box">
+      <div class="wz-header">
+        <div class="lansering-modal-title">Ny lansering</div>
+        <button class="wz-close-btn" onclick="closeWizard()">✕</button>
+      </div>
+      <div class="wz-steps">${dots}</div>
+      ${summaryHTML}
+      <div class="wz-content">${content}</div>
+      <div class="wz-nav">
+        ${backBtn}
+        <button class="inline-btn" onclick="${nextFn}">${nextLabel}</button>
+      </div>
+    </div>`;
+}
+
+// ── Steg 1: Varumärke ──
+function buildWizardStep1() {
+  const brandOptions = brands.map(b =>
+    `<option value="${b.id}" ${wizardData.brandId === b.id ? 'selected' : ''}>${b.name}</option>`
+  ).join('');
+  const showNew = wizardData.useNewBrand;
+
+  return `
+    <div class="wz-step-title">Välj varumärke</div>
+    <div class="lansering-form-group">
+      <label class="lansering-form-label">Varumärke</label>
+      <select class="lansering-form-input" id="wz-brand" onchange="wizardBrandChange()">
+        <option value="">— Välj varumärke —</option>
+        ${brandOptions}
+        <option value="__new__"${showNew ? ' selected' : ''}>✚ Skapa nytt varumärke...</option>
+      </select>
+    </div>
+    <div id="wz-new-brand-wrap" style="display:${showNew ? 'block' : 'none'}">
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Namn på nytt varumärke</label>
+        <input type="text" class="lansering-form-input" id="wz-new-brand-name"
+               value="${wizardData.newBrandName.replace(/"/g, '&quot;')}"
+               placeholder="T.ex. Foodster"
+               oninput="wizardData.newBrandName=this.value">
+      </div>
+    </div>`;
+}
+
+function wizardBrandChange() {
+  const val = document.getElementById('wz-brand')?.value;
+  if (val === '__new__') {
+    wizardData.useNewBrand = true;
+    wizardData.brandId = '';
+  } else {
+    wizardData.useNewBrand = false;
+    wizardData.brandId = val;
+  }
+  document.getElementById('wz-new-brand-wrap').style.display =
+    wizardData.useNewBrand ? 'block' : 'none';
+}
+
+// ── Steg 2: Produktgrupp & kedjor ──
+function buildWizardStep2() {
+  const tog = (c, lbl, col) => {
+    const active = wizardData.chains.includes(c);
+    return `<button class="wz-chain-btn${active ? ' active' : ''}" style="--chain-col:${col}"
+              onclick="wizardToggleChain('${c}')">
+              <span class="wz-chain-dot" style="background:${col}"></span>${lbl}
+            </button>`;
+  };
+  return `
+    <div class="wz-step-title">Produktgrupp och kedjor</div>
+    <div class="lansering-form-group">
+      <label class="lansering-form-label">Produktgrupp</label>
+      <input type="text" class="lansering-form-input" id="wz-group"
+             value="${wizardData.groupName.replace(/"/g, '&quot;')}"
+             placeholder="T.ex. Havredryck"
+             oninput="wizardData.groupName=this.value">
+    </div>
+    <div class="lansering-form-group">
+      <label class="lansering-form-label">Kedjor</label>
+      <div class="wz-chain-btns">
+        ${tog('coop', 'Coop', '#4ade80')}
+        ${tog('ica', 'ICA', '#f87171')}
+        ${tog('dagab', 'Dagab', '#fb923c')}
+      </div>
+    </div>`;
+}
+
+function wizardToggleChain(chain) {
+  const idx = wizardData.chains.indexOf(chain);
+  if (idx >= 0) {
+    wizardData.chains.splice(idx, 1);
+    wizardData.categories[chain] = null;
+  } else {
+    wizardData.chains.push(chain);
+  }
+  renderWizardModal();
+}
+
+// ── Steg 3: Kategori per kedja ──
+function buildWizardStep3() {
+  const sections = wizardData.chains.map(chain => {
+    const cats = chain === 'coop' ? COOP_CATS : chain === 'ica' ? ICA_CATS : DAGAB_CATS;
+    const col = chain === 'coop' ? '#4ade80' : chain === 'ica' ? '#f87171' : '#fb923c';
+    const lbl = chain === 'coop' ? 'Coop' : chain === 'ica' ? 'ICA' : 'Dagab';
+    const sel = wizardData.categories[chain];
+
+    let optsHTML = '<option value="">— Välj kategori —</option>';
+    if (chain === 'coop') {
+      const foodCats  = cats.filter(c => c.sub === 'Coop Food');
+      const hemmaCats = cats.filter(c => c.sub === 'Coop Hemma');
+      optsHTML += `<optgroup label="Coop Food">${foodCats.map(c => {
+        const i = cats.indexOf(c);
+        return `<option value="${i}"${sel && sel.cat === c.cat ? ' selected' : ''}>${c.cat}</option>`;
+      }).join('')}</optgroup>`;
+      optsHTML += `<optgroup label="Coop Hemma">${hemmaCats.map(c => {
+        const i = cats.indexOf(c);
+        return `<option value="${i}"${sel && sel.cat === c.cat ? ' selected' : ''}>${c.cat}</option>`;
+      }).join('')}</optgroup>`;
+    } else {
+      optsHTML += cats.map((c, i) =>
+        `<option value="${i}"${sel && sel.cat === c.cat ? ' selected' : ''}>${c.cat}</option>`
+      ).join('');
+    }
+
+    let badgesHTML = '';
+    if (sel && (sel.fonster.length || sel.avisering.length)) {
+      const fBadges = sel.fonster.map(w => `<span class="wz-badge fonster">V.${w}</span>`).join('');
+      const aBadges = sel.avisering.map(w => `<span class="wz-badge avisering">V.${w}</span>`).join('');
+      badgesHTML = `
+        <div class="wz-badge-row">
+          <span class="wz-badge-lbl">Fönster:</span>${fBadges}
+        </div>
+        <div class="wz-badge-row">
+          <span class="wz-badge-lbl">Avisering:</span>${aBadges}
+        </div>`;
+    }
+
+    return `
+      <div class="wz-chain-section" style="border-left-color:${col}">
+        <div class="wz-chain-label" style="color:${col}">${lbl}</div>
+        <select class="lansering-form-input" onchange="wizardCatChange('${chain}',this.value)">
+          ${optsHTML}
+        </select>
+        <div class="wz-badges">${badgesHTML}</div>
+      </div>`;
+  }).join('');
+
+  return `<div class="wz-step-title">Välj kategori och fönster per kedja</div>${sections}`;
+}
+
+function wizardCatChange(chain, idxStr) {
+  const cats = chain === 'coop' ? COOP_CATS : chain === 'ica' ? ICA_CATS : DAGAB_CATS;
+  const idx = parseInt(idxStr);
+  wizardData.categories[chain] = isNaN(idx) ? null : cats[idx] || null;
+  renderWizardModal();
+}
+
+// ── Steg 4: Artiklar ──
+function buildWizardStep4() {
+  const rows = wizardData.articles.map((name, i) => `
+    <div class="wz-article-row">
+      <input type="text" class="lansering-form-input" value="${name.replace(/"/g, '&quot;')}"
+             placeholder="Artikelnamn (t.ex. Havredryck Naturell 1L)"
+             oninput="wizardData.articles[${i}]=this.value">
+      ${wizardData.articles.length > 1
+        ? `<button class="wz-remove-btn" onclick="wizardRemoveArticle(${i})" title="Ta bort">✕</button>`
+        : ''}
+    </div>`).join('');
+
+  return `
+    <div class="wz-step-title">Artiklar och varianter</div>
+    <div class="wz-step-sub">Lägg till de artiklar / SKU:er som ingår i lanseringen. Minst en krävs.</div>
+    <div id="wz-articles">${rows}</div>
+    <button class="wz-add-article-btn" onclick="wizardAddArticle()">+ Lägg till artikel</button>`;
+}
+
+function wizardAddArticle() {
+  wizardData.articles.push('');
+  renderWizardModal();
+  // Fokusera sista input
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('#wz-articles input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 30);
+}
+
+function wizardRemoveArticle(i) {
+  wizardData.articles.splice(i, 1);
+  renderWizardModal();
+}
+
+// ── Navigation ──
+function wizardNext() {
+  const { step } = wizardData;
+
+  if (step === 1) {
+    if (!wizardData.brandId && !wizardData.useNewBrand) {
+      alert('Välj ett varumärke eller skapa ett nytt.');
+      return;
+    }
+    if (wizardData.useNewBrand && !wizardData.newBrandName.trim()) {
+      alert('Ange ett namn för det nya varumärket.');
+      return;
+    }
+  } else if (step === 2) {
+    if (!wizardData.groupName.trim()) {
+      alert('Ange ett namn för produktgruppen.');
+      return;
+    }
+    if (wizardData.chains.length === 0) {
+      alert('Välj minst en kedja.');
+      return;
+    }
+  } else if (step === 3) {
+    for (const c of wizardData.chains) {
+      if (!wizardData.categories[c]) {
+        const lbl = c === 'coop' ? 'Coop' : c === 'ica' ? 'ICA' : 'Dagab';
+        alert(`Välj kategori för ${lbl}.`);
+        return;
+      }
+    }
+  }
+
+  wizardData.step++;
+  renderWizardModal();
+}
+
+function wizardPrev() {
+  wizardData.step = Math.max(1, wizardData.step - 1);
+  renderWizardModal();
+}
+
+// ── Slutför: skapa projekt per kedja ──
+async function completeWizard() {
+  const validArticles = wizardData.articles.map(a => a.trim()).filter(Boolean);
+  if (validArticles.length === 0) {
+    alert('Lägg till minst en artikel.');
     return;
   }
-  const brand = brands.find(b => b.id === brandId);
-  const gi = parseInt(groupIndex);
-  const group = brand?.productGroups?.[gi];
-  if (!brand || !group) return;
 
-  // Hämta kedjor från produktgruppens kategorikopplingar
-  const cats = group.cats || [];
-  const chains = [...new Set(cats.map(c => c.source))];
-  const name = `${brand.name} — ${group.name}`;
+  // Stäng wizard direkt — gör resten i bakgrunden
+  const data = { ...wizardData };
+  closeWizard();
 
-  if (editingLanseringId) {
-    const l = getLansering(editingLanseringId);
-    if (l) {
-      l.name = name; l.brandId = brandId; l.brand = brand.name;
-      l.groupIndex = gi; l.groupName = group.name; l.chains = chains;
+  // Hämta/skapa varumärke
+  let brandId = data.brandId;
+  let brandName = '';
+  let brandColor = '#f59e0b';
+
+  if (data.useNewBrand) {
+    brandName = data.newBrandName.trim();
+    try {
+      const { data: pid, error } = await supabaseClient.rpc('create_project', {
+        p_workspace_id: currentWorkspaceId,
+        p_name: brandName,
+        p_color: brandColor,
+        p_visibility: 'private'
+      });
+      if (error) throw error;
+      const newBrand = { id: pid, name: brandName, color: brandColor, productGroups: [], products: [] };
+      brands.push(newBrand);
+      await supabaseClient.rpc('save_project_data', {
+        p_project_id: pid,
+        p_data: JSON.stringify({ productGroups: [], products: [] })
+      });
+      brandId = pid;
+    } catch (e) {
+      brandId = 'b_' + Date.now();
+      brands.push({ id: brandId, name: brandName, color: brandColor, productGroups: [], products: [] });
     }
-    await saveLansering(editingLanseringId);
   } else {
-    if (!currentWorkspaceId) return;
+    const b = brands.find(x => x.id === brandId);
+    brandName  = b?.name  || '';
+    brandColor = b?.color || '#f59e0b';
+  }
+
+  const groupName = data.groupName.trim();
+  const articles  = validArticles.map(name => ({ id: 'a_' + Math.random().toString(36).slice(2, 8), name }));
+  const created   = [];
+
+  for (const chain of data.chains) {
+    const cat  = data.categories[chain];
+    const name = `${brandName} — ${groupName}`;
+
     try {
       const { data: pid, error } = await supabaseClient.rpc('create_project', {
         p_workspace_id: currentWorkspaceId,
         p_name: name,
-        p_color: brand.color || '#f59e0b',
+        p_color: brandColor,
         p_visibility: 'private'
       });
       if (error) throw error;
+
       const newL = {
-        id: pid, name, color: brand.color || '#f59e0b',
-        brandId, brand: brand.name, groupIndex: gi, groupName: group.name,
-        chains, customers: {}, checklist: {}, tasks: [], contactLog: [],
-        is_lansering: true, activeCustomerTab: chains[0] || 'coop'
+        id: pid, name, color: brandColor,
+        brandId, brand: brandName, groupName,
+        chain,
+        chains: [chain],
+        category: cat?.cat || '',
+        aviseringsVeckor: cat?.avisering || [],
+        fonsterVeckor: cat?.fonster || [],
+        articles,
+        customers: {}, checklist: {}, tasks: [], contactLog: [],
+        is_lansering: true, activeCustomerTab: chain
       };
       lanseringar.push(newL);
-      selectedLanseringId = pid;
+      created.push(newL);
+
       const { id: _id, name: _n, color: _c, ...rest } = newL;
       await supabaseClient.rpc('save_project_data', { p_project_id: pid, p_data: JSON.stringify(rest) });
-    } catch(e) {
-      const lid = 'l_' + Date.now();
-      const newL = {
-        id: lid, name, color: brand.color || '#f59e0b',
-        brandId, brand: brand.name, groupIndex: gi, groupName: group.name,
-        chains, customers: {}, checklist: {}, tasks: [], contactLog: [],
-        is_lansering: true, activeCustomerTab: chains[0] || 'coop'
-      };
-      lanseringar.push(newL);
-      selectedLanseringId = lid;
+    } catch (e) {
+      console.error('completeWizard: kunde inte skapa lansering för', chain, e);
+      addNotif(`Kunde inte spara lansering för ${chain}`, 'error');
     }
   }
+
+  if (created.length > 0) {
+    selectedLanseringId = created[0].id;
+    const chainLabels = created.map(l =>
+      l.chain === 'coop' ? 'Coop' : l.chain === 'ica' ? 'ICA' : 'Dagab'
+    ).join(', ');
+    addActivity('🚀', `Lansering skapad: ${groupName} (${chainLabels})`);
+    addNotif(`Lansering skapad: ${groupName}`, 'success');
+  }
+
+  renderLansering();
+}
+
+async function saveLanseringModal() {
+  if (!editingLanseringId) return;
+  const brandId = document.getElementById('lm-brand')?.value;
+  const name = document.getElementById('lm-name')?.value?.trim();
+  if (!name) { alert('Ange ett namn'); return; }
+  const l = getLansering(editingLanseringId);
+  if (l) {
+    l.name = name;
+    if (brandId) { l.brandId = brandId; l.brand = brands.find(b => b.id === brandId)?.name || l.brand; }
+  }
+  await saveLansering(editingLanseringId);
   closeLanseringModal();
-  addActivity('🚀', `Lansering ${editingLanseringId ? 'uppdaterad' : 'skapad'}: ${name}`);
+  addActivity('✏️', `Lansering uppdaterad: ${name}`);
   renderLansering();
 }
 
@@ -3466,12 +3809,7 @@ function renderBrandLanseringar(brand) {
 }
 
 function openLanseringModalForBrand(brandId) {
-  openLanseringModal();
-  // Pre-select brand after modal renders
-  setTimeout(() => {
-    const sel = document.getElementById('lm-brand');
-    if (sel) sel.value = brandId;
-  }, 50);
+  openLanseringWizard(brandId);
 }
 
 
