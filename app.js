@@ -1925,14 +1925,8 @@ function buildWizardStep3() {
   return `<div class="wz-step-title">Välj kategori och fönster per kedja</div>${sections}`;
 }
 
-function buildWizardCatSection(chain) {
+function wizardBuildCatListHTML(chain, q, sel) {
   const cats = chain === 'coop' ? COOP_CATS : chain === 'ica' ? ICA_CATS : DAGAB_CATS;
-  const col  = chain === 'coop' ? '#4ade80' : chain === 'ica' ? '#f87171' : '#fb923c';
-  const lbl  = chain === 'coop' ? 'Coop'   : chain === 'ica' ? 'ICA'    : 'Dagab';
-  const sel  = wizardData.categories[chain];
-  const q    = (wizardData.catSearch[chain] || '').trim().toLowerCase();
-
-  // Bygg listposter — Coop grupperas i Food / Hemma
   let listHTML = '';
   if (chain === 'coop') {
     for (const sub of ['Coop Food', 'Coop Hemma']) {
@@ -1943,20 +1937,27 @@ function buildWizardCatSection(chain) {
       listHTML += filtered.map(c => {
         const i = cats.indexOf(c);
         const active = sel && sel.cat === c.cat ? ' active' : '';
-        return `<div class="wz-cat-item${active}" data-idx="${i}" onclick="wizardCatPick('${chain}',${i})">${c.cat}</div>`;
+        return `<div class="wz-cat-item${active}" data-idx="${i}" onmousedown="event.preventDefault()" onclick="wizardCatPick('${chain}',${i})">${c.cat}</div>`;
       }).join('');
     }
   } else {
     const filtered = q ? cats.filter(c => c.cat.toLowerCase().includes(q)) : cats;
-    listHTML = filtered.map((c, fi) => {
+    listHTML = filtered.map(c => {
       const i = cats.indexOf(c);
       const active = sel && sel.cat === c.cat ? ' active' : '';
-      return `<div class="wz-cat-item${active}" data-idx="${i}" onclick="wizardCatPick('${chain}',${i})">${c.cat}</div>`;
+      return `<div class="wz-cat-item${active}" data-idx="${i}" onmousedown="event.preventDefault()" onclick="wizardCatPick('${chain}',${i})">${c.cat}</div>`;
     }).join('');
   }
-  if (!listHTML) listHTML = `<div class="wz-cat-empty">Inga träffar</div>`;
+  return listHTML || `<div class="wz-cat-empty">Inga träffar</div>`;
+}
 
-  // Badges för vald kategori
+function buildWizardCatSection(chain) {
+  const col = chain === 'coop' ? '#4ade80' : chain === 'ica' ? '#f87171' : '#fb923c';
+  const lbl = chain === 'coop' ? 'Coop'   : chain === 'ica' ? 'ICA'    : 'Dagab';
+  const sel = wizardData.categories[chain];
+
+  const listHTML = wizardBuildCatListHTML(chain, '', sel);
+
   let badgesHTML = '';
   if (sel && (sel.fonster.length || sel.avisering.length)) {
     const fBadges = sel.fonster.map(w   => `<span class="wz-badge fonster">V.${w}</span>`).join('');
@@ -1969,68 +1970,66 @@ function buildWizardCatSection(chain) {
       </div>`;
   }
 
+  const inputVal = (sel?.cat || '').replace(/"/g, '&quot;');
+
   return `
     <div class="wz-chain-section" style="border-left-color:${col}">
       <div class="wz-chain-label" style="color:${col}">${lbl}</div>
-      <div class="wz-cat-search-wrap search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="lansering-form-input" type="text"
+      <div class="wz-cat-dropdown" id="wz-cat-wrap-${chain}">
+        <input class="lansering-form-input wz-cat-input" type="text"
                placeholder="Sök kategori..."
-               value="${(wizardData.catSearch[chain] || '').replace(/"/g,'&quot;')}"
-               oninput="wizardFilterCats('${chain}',this.value)">
+               value="${inputVal}"
+               autocomplete="off"
+               onfocus="wizardOpenCatDropdown('${chain}')"
+               oninput="wizardFilterCats('${chain}',this.value)"
+               onblur="wizardCatBlur('${chain}')">
+        <span class="wz-cat-arrow">▾</span>
+        <div class="wz-cat-list-float" id="wz-cat-list-${chain}">${listHTML}</div>
       </div>
-      <div class="wz-cat-list" id="wz-cat-list-${chain}">${listHTML}</div>
       ${badgesHTML}
     </div>`;
 }
 
-function wizardFilterCats(chain, value) {
-  wizardData.catSearch[chain] = value;
-  // Byt ut bara listinnehållet — ingen full re-render
-  const cats = chain === 'coop' ? COOP_CATS : chain === 'ica' ? ICA_CATS : DAGAB_CATS;
-  const q    = value.trim().toLowerCase();
-  const sel  = wizardData.categories[chain];
+function wizardOpenCatDropdown(chain) {
   const listEl = document.getElementById(`wz-cat-list-${chain}`);
   if (!listEl) return;
+  listEl.innerHTML = wizardBuildCatListHTML(chain, '', wizardData.categories[chain]);
+  listEl.style.display = 'block';
+  const active = listEl.querySelector('.wz-cat-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
 
-  let listHTML = '';
-  if (chain === 'coop') {
-    for (const sub of ['Coop Food', 'Coop Hemma']) {
-      const subCats = cats.filter(c => c.sub === sub);
-      const filtered = q ? subCats.filter(c => c.cat.toLowerCase().includes(q)) : subCats;
-      if (!filtered.length) continue;
-      listHTML += `<div class="wz-cat-group-lbl">${sub}</div>`;
-      listHTML += filtered.map(c => {
-        const i = cats.indexOf(c);
-        const active = sel && sel.cat === c.cat ? ' active' : '';
-        return `<div class="wz-cat-item${active}" data-idx="${i}" onclick="wizardCatPick('${chain}',${i})">${c.cat}</div>`;
-      }).join('');
-    }
-  } else {
-    const filtered = q ? cats.filter(c => c.cat.toLowerCase().includes(q)) : cats;
-    listHTML = filtered.map(c => {
-      const i = cats.indexOf(c);
-      const active = sel && sel.cat === c.cat ? ' active' : '';
-      return `<div class="wz-cat-item${active}" data-idx="${i}" onclick="wizardCatPick('${chain}',${i})">${c.cat}</div>`;
-    }).join('');
-  }
-  listEl.innerHTML = listHTML || `<div class="wz-cat-empty">Inga träffar</div>`;
+function wizardFilterCats(chain, value) {
+  wizardData.catSearch[chain] = value;
+  const q = value.trim().toLowerCase();
+  const listEl = document.getElementById(`wz-cat-list-${chain}`);
+  if (!listEl) return;
+  listEl.innerHTML = wizardBuildCatListHTML(chain, q, wizardData.categories[chain]);
+  listEl.style.display = 'block';
+}
+
+function wizardCatBlur(chain) {
+  setTimeout(() => {
+    const listEl = document.getElementById(`wz-cat-list-${chain}`);
+    if (listEl) listEl.style.display = 'none';
+  }, 150);
 }
 
 function wizardCatPick(chain, idx) {
   const cats = chain === 'coop' ? COOP_CATS : chain === 'ica' ? ICA_CATS : DAGAB_CATS;
-  wizardData.categories[chain] = cats[idx] || null;
-  // Uppdatera active-klass och visa badges utan full re-render
+  const cat = cats[idx] || null;
+  wizardData.categories[chain] = cat;
+  wizardData.catSearch[chain] = cat?.cat || '';
+
+  const wrap = document.getElementById(`wz-cat-wrap-${chain}`);
+  const inputEl = wrap?.querySelector('.wz-cat-input');
+  if (inputEl) inputEl.value = cat?.cat || '';
+
   const listEl = document.getElementById(`wz-cat-list-${chain}`);
-  if (listEl) {
-    listEl.querySelectorAll('.wz-cat-item').forEach(el => {
-      el.classList.toggle('active', parseInt(el.dataset.idx) === idx);
-    });
-  }
-  // Uppdatera badge-sektionen (finns direkt efter listan i chain-section)
-  const section = listEl?.closest('.wz-chain-section');
+  if (listEl) listEl.style.display = 'none';
+
+  const section = wrap?.closest('.wz-chain-section');
   if (!section) return;
-  const cat = cats[idx];
   let badgesHTML = '';
   if (cat && (cat.fonster.length || cat.avisering.length)) {
     const fBadges = cat.fonster.map(w   => `<span class="wz-badge fonster">V.${w}</span>`).join('');
@@ -2042,12 +2041,10 @@ function wizardCatPick(chain, idx) {
         <div class="wz-badge-row"><span class="wz-badge-lbl">Avisering:</span>${aBadges}</div>
       </div>`;
   }
-  // Ta bort gamla badges/selected och lägg till nya
   section.querySelectorAll('.wz-selected-cat, .wz-badges').forEach(el => el.remove());
   if (badgesHTML) section.insertAdjacentHTML('beforeend', badgesHTML);
 }
 
-// Bakåtkompatibilitet — används fortfarande av wizardFilterCats vid initial render
 function wizardCatChange(chain, idxStr) {
   wizardCatPick(chain, parseInt(idxStr));
 }

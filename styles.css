@@ -1445,22 +1445,39 @@
   }
   .wz-add-article-btn:hover { border-color: #f59e0b; color: #f59e0b; }
 
-  /* Kategori-sök i steg 3 */
-  .wz-cat-search-wrap {
+  /* Kategori-dropdown i steg 3 */
+  .wz-cat-dropdown {
     position: relative;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
-  .wz-cat-search-wrap .lansering-form-input {
+  .wz-cat-dropdown .lansering-form-input {
     width: 100%;
-    padding-left: 28px;
+    padding-right: 28px;
+    cursor: pointer;
   }
-  .wz-cat-list {
-    max-height: 180px;
+  .wz-cat-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+    pointer-events: none;
+    user-select: none;
+  }
+  .wz-cat-list-float {
+    display: none;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    max-height: 220px;
     overflow-y: auto;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--surface);
-    margin-bottom: 8px;
+    z-index: 200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   }
   .wz-cat-group-lbl {
     font-size: 10px;
