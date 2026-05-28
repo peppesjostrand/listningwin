@@ -1231,7 +1231,7 @@
   .onboard-chain-pick.picked-dagab { border-color: #0D4F35; color: #0D4F35; }
 
   /* STATUSDASHBOARD WIDGET */
-  .dash-widgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px 0; }
+  .dash-widgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px 28px; }
   @media (max-width: 900px) { .dash-widgets { grid-template-columns: repeat(2,1fr); } }
   @media (max-width: 500px) { .dash-widgets { grid-template-columns: 1fr 1fr; } }
   .dash-widget { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: var(--shadow-sm); }
