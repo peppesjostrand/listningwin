@@ -491,24 +491,24 @@
 
       <!-- Tab switcher -->
       <div style="display:flex;background:#28211e;border-radius:10px;padding:4px;margin-bottom:28px;">
-        <button id="auth-tab-login" onclick="authShowTab('login')" style="flex:1;padding:9px;border:none;border-radius:7px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:#332a26;color:#fff;transition:all 0.15s;">Logga in</button>
-        <button id="auth-tab-register" onclick="authShowTab('register')" style="flex:1;padding:9px;border:none;border-radius:7px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#ffffff88;transition:all 0.15s;">Skapa konto</button>
+        <button id="auth-tab-login" onclick="authShowTab('login')" style="flex:1;padding:9px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;background:#332a26;color:#fff;transition:all 0.15s;">Logga in</button>
+        <button id="auth-tab-register" onclick="authShowTab('register')" style="flex:1;padding:9px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#ffffff88;transition:all 0.15s;">Skapa konto</button>
       </div>
 
       <!-- LOGIN FORM -->
       <div id="auth-form-login">
         <div style="margin-bottom:16px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Email</label>
-          <input id="auth-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
+          <input id="auth-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
         </div>
         <div style="margin-bottom:8px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Lösenord</label>
-          <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')authLogin()">
+          <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')authLogin()">
         </div>
         <div style="text-align:right;margin-bottom:20px;">
           <span onclick="showForgotPassword()" style="font-size:12px;color:#a78bfa;cursor:pointer;opacity:0.8;">Glömt lösenord?</span>
         </div>
-        <button onclick="authLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Logga in</button>
+        <button onclick="authLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Logga in</button>
         <div id="auth-login-error" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:7px;font-size:13px;color:#f87171;"></div>
       </div>
 
@@ -519,9 +519,9 @@
         </div>
         <div style="margin-bottom:20px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Email</label>
-          <input id="forgot-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')sendResetEmail()">
+          <input id="forgot-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')sendResetEmail()">
         </div>
-        <button onclick="sendResetEmail()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Skicka återställningslänk</button>
+        <button onclick="sendResetEmail()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Skicka återställningslänk</button>
         <div style="text-align:center;margin-top:16px;">
           <span onclick="showForgotPassword(false)" style="font-size:12px;color:#a78bfa;cursor:pointer;opacity:0.8;">← Tillbaka till inloggning</span>
         </div>
@@ -535,9 +535,9 @@
         </div>
         <div style="margin-bottom:20px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Nytt lösenord</label>
-          <input id="reset-password" type="password" placeholder="Minst 6 tecken" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')saveNewPassword()">
+          <input id="reset-password" type="password" placeholder="Minst 6 tecken" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')saveNewPassword()">
         </div>
-        <button onclick="saveNewPassword()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Spara nytt lösenord</button>
+        <button onclick="saveNewPassword()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Spara nytt lösenord</button>
         <div id="reset-feedback" style="display:none;margin-top:12px;padding:10px 14px;border-radius:7px;font-size:13px;"></div>
       </div>
 
@@ -552,31 +552,31 @@
         <!-- Workspace field — hidden when invite -->
         <div id="reg-workspace-field" style="margin-bottom:16px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Företagsnamn</label>
-          <input id="reg-workspace" type="text" placeholder="Ditt företag AB" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
+          <input id="reg-workspace" type="text" placeholder="Ditt företag AB" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
         </div>
         <div style="display:flex;gap:10px;margin-bottom:16px;">
           <div style="flex:1;">
             <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Förnamn</label>
-            <input id="reg-firstname" type="text" placeholder="Anna" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
+            <input id="reg-firstname" type="text" placeholder="Anna" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
           </div>
           <div style="flex:1;">
             <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Efternamn</label>
-            <input id="reg-lastname" type="text" placeholder="Svensson" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
+            <input id="reg-lastname" type="text" placeholder="Svensson" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
           </div>
         </div>
         <div style="margin-bottom:16px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Roll</label>
-          <input id="reg-role" type="text" placeholder="t.ex. Key Account Manager" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
+          <input id="reg-role" type="text" placeholder="t.ex. Key Account Manager" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
         </div>
         <div style="margin-bottom:16px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Email</label>
-          <input id="reg-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
+          <input id="reg-email" type="email" placeholder="din@email.com" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'">
         </div>
         <div style="margin-bottom:24px;">
           <label style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;display:block;margin-bottom:6px;">Lösenord</label>
-          <input id="reg-password" type="password" placeholder="Minst 6 tecken" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')authRegister()">
+          <input id="reg-password" type="password" placeholder="Minst 6 tecken" style="width:100%;background:#28211e;border:1px solid #524540;border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'" onkeydown="if(event.key==='Enter')authRegister()">
         </div>
-        <button id="reg-submit-btn" onclick="authRegister()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Skapa konto & workspace</button>
+        <button id="reg-submit-btn" onclick="authRegister()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">Skapa konto & workspace</button>
         <div id="auth-register-error" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:7px;font-size:13px;color:#f87171;"></div>
         <div id="auth-register-success" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:7px;font-size:13px;color:#4ade80;"></div>
       </div>
