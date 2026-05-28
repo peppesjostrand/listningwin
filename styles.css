@@ -18,7 +18,7 @@
     /* Chain colors */
     --coop-color: #16a34a;
     --ica-color: #dc2626;
-    --dagab-color: #ea580c;
+    --dagab-color: #0D4F35;
     /* Buttons */
     --btn-bg: #0A1F44;
     --btn-text: #FFFFFF;
@@ -61,7 +61,7 @@
     /* Chain colors */
     --coop-color: #4ade80;
     --ica-color: #f87171;
-    --dagab-color: #fb923c;
+    --dagab-color: #0D4F35;
     /* Buttons */
     --btn-bg: #2455A4;
     --btn-text: #FFFFFF;
@@ -989,7 +989,7 @@
     padding: 2px 8px; border-radius: 4px; cursor: pointer;
     transition: all 0.12s; white-space: nowrap;
   }
-  .subgroup-toggle:hover { color: var(--dagab-color); border-color: rgba(251,146,60,0.4); }
+  .subgroup-toggle:hover { color: var(--dagab-color); border-color: rgba(13,79,53,0.4); }
   .subgroup-panel {
     display: none; background: var(--bg);
     border: 1px solid var(--border); border-top: none;
@@ -1058,7 +1058,7 @@
   .contact-chain-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
   .contact-chain-badge.coop { background: rgba(74,222,128,0.15); color: #4ade80; }
   .contact-chain-badge.ica { background: rgba(248,113,113,0.15); color: #f87171; }
-  .contact-chain-badge.dagab { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .contact-chain-badge.dagab { background: rgba(13,79,53,0.15); color: #0D4F35; }
   .contact-chain-badge.other { background: var(--surface2); color: var(--text); }
   .contact-entry-date { font-size: 10px; color: var(--muted); }
   .contact-entry-text { font-size: 12px; color: var(--text); }
@@ -1116,7 +1116,7 @@
   .hist-pill { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
   .hist-pill-coop { background: rgba(74,222,128,0.15); color: #4ade80; }
   .hist-pill-ica { background: rgba(248,113,113,0.15); color: #f87171; }
-  .hist-pill-dagab { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .hist-pill-dagab { background: rgba(13,79,53,0.15); color: #0D4F35; }
   .hist-pill-past { background: var(--surface2); color: var(--text); }
   .history-empty { color: var(--muted); font-size: 13px; padding: 20px; text-align: center; }
   .history-filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
@@ -1150,7 +1150,7 @@
   .kalkyl-chain-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
   .kalkyl-chain-tab { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); font-family: var(--font); font-size: 11px; cursor: pointer; transition: all 0.12s; }
   .kalkyl-chain-tab.active-coop { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
-  .kalkyl-chain-tab.active-dagab { border-color: #fb923c; color: #fb923c; background: rgba(251,146,60,0.08); }
+  .kalkyl-chain-tab.active-dagab { border-color: #0D4F35; color: #0D4F35; background: rgba(13,79,53,0.08); }
 
   /* ── PÅMINNELSER ── */
   .pam-page { padding: 20px; max-width: 800px; }
@@ -1228,7 +1228,7 @@
   .onboard-chain-pick { background: var(--surface2); border: 2px solid var(--border); border-radius: 8px; padding: 10px 18px; cursor: pointer; font-family: var(--font); font-size: 13px; transition: all 0.12s; }
   .onboard-chain-pick.picked-coop { border-color: #4ade80; color: #4ade80; }
   .onboard-chain-pick.picked-ica { border-color: #f87171; color: #f87171; }
-  .onboard-chain-pick.picked-dagab { border-color: #fb923c; color: #fb923c; }
+  .onboard-chain-pick.picked-dagab { border-color: #0D4F35; color: #0D4F35; }
 
   /* STATUSDASHBOARD WIDGET */
   .dash-widgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px 0; }
@@ -1806,7 +1806,7 @@
   .lp-visual-chain.ica { border-color: rgba(220,38,38,0.25); background: rgba(220,38,38,0.04); }
   .lp-visual-chain.ica .lp-visual-chain-name { color: var(--ica-color); }
   .lp-visual-chain.ica .lp-visual-chain-days { color: var(--ica-color); }
-  .lp-visual-chain.dagab { border-color: rgba(234,88,12,0.25); background: rgba(234,88,12,0.04); }
+  .lp-visual-chain.dagab { border-color: rgba(13,79,53,0.25); background: rgba(13,79,53,0.04); }
   .lp-visual-chain.dagab .lp-visual-chain-name { color: var(--dagab-color); }
   .lp-visual-chain.dagab .lp-visual-chain-days { color: var(--dagab-color); }
 
