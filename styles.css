@@ -2104,6 +2104,7 @@
   .lp-mock-step-name { font-size: 13px; font-weight: 500; }
   .lp-mock-step-date { font-size: 11px; color: var(--muted); }
 
-  /* Dagab logo is dark green — needs border to be visible on navy dark-mode background */
-  body.dark img[src="assets/Dagab.png"] { border: 1px solid #F0F4F8; border-radius: 4px; padding: 1px 3px; }
+  /* Dagab logo is dark green — needs border to be visible on navy dark-mode background.
+     Coop/ICA logos are base64 data: URIs; only Dagab uses a file path, so src^="assets" is unique. */
+  body.dark img[src^="assets"] { border: 1px solid #F0F4F8; border-radius: 4px; padding: 1px 3px; }
 
