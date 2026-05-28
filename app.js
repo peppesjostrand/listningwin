@@ -575,7 +575,7 @@ function renderRoundCard(r) {
 
   // Launch pill
   const launchPill = launchStep
-    ? '<span class="pill pill-launch">🚀 v.' + r.launch + '</span>'
+    ? '<span class="pill pill-launch">v.' + r.launch + '</span>'
     : '';
 
   // All steps for expanded view
@@ -583,7 +583,7 @@ function renderRoundCard(r) {
     if (!state.showPast && s.days < 0 && !s.isLaunch) return '';
     const isDone = s.days < 0 && !s.isLaunch;
     let pill = '';
-    if (s.isLaunch)    pill = '<span class="pill pill-launch">🚀 v.' + s.week + '</span>';
+    if (s.isLaunch)    pill = '<span class="pill pill-launch">v.' + s.week + '</span>';
     else if (isDone)   pill = '<span class="pill pill-done">Passerad</span>';
     else               { const st = status(s.days); pill = '<span class="pill ' + st.cls + '">' + st.label + '</span>'; }
     const numCls = isDone ? 'done' : s.isLaunch ? 'launch-num' : s.primary ? 'is-next' : '';
@@ -1092,7 +1092,7 @@ function removeCompanyLogo(e) {
       .update({ logo: null })
       .eq('id', currentWorkspaceId);
   }
-  addActivity('🖼️', 'Företagslogga borttagen');
+  addActivity('', 'Företagslogga borttagen');
 }
 // Load saved company logo on startup
 // Company logo loaded per workspace in authOnLogin
@@ -1178,7 +1178,7 @@ async function loadBrands() {
   } catch(e) {
     console.error('loadBrands error', e);
     brands = [];
-    setTimeout(() => addNotif('⚠️ Kunde inte ladda varumärken: ' + e.message, 'error'), 500);
+    setTimeout(() => addNotif('Kunde inte ladda varumärken: ' + e.message, 'error'), 500);
   }
   renderAll();
 }
@@ -1280,7 +1280,7 @@ async function authLogin() {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) return authShowError('auth-login-error', 'Fel email eller lösenord.');
   await authOnLogin(data.user);
-  addActivity('🔑', `Inloggad som ${data.user.email}`);
+  addActivity('', `Inloggad som ${data.user.email}`);
 }
 
 async function authRegister() {
@@ -1557,7 +1557,7 @@ async function loadLanseringar() {
   } catch(e) {
     console.error('loadLanseringar error', e);
     lanseringar = lanseringar || [];
-    setTimeout(() => addNotif('⚠️ Kunde inte ladda lanseringar: ' + e.message, 'error'), 500);
+    setTimeout(() => addNotif('Kunde inte ladda lanseringar: ' + e.message, 'error'), 500);
   }
   if (state.tab === 'lansering') renderLansering();
   if (state.tab === 'arkiv') renderArkiv();
@@ -1573,7 +1573,7 @@ async function saveLansering(lid) {
     p_project_id: id,
     p_data: JSON.stringify({ ...rest, is_lansering: true })
   });
-  if (error) { console.error('saveLansering error', error); addNotif('⚠️ Kunde inte spara lansering: ' + error.message, 'error'); }
+  if (error) { console.error('saveLansering error', error); addNotif('Kunde inte spara lansering: ' + error.message, 'error'); }
 }
 
 function getLansering(lid) { return lanseringar.find(x => x.id === lid); }
@@ -1647,7 +1647,7 @@ function toggleCheckItem(lid, itemId, checked) {
     delete l.checklist[itemId];
   }
   saveLansering(lid);
-  addActivity(checked ? '✅' : '⬜', `${CHECKLIST_ITEMS.find(i=>i.id===itemId)?.label} — ${getLansering(lid)?.name}`);
+  addActivity('', `${CHECKLIST_ITEMS.find(i=>i.id===itemId)?.label} — ${getLansering(lid)?.name}`);
   renderLansering();
 }
 
@@ -1657,7 +1657,7 @@ function addTask(lid) {
   if (!l.tasks) l.tasks = [];
   l.tasks.push({ name: '', deadline: '', status: 'Ej påbörjad', owner: '' });
   saveLansering(lid);
-  addActivity('📌', `Uppgift tillagd i "${l.name}"`);
+  addActivity('', `Uppgift tillagd i "${l.name}"`);
   renderLansering();
 }
 
@@ -1667,7 +1667,7 @@ function updateTask(lid, idx, field, val) {
   l.tasks[idx][field] = val;
   saveLansering(lid);
   if (field === 'status') {
-    addActivity('🔄', `Uppgift "${l.tasks[idx].name || 'Namnlös'}" → ${val} — ${l.name}`);
+    addActivity('', `Uppgift "${l.tasks[idx].name || 'Namnlös'}" → ${val} — ${l.name}`);
     renderLansering();
   }
 }
@@ -1678,7 +1678,7 @@ function deleteTask(lid, idx) {
   const taskName = l.tasks[idx]?.name || 'Namnlös';
   l.tasks.splice(idx, 1);
   saveLansering(lid);
-  addActivity('🗑️', `Uppgift "${taskName}" borttagen från "${l.name}"`);
+  addActivity('', `Uppgift "${taskName}" borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -1695,7 +1695,7 @@ function addContactEntry(lid) {
   if (!l.contactLog) l.contactLog = [];
   l.contactLog.push({ chain, chainLabel: chainLabels[chain], contact, date, note, next });
   saveLansering(lid);
-  addActivity('📋', `Kontaktlogg: ${chainLabels[chain]} — ${note.slice(0,40)}`);
+  addActivity('', `Kontaktlogg: ${chainLabels[chain]} — ${note.slice(0,40)}`);
   renderLansering();
 }
 
@@ -1704,7 +1704,7 @@ function deleteContactEntry(lid, idx) {
   if (!l || !l.contactLog) return;
   l.contactLog.splice(idx, 1);
   saveLansering(lid);
-  addActivity('🗑️', `Kontaktloggpost borttagen från "${l.name}"`);
+  addActivity('', `Kontaktloggpost borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -1802,9 +1802,9 @@ function buildWizardHTML() {
     const brandName = wizardData.useNewBrand
       ? (wizardData.newBrandName || '—')
       : (brands.find(b => b.id === wizardData.brandId)?.name || '—');
-    const parts = [`<span class="wz-summary-item">🏷️ ${brandName}</span>`];
+    const parts = [`<span class="wz-summary-item">${brandName}</span>`];
     if (step >= 3 && wizardData.groupName)
-      parts.push(`<span class="wz-summary-item">📦 ${wizardData.groupName}</span>`);
+      parts.push(`<span class="wz-summary-item">${wizardData.groupName}</span>`);
     if (step >= 3 && wizardData.chains.length)
       parts.push(...wizardData.chains.map(c => {
         const col = c === 'coop' ? '#4ade80' : c === 'ica' ? '#f87171' : '#fb923c';
@@ -1823,7 +1823,7 @@ function buildWizardHTML() {
   const backBtn = step > 1
     ? `<button class="lansering-action-btn" onclick="wizardPrev()">← Tillbaka</button>`
     : `<button class="lansering-action-btn" onclick="closeWizard()">Avbryt</button>`;
-  const nextLabel = step === 4 ? 'Skapa lansering 🚀' : 'Nästa →';
+  const nextLabel = step === 4 ? 'Skapa lansering' : 'Nästa →';
   const nextFn = step === 4 ? 'completeWizard()' : 'wizardNext()';
 
   return `
@@ -1856,7 +1856,7 @@ function buildWizardStep1() {
       <select class="lansering-form-input" id="wz-brand" onchange="wizardBrandChange()">
         <option value="">— Välj varumärke —</option>
         ${brandOptions}
-        <option value="__new__"${showNew ? ' selected' : ''}>✚ Skapa nytt varumärke...</option>
+        <option value="__new__"${showNew ? ' selected' : ''}>+ Skapa nytt varumärke...</option>
       </select>
     </div>
     <div id="wz-new-brand-wrap" style="display:${showNew ? 'block' : 'none'}">
@@ -2213,7 +2213,7 @@ async function completeWizard() {
     const { id: _id, name: _n, color: _c, ...rest } = newL;
     await supabaseClient.rpc('save_project_data', { p_project_id: pid, p_data: JSON.stringify(rest) });
 
-    addActivity('🚀', `Lansering skapad: ${groupName} (${chainLabels})`);
+    addActivity('', `Lansering skapad: ${groupName} (${chainLabels})`);
     addNotif(`Lansering skapad: ${groupName}`, 'success');
   } catch (e) {
     console.error('completeWizard: kunde inte skapa lansering', e);
@@ -2236,7 +2236,7 @@ async function saveLanseringModal() {
   }
   await saveLansering(editingLanseringId);
   closeLanseringModal();
-  addActivity('✏️', `Lansering uppdaterad: ${name}`);
+  addActivity('', `Lansering uppdaterad: ${name}`);
   renderLansering();
 }
 
@@ -2249,7 +2249,7 @@ async function deleteLansering(lid) {
   } catch(e) {}
   lanseringar = lanseringar.filter(x => x.id !== lid);
   if (selectedLanseringId === lid) selectedLanseringId = null;
-  addActivity('🗑️', `Lansering "${name}" borttagen`);
+  addActivity('', `Lansering "${name}" borttagen`);
   renderLansering();
 }
 
@@ -2343,7 +2343,7 @@ async function addProductGroup(brandId) {
   getOrInitGroups(brand).push({ name, articles: [] });
   await saveProject(brandId);
   input.value = '';
-  addActivity('📦', `Produktgrupp "${name}" skapad i "${brand.name}"`);
+  addActivity('', `Produktgrupp "${name}" skapad i "${brand.name}"`);
   renderBrands();
 }
 
@@ -2354,7 +2354,7 @@ function deleteGroup(brandId, gi) {
   const groupName = groups[gi]?.name || 'Okänd grupp';
   groups.splice(gi, 1);
   saveProject(brandId);
-  addActivity('🗑️', `Produktgrupp "${groupName}" borttagen från "${brand.name}"`);
+  addActivity('', `Produktgrupp "${groupName}" borttagen från "${brand.name}"`);
   renderBrands();
   restoreOpenGroups(brandId);
 }
@@ -2374,7 +2374,7 @@ async function addArticle(brandId, gi) {
   console.log('addArticle: saved OK');
   document.getElementById(`art-name-${brandId}-${gi}`).value = '';
   document.getElementById(`art-ean-${brandId}-${gi}`).value = '';
-  addActivity('➕', `Artikel "${name}" tillagd i "${groups[gi].name}" (${brand.name})`);
+  addActivity('', `Artikel "${name}" tillagd i "${groups[gi].name}" (${brand.name})`);
   renderBrands();
   restoreOpenGroups(brandId);
 }
@@ -2387,7 +2387,7 @@ function deleteArticle(brandId, gi, ai) {
   const groupName = groups[gi]?.name || 'Okänd grupp';
   groups[gi].articles.splice(ai, 1);
   saveProject(brandId);
-  addActivity('🗑️', `Artikel "${articleName}" borttagen från "${groupName}" (${brand.name})`);
+  addActivity('', `Artikel "${articleName}" borttagen från "${groupName}" (${brand.name})`);
   renderBrands();
   restoreOpenGroups(brandId);
 }
@@ -2473,7 +2473,7 @@ function renderArkiv() {
   el.innerHTML = `<div class="history-section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <div style="font-family:var(--display);font-size:18px;font-weight:700">Arkiv & Export</div>
-      <button class="export-btn" onclick="exportToExcel()">⬇ Exportera till Excel</button>
+      <button class="export-btn" onclick="exportToExcel()">Exportera till Excel</button>
     </div>
 
     <div class="history-filter-bar">
@@ -3070,7 +3070,7 @@ function renderOnboardStep() {
 
   const steps = [
     {
-      title: 'Välkommen till ListingWin! 🎉',
+      title: 'Välkommen till ListingWIN!',
       desc: 'Det här är ditt verktyg för att hantera listningar inom dagligvaruhandeln. Vi hjälper dig att hålla koll på aviseringsfönster, lanseringar och kontakter mot kedjorna. Låt oss sätta upp ditt konto på 3 enkla steg.',
       content: '',
       next: 'Kom igång →'
@@ -3085,9 +3085,9 @@ function renderOnboardStep() {
       title: 'Vilka kedjor jobbar du mot?',
       desc: 'Välj de kedjor du aktivt jobbar med. Aviseringsfönster visas bara för valda kedjor.',
       content: `<div class="onboard-chain-picks">
-        <button class="onboard-chain-pick ${onboardData.chains.includes('coop')?'picked-coop':''}" onclick="toggleOnboardChain('coop',this)">🟢 Coop</button>
-        <button class="onboard-chain-pick ${onboardData.chains.includes('ica')?'picked-ica':''}" onclick="toggleOnboardChain('ica',this)">🔴 ICA</button>
-        <button class="onboard-chain-pick ${onboardData.chains.includes('dagab')?'picked-dagab':''}" onclick="toggleOnboardChain('dagab',this)">🟠 Dagab</button>
+        <button class="onboard-chain-pick ${onboardData.chains.includes('coop')?'picked-coop':''}" onclick="toggleOnboardChain('coop',this)">Coop</button>
+        <button class="onboard-chain-pick ${onboardData.chains.includes('ica')?'picked-ica':''}" onclick="toggleOnboardChain('ica',this)">ICA</button>
+        <button class="onboard-chain-pick ${onboardData.chains.includes('dagab')?'picked-dagab':''}" onclick="toggleOnboardChain('dagab',this)">Dagab</button>
       </div>`,
       next: 'Avsluta setup →'
     }
@@ -3158,7 +3158,7 @@ async function finishOnboarding() {
     renderAll();
   }
 
-  addActivity('🎉', 'Välkommen! Ditt konto är nu satt upp.');
+  addActivity('', 'Välkommen! Ditt konto är nu satt upp.');
 }
 
 function skipOnboarding() {
@@ -3212,7 +3212,7 @@ const DEADLINE_STEPS = [
   { name: 'Mötesbokning kedja',        daysBefore: 21, key: 'mote' },
   { name: 'Presentation klar',         daysBefore: 14, key: 'presentation' },
   { name: 'Offert till kedja',         daysBefore: 7,  key: 'offert' },
-  { name: '🚀 Lansering',             daysBefore: 0,  key: '__launch__' },
+  { name: 'Lansering',             daysBefore: 0,  key: '__launch__' },
 ];
 
 const ROUNDS_BY_CHAIN = {
@@ -3348,7 +3348,7 @@ function renderWindowNote(roundName, source) {
   const noteId = `wn-${key}`;
   const panelId = `wnp-${key}`;
   return `<div style="margin-top:6px">
-    <button class="window-note-btn" onclick="toggleWindowNote('${panelId}')">✏ ${note ? 'Redigera notering' : 'Lägg till notering'}</button>
+    <button class="window-note-btn" onclick="toggleWindowNote('${panelId}')">${note ? 'Redigera notering' : 'Lägg till notering'}</button>
     <div class="window-note-panel" id="${panelId}" style="display:${note?'block':'none'}">
       <textarea class="window-note-textarea" id="${noteId}" placeholder="Anteckna vad du vet om det här fönstret..." onblur="saveWindowNote('${key}','${noteId}')">${note}</textarea>
       ${note ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">Sparas automatiskt</div>` : ''}
@@ -3475,7 +3475,7 @@ function addAgendaItem() {
   if (!title || !date) return;
   agendaItems.push({ id: uid(), date, title, sub, color: '#a78bfa', type: 'custom', readonly: false });
   saveAgenda();
-  addActivity('📅', `Agendahändelse tillagd: ${title}`);
+  addActivity('', `Agendahändelse tillagd: ${title}`);
   renderAgenda();
 }
 
@@ -3483,7 +3483,7 @@ function deleteAgendaItem(id) {
   const item = agendaItems.find(i => i.id === id);
   agendaItems = agendaItems.filter(i => i.id !== id);
   saveAgenda();
-  addActivity('🗑️', `Agendahändelse "${item?.title || 'Okänd'}" borttagen`);
+  addActivity('', `Agendahändelse "${item?.title || 'Okänd'}" borttagen`);
   renderAgenda();
 }
 
@@ -3558,14 +3558,14 @@ function checkAndGenerateNotifs() {
   urgent.forEach(r => {
     const d = daysLeft(r.launchDate);
     const src = r.source === 'coop' ? 'Coop' : r.source === 'ica' ? 'ICA' : 'Dagab';
-    if (d <= 7) addNotif(`⚠️ KRITISKT: ${r.name} (${src}) lanserar om ${d} dagar!`, 'urgent');
-    else addNotif(`📅 ${r.name} (${src}) lanserar om ${d} dagar`, 'info');
+    if (d <= 7) addNotif(`KRITISKT: ${r.name} (${src}) lanserar om ${d} dagar!`, 'urgent');
+    else addNotif(`${r.name} (${src}) lanserar om ${d} dagar`, 'info');
   });
 
   lanseringar.forEach(l => {
     if (!l.launchDate) return;
     const d = Math.round((new Date(l.launchDate) - new Date()) / 86400000);
-    if (d >= 0 && d <= 14) addNotif(`🚀 Lansering "${l.name}" om ${d} dagar`, 'lansering');
+    if (d >= 0 && d <= 14) addNotif(`Lansering "${l.name}" om ${d} dagar`, 'lansering');
   });
 }
 
@@ -3707,7 +3707,7 @@ function addComment(lid) {
   if (!l.comments) l.comments = [];
   l.comments.push({ author: currentUser?.email || 'du', date: new Date().toLocaleDateString('sv-SE'), text });
   saveLansering(lid);
-  addActivity('💬', `Kommentar tillagd på "${l.name}"`);
+  addActivity('', `Kommentar tillagd på "${l.name}"`);
   renderLansering();
 }
 
@@ -3716,7 +3716,7 @@ function deleteComment(lid, idx) {
   if (!l?.comments) return;
   l.comments.splice(idx, 1);
   saveLansering(lid);
-  addActivity('🗑️', `Kommentar borttagen från "${l.name}"`);
+  addActivity('', `Kommentar borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -3751,14 +3751,14 @@ function renderGlobalSearch(q) {
     // Search products
     (b.productGroups||[]).forEach(g => {
       if (g.name.toLowerCase().includes(q)) {
-        results.push({ icon: '📦', label: g.name, sub: `Varumärke: ${b.name}`, type: 'Produktgrupp', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
+        results.push({ icon: '·', label: g.name, sub: `Varumärke: ${b.name}`, type: 'Produktgrupp', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
       }
     });
     // Search articles
     (b.productGroups||[]).forEach(g => {
       (g.articles||[]).forEach(a => {
         if (a.name.toLowerCase().includes(q) || (a.ean||'').includes(q)) {
-          results.push({ icon: '🏷', label: a.name, sub: `${b.name} → ${g.name}${a.ean?' · EAN: '+a.ean:''}`, type: 'Artikel', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
+          results.push({ icon: '·', label: a.name, sub: `${b.name} → ${g.name}${a.ean?' · EAN: '+a.ean:''}`, type: 'Artikel', action: () => { showTab('brands'); selectedBrandId = b.id; renderBrands(); } });
         }
       });
     });
@@ -3767,12 +3767,12 @@ function renderGlobalSearch(q) {
   // Search lanseringar
   lanseringar.forEach(l => {
     if (l.name.toLowerCase().includes(q)) {
-      results.push({ icon: '🚀', label: l.name, sub: l.launchDate ? `Lansering: ${l.launchDate}` : 'Lansering', type: 'Lansering', action: () => { showTab('lansering'); selectedLanseringId = l.id; renderLansering(); } });
+      results.push({ icon: '▸', label: l.name, sub: l.launchDate ? `Lansering: ${l.launchDate}` : 'Lansering', type: 'Lansering', action: () => { showTab('lansering'); selectedLanseringId = l.id; renderLansering(); } });
     }
     // Search contact log
     (l.contactLog||[]).forEach(e => {
       if (e.note.toLowerCase().includes(q) || (e.contact||'').toLowerCase().includes(q)) {
-        results.push({ icon: '📋', label: `${e.chainLabel||e.chain}: ${e.note.slice(0,50)}`, sub: `Kontaktlogg · ${l.name}`, type: 'Logg', action: () => { showTab('lansering'); selectedLanseringId = l.id; renderLansering(); } });
+        results.push({ icon: '·', label: `${e.chainLabel||e.chain}: ${e.note.slice(0,50)}`, sub: `Kontaktlogg · ${l.name}`, type: 'Logg', action: () => { showTab('lansering'); selectedLanseringId = l.id; renderLansering(); } });
       }
     });
   });
@@ -3781,7 +3781,7 @@ function renderGlobalSearch(q) {
   allRounds().forEach(r => {
     if (r.name.toLowerCase().includes(q)) {
       const src = r.source === 'coop' ? 'Coop' : r.source === 'ica' ? 'ICA' : 'Dagab';
-      results.push({ icon: '📅', label: r.name, sub: `${src} · ${r.launchDate}`, type: 'Fönster', action: () => showTab('overview') });
+      results.push({ icon: '·', label: r.name, sub: `${src} · ${r.launchDate}`, type: 'Fönster', action: () => showTab('overview') });
     }
   });
 
@@ -3826,7 +3826,7 @@ function renderMobileQuick() {
   return `<div class="mobile-quick" style="padding:12px 16px 0">
     ${urgentLanseringar.length > 0 ? `
       <div class="mq-card">
-        <div class="mq-card-title">🚀 Kommande lanseringar</div>
+        <div class="mq-card-title">Kommande lanseringar</div>
         ${urgentLanseringar.map(l => {
           const d = Math.round((new Date(l.launchDate) - new Date()) / 86400000);
           return `<div class="mq-check">
@@ -3837,7 +3837,7 @@ function renderMobileQuick() {
       </div>` : ''}
     ${openChecks.length > 0 ? `
       <div class="mq-card">
-        <div class="mq-card-title">☑ Att göra</div>
+        <div class="mq-card-title">Att göra</div>
         ${openChecks.map(c => `
           <div class="mq-check">
             <input type="checkbox" onchange="toggleCheckItem('${c.lid}','${c.id}',this.checked)">
@@ -4005,7 +4005,7 @@ function removeChainTab(lid, chainId) {
     l.activeCustomerTab = remaining[0]?.id || null;
   }
   const chainLabel = { coop: 'Coop', ica: 'ICA', dagab: 'Dagab' }[chainId] || chainId;
-  addActivity('🗂️', `Kundtabb "${chainLabel}" arkiverad i "${l.name}"`);
+  addActivity('', `Kundtabb "${chainLabel}" arkiverad i "${l.name}"`);
   saveLansering(lid);
   renderLansering();
 }
@@ -4039,7 +4039,7 @@ function addFreeCustomer(lid) {
   if (!l.freeCustomers) l.freeCustomers = [];
   if (!l.freeCustomers.includes(name)) l.freeCustomers.push(name);
   saveLansering(lid);
-  addActivity('👤', `Kund "${name}" tillagd i "${l.name}"`);
+  addActivity('', `Kund "${name}" tillagd i "${l.name}"`);
   renderLansering();
 }
 
@@ -4051,7 +4051,7 @@ function removeFreeCustomer(lid, name) {
     l.activeCustomerTab = (l.chains || [])[0] || null;
   }
   saveLansering(lid);
-  addActivity('🗑️', `Kund "${name}" borttagen från "${l.name}"`);
+  addActivity('', `Kund "${name}" borttagen från "${l.name}"`);
   renderLansering();
 }
 
@@ -4212,7 +4212,7 @@ function toggleCustomerCheckItem(lid, custKey, itemId, checked) {
   if (checked) l.customers[custKey].checklist[itemId] = new Date().toLocaleDateString('sv-SE');
   else delete l.customers[custKey].checklist[itemId];
   saveLansering(lid);
-  addActivity(checked ? '✅' : '⬜', `${CHECKLIST_ITEMS.find(i=>i.id===itemId)?.label} — ${l.name}`);
+  addActivity('', `${CHECKLIST_ITEMS.find(i=>i.id===itemId)?.label} — ${l.name}`);
   renderLansering();
 }
 
@@ -4224,7 +4224,7 @@ function addCustomerTask(lid, custKey) {
   if (!l.customers[custKey]) l.customers[custKey] = { checklist: {}, tasks: [] };
   l.customers[custKey].tasks.push({ name: '', deadline: '', status: 'Ej påbörjad', owner: '' });
   saveLansering(lid);
-  addActivity('📌', `Uppgift tillagd för ${custKey} i "${l.name}"`);
+  addActivity('', `Uppgift tillagd för ${custKey} i "${l.name}"`);
   renderLansering();
 }
 
@@ -4235,7 +4235,7 @@ function updateCustomerTask(lid, custKey, idx, field, value) {
   task[field] = value;
   saveLansering(lid);
   if (field === 'status') {
-    addActivity('🔄', `Uppgift "${task.name || 'Namnlös'}" → ${value} (${custKey}, ${l.name})`);
+    addActivity('', `Uppgift "${task.name || 'Namnlös'}" → ${value} (${custKey}, ${l.name})`);
   }
 }
 
@@ -4245,7 +4245,7 @@ function deleteCustomerTask(lid, custKey, idx) {
   const taskName = l.customers[custKey].tasks[idx]?.name || 'Namnlös';
   l.customers[custKey].tasks.splice(idx, 1);
   saveLansering(lid);
-  addActivity('🗑️', `Uppgift "${taskName}" borttagen (${custKey}, ${l.name})`);
+  addActivity('', `Uppgift "${taskName}" borttagen (${custKey}, ${l.name})`);
   renderLansering();
 }
 
@@ -4261,7 +4261,7 @@ function addCustomerContactEntry(lid, custKey) {
   if (!l.contactLog) l.contactLog = [];
   l.contactLog.push({ customerTab: custKey, contact, date, note, next });
   saveLansering(lid);
-  addActivity('📋', `Kontaktlogg: ${custKey} — ${note.slice(0,40)}`);
+  addActivity('', `Kontaktlogg: ${custKey} — ${note.slice(0,40)}`);
   renderLansering();
 }
 
@@ -4426,7 +4426,7 @@ async function sendInvitation() {
       fb.style.color = '#4ade80';
       fb.textContent = 'Inbjudan skickad till ' + email + '!';
       document.getElementById('invite-email').value = '';
-      addActivity('✉️', `Inbjudan skickad till ${email}`);
+      addActivity('', `Inbjudan skickad till ${email}`);
     } else {
       throw new Error(result.message || 'Okänt fel');
     }
@@ -4449,7 +4449,7 @@ function toggleCoopHemmaSettings() {
   state.active.coopHemma = !state.active.coopHemma;
   const el = document.getElementById('settings-hemma-toggle');
   if (el) el.classList.toggle('on', state.active.coopHemma);
-  addActivity('⚙️', `Coop Hemma-fönster ${state.active.coopHemma ? 'aktiverat' : 'inaktiverat'}`);
+  addActivity('', `Coop Hemma-fönster ${state.active.coopHemma ? 'aktiverat' : 'inaktiverat'}`);
   renderAll();
 }
 
@@ -4535,7 +4535,7 @@ function uid() { return Math.random().toString(36).slice(2,9); }
 
 // ─── SYNLIGHET ───
 function renderVisibilityBadge(brand) {
-  const icons = { private: '🔒', shared: '👥', workspace: '🏢' };
+  const icons = { private: '·', shared: '·', workspace: '·' };
   const labels = { private: 'Privat', shared: 'Delade', workspace: 'Hela workspace' };
   const colors = { private: '#94a3b8', shared: '#a78bfa', workspace: '#4ade80' };
   const v = brand.visibility || 'private';
@@ -4568,7 +4568,7 @@ async function openShareModal(brandId) {
   cachedMemberMap = memberMap;
 
   const visOpts = ['private','shared','workspace'];
-  const visLabels = { private:'🔒 Privat', shared:'👥 Utvalda kollegor', workspace:'🏢 Hela workspace' };
+  const visLabels = { private:'Privat', shared:'Utvalda kollegor', workspace:'Hela workspace' };
   const visDescriptions = {
     private: 'Bara du kan se detta projekt.',
     shared: 'Välj vilka kollegor som ska ha åtkomst och vilken behörighet de ska ha.',
@@ -4610,7 +4610,7 @@ async function setProjectVisibility(brandId, visibility) {
   if (ok) {
     const brand = brands.find(b => b.id === brandId);
     const visLabels = { private: 'Privat', shared: 'Delade kollegor', workspace: 'Hela workspace' };
-    addActivity('🔒', `Synlighet för "${brand?.name || 'projekt'}" ändrad till ${visLabels[visibility] || visibility}`);
+    addActivity('', `Synlighet för "${brand?.name || 'projekt'}" ändrad till ${visLabels[visibility] || visibility}`);
     renderBrands();
     openShareModal(brandId);
   }
@@ -4627,7 +4627,7 @@ async function updateSharePermission(brandId, userId, permission) {
   const brand = brands.find(b => b.id === brandId);
   const member = workspaceMembers.find(m => m.user_id === userId);
   if (!permission) {
-    addActivity('🔓', `Åtkomst till "${brand?.name || 'projekt'}" borttagen för ${member?.email || userId}`);
+    addActivity('', `Åtkomst till "${brand?.name || 'projekt'}" borttagen för ${member?.email || userId}`);
     supabaseClient.from('project_members')
       .delete()
       .eq('project_id', brandId)
@@ -4635,7 +4635,7 @@ async function updateSharePermission(brandId, userId, permission) {
       .neq('permission', 'owner');
   } else {
     const permLabels = { viewer: 'kan se', editor: 'kan redigera' };
-    addActivity('🤝', `${member?.email || userId} fick behörighet "${permLabels[permission] || permission}" på "${brand?.name || 'projekt'}"`);
+    addActivity('', `${member?.email || userId} fick behörighet "${permLabels[permission] || permission}" på "${brand?.name || 'projekt'}"`);
     supabaseClient.rpc('share_project', {
       p_project_id: brandId,
       p_user_id: userId,
@@ -4657,11 +4657,11 @@ function renderShareMembersList(brandId) {
           <div style="display:flex;gap:4px;">
             <button onclick="updateSharePermission('${brandId}','${m.user_id}','viewer')"
               style="padding:4px 10px;border-radius:6px;border:1px solid ${perm==='viewer' ? '#a78bfa' : 'var(--border2)'};background:${perm==='viewer' ? 'rgba(167,139,250,0.15)' : 'none'};color:${perm==='viewer' ? '#a78bfa' : '#fff'};cursor:pointer;font-family:var(--font);font-size:11px;transition:all 0.15s;">
-              👁 Kan se
+              Kan se
             </button>
             <button onclick="updateSharePermission('${brandId}','${m.user_id}','editor')"
               style="padding:4px 10px;border-radius:6px;border:1px solid ${perm==='editor' ? '#a78bfa' : 'var(--border2)'};background:${perm==='editor' ? 'rgba(167,139,250,0.15)' : 'none'};color:${perm==='editor' ? '#a78bfa' : '#fff'};cursor:pointer;font-family:var(--font);font-size:11px;transition:all 0.15s;">
-              ✏️ Kan redigera
+              Kan redigera
             </button>
             ${perm && perm !== 'owner' ? `<button onclick="updateSharePermission('${brandId}','${m.user_id}','')"
               style="padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:none;color:#f87171;cursor:pointer;font-family:var(--font);font-size:11px;" title="Ta bort åtkomst">✕</button>` : ''}
@@ -4904,14 +4904,14 @@ async function saveBrand() {
       await supabaseClient.from('projects')
         .update({ name, color })
         .eq('id', editingBrandId);
-      addActivity('✏️', `Varumärke "${name}" uppdaterat`);
+      addActivity('', `Varumärke "${name}" uppdaterat`);
     }
   } else {
     const newBrand = await createProject(name, color);
     if (!newBrand) { alert('Kunde inte skapa projekt'); return; }
     newBrand.logo = pendingLogoDataUrl || null;
     selectedBrandId = newBrand.id;
-    addActivity('🆕', `Varumärke "${name}" skapat`);
+    addActivity('', `Varumärke "${name}" skapat`);
   }
   closeBrandModal();
   renderBrands();
@@ -4929,7 +4929,7 @@ async function deleteBrand(id) {
   if (error) { alert('Kunde inte ta bort: ' + error.message); return; }
   brands = brands.filter(b => b.id !== id);
   if (selectedBrandId === id) selectedBrandId = brands[0]?.id || null;
-  addActivity('🗑️', `Varumärke "${brandName}" borttaget`);
+  addActivity('', `Varumärke "${brandName}" borttaget`);
   renderBrands();
   if (state.tab === 'overview') renderOverview();
 }
@@ -5014,7 +5014,7 @@ function saveCatModal() {
     if (group) {
       group.cats = [...catModalSelected];
       saveProject(catModalTarget.brandId);
-      addActivity('🏷️', `Kategorier uppdaterade på "${group.name}" (${brand?.name || ''}): ${catModalSelected.map(c=>c.catName).join(', ') || 'inga'}`);
+      addActivity('', `Kategorier uppdaterade på "${group.name}" (${brand?.name || ''}): ${catModalSelected.map(c=>c.catName).join(', ') || 'inga'}`);
       restoreOpenGroups(catModalTarget.brandId);
     }
   } else {
@@ -5022,7 +5022,7 @@ function saveCatModal() {
     if (product) {
       product.cats = [...catModalSelected];
       saveProject(catModalTarget.brandId);
-      addActivity('🏷️', `Kategorier uppdaterade på "${product.name}" (${brand?.name || ''})`);
+      addActivity('', `Kategorier uppdaterade på "${product.name}" (${brand?.name || ''})`);
     }
   }
   closeCatModal();

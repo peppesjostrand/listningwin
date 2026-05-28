@@ -17,6 +17,7 @@
 <title>ListingWIN — Operativ kontroll över retail-lanseringar</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -42,37 +43,37 @@
     </div>
 
     <div class="sidebar-section">
-      <button class="nav-btn active" onclick="showTab('overview')" id="nav-overview"><span class="icon">◉</span> Hem</button>
+      <button class="nav-btn active" onclick="showTab('overview')" id="nav-overview"><i class="ti ti-home icon"></i> Hem</button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Planera</div>
-      <button class="nav-btn" onclick="showTab('categories')" id="nav-categories"><span class="icon">⊞</span> Fönster & Kategorier</button>
-      <button class="nav-btn" onclick="showTab('timeline')" id="nav-timeline"><span class="icon">▷</span> Tidslinje</button>
+      <button class="nav-btn" onclick="showTab('categories')" id="nav-categories"><i class="ti ti-calendar-event icon"></i> Fönster & Kategorier</button>
+      <button class="nav-btn" onclick="showTab('timeline')" id="nav-timeline"><i class="ti ti-timeline icon"></i> Tidslinje</button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
-      <button class="nav-btn" onclick="showTab('brands')" id="nav-brands"><span class="icon">◈</span> Varumärken</button>
+      <button class="nav-btn" onclick="showTab('brands')" id="nav-brands"><i class="ti ti-building-store icon"></i> Varumärken</button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Lanseringar</div>
-      <button class="nav-btn" onclick="showTab('lansering')" id="nav-lansering"><span class="icon">🚀</span> Aktiva</button>
-      <button class="nav-btn" onclick="showTab('arkiv')" id="nav-arkiv"><span class="icon">📦</span> Arkiv</button>
+      <button class="nav-btn" onclick="showTab('lansering')" id="nav-lansering"><i class="ti ti-rocket icon"></i> Aktiva</button>
+      <button class="nav-btn" onclick="showTab('arkiv')" id="nav-arkiv"><i class="ti ti-archive icon"></i> Arkiv</button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Verktyg</div>
-      <button class="nav-btn" onclick="showTab('kalkyl')" id="nav-kalkyl"><span class="icon">🧮</span> Kalkyl</button>
-      <button class="nav-btn" onclick="showTab('paminnelser')" id="nav-paminnelser"><span class="icon">🔔</span> Påminnelser</button>
+      <button class="nav-btn" onclick="showTab('kalkyl')" id="nav-kalkyl"><i class="ti ti-calculator icon"></i> Kalkyl</button>
+      <button class="nav-btn" onclick="showTab('paminnelser')" id="nav-paminnelser"><i class="ti ti-bell icon"></i> Påminnelser</button>
     </div>
 
     <div class="sidebar-section" style="margin-top:auto; padding: 0 14px 20px;">
       <button class="nav-btn" onclick="openSettings()" style="width:100%;display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span style="font-size:14px">⚙</span> Inställningar
+        <i class="ti ti-settings icon"></i> Inställningar
       </button>
       <button class="nav-btn" onclick="showTab('aktivitetslogg')" id="nav-aktivitetslogg" style="width:100%;display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span style="font-size:14px">📋</span> Aktivitetslogg
+        <i class="ti ti-list-details icon"></i> Aktivitetslogg
       </button>
       <div id="sidebar-logout"></div>
     </div>
@@ -84,12 +85,12 @@
       <div class="page-title" id="page-title">Översikt</div>
       <div class="week-badge" id="week-badge"></div>
       <div class="search-wrap" style="position:relative">
-        <span class="search-icon">⌕</span>
+        <i class="ti ti-search search-icon"></i>
         <input class="search-input search-input-global" type="text" placeholder="Sök allt..." id="global-search" oninput="renderGlobalSearch(this.value)" onfocus="showSearchPanel()" onblur="setTimeout(hideSearchPanel,200)">
         <div id="search-panel" style="display:none" class="search-results-panel"></div>
       </div>
       <div class="notif-bell-wrap" onclick="toggleNotifPanel()" id="notif-bell" style="margin-left:4px">
-        <span style="font-size:18px">🔔</span>
+        <i class="ti ti-bell" style="font-size:18px"></i>
         <span class="notif-badge" id="notif-badge" style="display:none">0</span>
       </div>
       <div id="notif-panel" class="notif-panel" style="display:none"></div>
@@ -121,6 +122,10 @@
     <a class="lp-nav-logo" href="#">
       <span class="listing">LISTING</span><span class="win">WIN</span>
     </a>
+    <div class="lp-nav-center">
+      <a class="lp-nav-link" href="#lp-features">Funktioner</a>
+      <a class="lp-nav-link" href="#lp-pricing">Priser</a>
+    </div>
     <div class="lp-nav-actions">
       <span class="lp-nav-link" onclick="openAuthOverlay('login')">Logga in</span>
       <button class="lp-btn-primary" onclick="openAuthOverlay('register')">Kom igång gratis</button>
@@ -128,7 +133,7 @@
   </nav>
 
   <section class="lp-hero">
-    <div class="lp-hero-text">
+    <div class="lp-hero-center">
       <div class="lp-hero-eyebrow">Lansering i DVH</div>
       <h1>Operativ kontroll över retail-lanseringar.</h1>
       <p class="lp-hero-sub">ListingWIN visar exakt när du ska agera för att hinna med varje listningsfönster — hos Coop, ICA och Dagab.</p>
@@ -137,46 +142,48 @@
         <button class="lp-btn-secondary" onclick="openAuthOverlay('login')" style="padding:13px 28px;font-size:15px;">Logga in</button>
       </div>
     </div>
-    <div class="lp-hero-visual">
-      <div class="lp-visual-card">
-        <div class="lp-visual-card-label">Nästa fönster — Mejeri</div>
-        <div class="lp-visual-chains">
-          <div class="lp-visual-chain coop">
-            <div class="lp-visual-chain-name">Coop</div>
-            <div class="lp-visual-chain-days">12</div>
-            <div class="lp-visual-chain-unit">dagar kvar</div>
-          </div>
-          <div class="lp-visual-chain ica">
-            <div class="lp-visual-chain-name">ICA</div>
-            <div class="lp-visual-chain-days">34</div>
-            <div class="lp-visual-chain-unit">dagar kvar</div>
-          </div>
-          <div class="lp-visual-chain dagab">
-            <div class="lp-visual-chain-name">Dagab</div>
-            <div class="lp-visual-chain-days">48</div>
-            <div class="lp-visual-chain-unit">dagar kvar</div>
+    <div class="lp-hero-visual-wide">
+      <div class="lp-hero-visual-inner">
+        <div class="lp-visual-card">
+          <div class="lp-visual-card-label">Nästa fönster — Mejeri</div>
+          <div class="lp-visual-chains">
+            <div class="lp-visual-chain coop">
+              <div class="lp-visual-chain-name">Coop</div>
+              <div class="lp-visual-chain-days">12</div>
+              <div class="lp-visual-chain-unit">dagar kvar</div>
+            </div>
+            <div class="lp-visual-chain ica">
+              <div class="lp-visual-chain-name">ICA</div>
+              <div class="lp-visual-chain-days">34</div>
+              <div class="lp-visual-chain-unit">dagar kvar</div>
+            </div>
+            <div class="lp-visual-chain dagab">
+              <div class="lp-visual-chain-name">Dagab</div>
+              <div class="lp-visual-chain-days">48</div>
+              <div class="lp-visual-chain-unit">dagar kvar</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="lp-visual-card" style="padding:0;overflow:hidden;">
-        <div class="lp-mock-table" style="padding:12px;">
-          <div class="lp-mock-row">
-            <div class="lp-mock-dot" style="background:var(--coop-color)"></div>
-            <div class="lp-mock-label">Anmälan till Coop</div>
-            <div class="lp-mock-week" style="color:var(--coop-color)">V.32</div>
-            <div class="lp-mock-chip green">Öppet</div>
-          </div>
-          <div class="lp-mock-row">
-            <div class="lp-mock-dot" style="background:var(--ica-color)"></div>
-            <div class="lp-mock-label">ICA-avisering stänger</div>
-            <div class="lp-mock-week" style="color:var(--ica-color)">V.35</div>
-            <div class="lp-mock-chip yellow">Snart</div>
-          </div>
-          <div class="lp-mock-row">
-            <div class="lp-mock-dot" style="background:var(--dagab-color)"></div>
-            <div class="lp-mock-label">Dagab-lansering</div>
-            <div class="lp-mock-week" style="color:var(--dagab-color)">V.40</div>
-            <div class="lp-mock-chip red">Förbi</div>
+        <div class="lp-visual-card" style="flex:2;padding:0;overflow:hidden;">
+          <div class="lp-mock-table" style="padding:16px;">
+            <div class="lp-mock-row">
+              <div class="lp-mock-dot" style="background:var(--coop-color)"></div>
+              <div class="lp-mock-label">Anmälan till Coop</div>
+              <div class="lp-mock-week" style="color:var(--coop-color)">V.32</div>
+              <div class="lp-mock-chip green">Öppet</div>
+            </div>
+            <div class="lp-mock-row">
+              <div class="lp-mock-dot" style="background:var(--ica-color)"></div>
+              <div class="lp-mock-label">ICA-avisering stänger</div>
+              <div class="lp-mock-week" style="color:var(--ica-color)">V.35</div>
+              <div class="lp-mock-chip yellow">Snart</div>
+            </div>
+            <div class="lp-mock-row">
+              <div class="lp-mock-dot" style="background:var(--dagab-color)"></div>
+              <div class="lp-mock-label">Dagab-lansering</div>
+              <div class="lp-mock-week" style="color:var(--dagab-color)">V.40</div>
+              <div class="lp-mock-chip red">Förbi</div>
+            </div>
           </div>
         </div>
       </div>
@@ -189,7 +196,7 @@
     <div class="lp-proof-item"><div class="lp-proof-dot" style="background:var(--dagab-color)"></div>Byggd för leverantörer inom dagligvaruhandeln</div>
   </div>
 
-  <div class="lp-features">
+  <div class="lp-features" id="lp-features">
     <div class="lp-feature">
       <div class="lp-feature-text">
         <div class="lp-feature-eyebrow">Fönsteröversikt</div>
@@ -267,7 +274,7 @@
     </div>
   </div>
 
-  <section class="lp-pricing">
+  <section class="lp-pricing" id="lp-pricing">
     <div class="lp-pricing-header">
       <div class="lp-pricing-eyebrow">Prissättning</div>
       <h2>Enkelt och transparent</h2>
@@ -303,11 +310,15 @@
   </section>
 
   <section class="lp-cta">
-    <h2>Redo att ta kontroll?</h2>
-    <p class="lp-cta-sub">Sluta gissa. Börja planera med exakta datum och automatiska påminnelser.</p>
-    <div class="lp-cta-btns">
-      <button class="lp-btn-white" onclick="openAuthOverlay('register')">Skapa konto gratis</button>
-      <button class="lp-btn-outline-white" onclick="openAuthOverlay('login')">Logga in</button>
+    <div class="lp-cta-inner">
+      <div class="lp-cta-text">
+        <h2>Redo att ta kontroll?</h2>
+        <p class="lp-cta-sub">Sluta gissa. Börja planera med exakta datum och automatiska påminnelser.</p>
+      </div>
+      <div class="lp-cta-btns">
+        <button class="lp-btn-primary lp-cta-btn-main" onclick="openAuthOverlay('register')">Skapa konto gratis</button>
+        <button class="lp-btn-secondary lp-cta-btn-sub" onclick="openAuthOverlay('login')">Logga in</button>
+      </div>
     </div>
   </section>
 
@@ -338,7 +349,7 @@
            ondragleave="this.classList.remove('drag-over')"
            ondrop="handleLogoDrop(event)">
         <input type="file" accept="image/*" id="logo-file-input" onchange="handleLogoFile(this.files[0])">
-        <div class="drop-icon">🖼️</div>
+        <div class="drop-icon"><i class="ti ti-photo"></i></div>
         <div class="drop-label">Dra och släpp logga här, eller klicka för att bläddra</div>
       </div>
       <div class="logo-preview-wrap" id="logo-preview-wrap" style="display:none">
@@ -397,7 +408,7 @@
   <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;" onclick="closeSettingsOutside(event)">
     <div id="settings-modal" style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:360px;max-width:90vw;position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <div style="font-family:var(--display);font-weight:700;font-size:18px;">⚙ Inställningar</div>
+        <div style="font-family:var(--display);font-weight:700;font-size:18px;">Inställningar</div>
         <button onclick="closeSettings()" style="background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;opacity:0.6;line-height:1;">✕</button>
       </div>
 
