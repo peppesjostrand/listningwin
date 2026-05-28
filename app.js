@@ -1775,6 +1775,29 @@ function closeWizard() {
   wizardData = null;
 }
 
+function openEditWizard(lid) {
+  const l = lanseringar.find(x => x.id === lid);
+  if (!l) return;
+  const categories = { coop: null, ica: null, dagab: null };
+  const catSearch  = { coop: '', ica: '', dagab: '' };
+  for (const chain of (l.chains || [])) {
+    const catName = l.chainData?.[chain]?.category || '';
+    const cats = chain === 'coop' ? COOP_CATS : chain === 'ica' ? ICA_CATS : DAGAB_CATS;
+    const found = cats.find(c => c.cat === catName) || null;
+    categories[chain] = found;
+    catSearch[chain]  = catName;
+  }
+  wizardData = {
+    step: 1, isEdit: true, lanseringId: lid,
+    brandId: l.brandId || '', newBrandName: '', useNewBrand: false,
+    groupName: l.groupName || '',
+    chains: [...(l.chains || [])],
+    categories, catSearch,
+    articles: (l.articles || [{name:''}]).map(a => (typeof a === 'string' ? a : a.name) || '')
+  };
+  renderWizardModal();
+}
+
 function renderWizardModal() {
   document.getElementById('lansering-wizard')?.remove();
   const overlay = document.createElement('div');
@@ -1823,13 +1846,13 @@ function buildWizardHTML() {
   const backBtn = step > 1
     ? `<button class="lansering-action-btn" onclick="wizardPrev()">← Tillbaka</button>`
     : `<button class="lansering-action-btn" onclick="closeWizard()">Avbryt</button>`;
-  const nextLabel = step === 4 ? 'Skapa lansering' : 'Nästa →';
-  const nextFn = step === 4 ? 'completeWizard()' : 'wizardNext()';
+  const nextLabel = step === 4 ? (wizardData.isEdit ? 'Spara ändringar' : 'Skapa lansering') : 'Nästa →';
+  const nextFn = step === 4 ? (wizardData.isEdit ? 'completeEditWizard()' : 'completeWizard()') : 'wizardNext()';
 
   return `
     <div class="lansering-modal-box wz-box">
       <div class="wz-header">
-        <div class="lansering-modal-title">Ny lansering</div>
+        <div class="lansering-modal-title">${wizardData.isEdit ? 'Redigera lansering' : 'Ny lansering'}</div>
         <button class="wz-close-btn" onclick="closeWizard()">✕</button>
       </div>
       <div class="wz-steps">${dots}</div>
@@ -1856,7 +1879,7 @@ function buildWizardStep1() {
       <select class="lansering-form-input" id="wz-brand" onchange="wizardBrandChange()">
         <option value="">— Välj varumärke —</option>
         ${brandOptions}
-        <option value="__new__"${showNew ? ' selected' : ''}>+ Skapa nytt varumärke...</option>
+        ${!wizardData.isEdit ? '<option value="__new__"' + (showNew ? ' selected' : '') + '>+ Skapa nytt varumärke...</option>' : ''}
       </select>
     </div>
     <div id="wz-new-brand-wrap" style="display:${showNew ? 'block' : 'none'}">
@@ -2090,6 +2113,8 @@ function wizardRemoveArticle(i) {
 function wizardNext() {
   const { step } = wizardData;
 
+  if (step === 1 && wizardData.isEdit) { wizardData.step++; renderWizardModal(); return; }
+
   if (step === 1) {
     if (!wizardData.brandId && !wizardData.useNewBrand) {
       alert('Välj ett varumärke eller skapa ett nytt.');
@@ -2222,6 +2247,47 @@ async function completeWizard() {
 
   renderLansering();
   renderBrands();
+}
+
+async function completeEditWizard() {
+  const validArticles = wizardData.articles.map(a => a.trim()).filter(Boolean);
+  if (validArticles.length === 0) { alert('Lägg till minst en artikel.'); return; }
+  const data = { ...wizardData };
+  closeWizard();
+  const l = lanseringar.find(x => x.id === data.lanseringId);
+  if (!l) { addNotif('Lanseringen hittades inte', 'error'); return; }
+  const b = brands.find(x => x.id === data.brandId);
+  const brandName  = b?.name  || l.brand  || '';
+  const brandColor = b?.color || l.color  || '#f59e0b';
+  const groupName  = data.groupName.trim();
+  const chainData = Object.fromEntries(data.chains.map(c => {
+    const cat = data.categories[c];
+    return [c, { category: cat?.cat || '', aviseringsVeckor: cat?.avisering || [], fonsterVeckor: cat?.fonster || [] }];
+  }));
+  const articles = validArticles.map((name, i) => ({
+    id: l.articles?.[i]?.id || 'a_' + Math.random().toString(36).slice(2, 8), name
+  }));
+  const customers = { ...(l.customers || {}) };
+  for (const chain of (l.chains || [])) { if (!data.chains.includes(chain)) delete customers[chain]; }
+  for (const chain of data.chains) { if (!customers[chain]) customers[chain] = { checklist: {}, tasks: [] }; }
+  const activeTab = data.chains.includes(l.activeCustomerTab) ? l.activeCustomerTab : data.chains[0];
+  const updated = { ...l, brandId: data.brandId, brand: brandName, color: brandColor,
+    groupName, name: `${brandName} — ${groupName}`,
+    chains: data.chains, chainData, articles, customers,
+    activeCustomerTab: activeTab, is_lansering: true };
+  try {
+    const { id: _id, name: _n, color: _c, ...rest } = updated;
+    await supabaseClient.rpc('save_project_data', { p_project_id: updated.id, p_data: JSON.stringify(rest) });
+    const idx = lanseringar.findIndex(x => x.id === updated.id);
+    if (idx !== -1) lanseringar[idx] = updated;
+    selectedLanseringId = updated.id;
+    addActivity('✏️', `Lansering uppdaterad: ${groupName}`);
+    addNotif(`"${updated.name}" sparad`, 'success');
+  } catch (e) {
+    console.error('completeEditWizard:', e);
+    addNotif('Kunde inte spara ändringarna', 'error');
+  }
+  renderLansering();
 }
 
 async function saveLanseringModal() {
@@ -4183,7 +4249,7 @@ function renderLanseringDetail(l) {
     <div class="lansering-detail-header">
       <span style="width:14px;height:14px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
       <span class="lansering-detail-name">${l.name}</span>
-      <button class="lansering-action-btn" onclick="openLanseringModal('${l.id}')">Redigera</button>
+      <button class="lansering-action-btn" onclick="openEditWizard('${l.id}')">Redigera</button>
       <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
     </div>
 
