@@ -1351,8 +1351,9 @@ async function authOnLogin(user) {
     currentUserRole = membership.role;
   }
 
-  // Hide auth overlay, show app
+  // Hide auth overlay and landing page, show app
   document.getElementById('auth-overlay').style.display = 'none';
+  hideLandingPage();
   document.getElementById('app-root').style.display = 'flex';
 
   // Load workspace logo
@@ -1416,7 +1417,7 @@ async function authLogout() {
   applyCompanyLogo(null);
   localStorage.removeItem('listwin_company_logo');
   document.getElementById('app-root').style.display = 'none';
-  document.getElementById('auth-overlay').style.display = 'flex';
+  showLandingPage();
 }
 
 async function showInviteBanner(token) {
@@ -1498,10 +1499,12 @@ async function authInit() {
   } else if (session) {
     await authOnLogin(session.user);
   } else {
-    document.getElementById('auth-overlay').style.display = 'flex';
     if (inviteToken) {
+      document.getElementById('auth-overlay').style.display = 'flex';
       authShowTab('register');
       await showInviteBanner(inviteToken);
+    } else {
+      showLandingPage();
     }
   }
 }
@@ -4262,11 +4265,50 @@ function addCustomerContactEntry(lid, custKey) {
 }
 
 
+// ── TEMA ──
+function initTheme() {
+  const saved = localStorage.getItem('listwin_theme');
+  if (saved === 'dark') document.body.classList.add('dark');
+}
+
+function toggleDarkMode(enable) {
+  if (enable) {
+    document.body.classList.add('dark');
+    localStorage.setItem('listwin_theme', 'dark');
+  } else {
+    document.body.classList.remove('dark');
+    localStorage.setItem('listwin_theme', 'light');
+  }
+}
+
+// ── LANDNINGSSIDA ──
+function showLandingPage() {
+  const lp = document.getElementById('landing-page');
+  if (lp) lp.style.display = '';
+  document.getElementById('app-root').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'none';
+}
+
+function hideLandingPage() {
+  const lp = document.getElementById('landing-page');
+  if (lp) lp.style.display = 'none';
+}
+
+function openAuthOverlay(tab = 'login') {
+  hideLandingPage();
+  document.getElementById('auth-overlay').style.display = 'flex';
+  authShowTab(tab);
+}
+
+initTheme();
 loadWindowData().then(() => authInit());
 
 // ── SETTINGS ──
 function openSettings() {
   document.getElementById('settings-overlay').style.display = 'flex';
+  // Sync dark mode toggle
+  const darkToggle = document.getElementById('settings-dark-toggle');
+  if (darkToggle) darkToggle.classList.toggle('on', document.body.classList.contains('dark'));
   // Sync Coop Hemma toggle
   const hemmaToggle = document.getElementById('settings-hemma-toggle');
   if (hemmaToggle) hemmaToggle.classList.toggle('on', state.active.coopHemma);
@@ -4393,6 +4435,13 @@ async function sendInvitation() {
     fb.style.color = '#f87171';
     fb.textContent = 'Kunde inte skicka email: ' + e.message;
   }
+}
+
+function toggleDarkModeSettings() {
+  const isDark = document.body.classList.contains('dark');
+  toggleDarkMode(!isDark);
+  const el = document.getElementById('settings-dark-toggle');
+  if (el) el.classList.toggle('on', !isDark);
 }
 
 function toggleCoopHemmaSettings() {

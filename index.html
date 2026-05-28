@@ -14,7 +14,7 @@
 </script>
   <!-- v2.1772187763 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Listningsfönster 2026 — v02271022</title>
+<title>ListingWIN — Operativ kontroll över retail-lanseringar</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -28,7 +28,7 @@
   <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
   <!-- SIDEBAR -->
   <nav class="sidebar" id="app-sidebar">
-    <button onclick="closeMobileMenu()" style="display:none;position:absolute;top:12px;right:12px;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;opacity:0.6;line-height:1;" id="sidebar-close-btn">✕</button>
+    <button onclick="closeMobileMenu()" style="display:none;position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:0.6;line-height:1;" id="sidebar-close-btn">✕</button>
     <div class="logo">
       <div class="logo-wordmark">
         <span class="listing">LISTING</span><span class="win">WIN</span>
@@ -115,6 +115,211 @@
   </main>
 </div>
 
+<!-- LANDNINGSSIDA -->
+<div id="landing-page" style="display:none;">
+  <nav class="lp-nav">
+    <a class="lp-nav-logo" href="#">
+      <span class="listing">LISTING</span><span class="win">WIN</span>
+    </a>
+    <div class="lp-nav-actions">
+      <span class="lp-nav-link" onclick="openAuthOverlay('login')">Logga in</span>
+      <button class="lp-btn-primary" onclick="openAuthOverlay('register')">Kom igång gratis</button>
+    </div>
+  </nav>
+
+  <section class="lp-hero">
+    <div class="lp-hero-text">
+      <div class="lp-hero-eyebrow">Lansering i DVH</div>
+      <h1>Operativ kontroll över retail-lanseringar.</h1>
+      <p class="lp-hero-sub">ListingWIN visar exakt när du ska agera för att hinna med varje listningsfönster — hos Coop, ICA och Dagab.</p>
+      <div class="lp-hero-ctas">
+        <button class="lp-btn-primary" onclick="openAuthOverlay('register')" style="padding:13px 28px;font-size:15px;">Testa gratis</button>
+        <button class="lp-btn-secondary" onclick="openAuthOverlay('login')" style="padding:13px 28px;font-size:15px;">Logga in</button>
+      </div>
+    </div>
+    <div class="lp-hero-visual">
+      <div class="lp-visual-card">
+        <div class="lp-visual-card-label">Nästa fönster — Mejeri</div>
+        <div class="lp-visual-chains">
+          <div class="lp-visual-chain coop">
+            <div class="lp-visual-chain-name">Coop</div>
+            <div class="lp-visual-chain-days">12</div>
+            <div class="lp-visual-chain-unit">dagar kvar</div>
+          </div>
+          <div class="lp-visual-chain ica">
+            <div class="lp-visual-chain-name">ICA</div>
+            <div class="lp-visual-chain-days">34</div>
+            <div class="lp-visual-chain-unit">dagar kvar</div>
+          </div>
+          <div class="lp-visual-chain dagab">
+            <div class="lp-visual-chain-name">Dagab</div>
+            <div class="lp-visual-chain-days">48</div>
+            <div class="lp-visual-chain-unit">dagar kvar</div>
+          </div>
+        </div>
+      </div>
+      <div class="lp-visual-card" style="padding:0;overflow:hidden;">
+        <div class="lp-mock-table" style="padding:12px;">
+          <div class="lp-mock-row">
+            <div class="lp-mock-dot" style="background:var(--coop-color)"></div>
+            <div class="lp-mock-label">Anmälan till Coop</div>
+            <div class="lp-mock-week" style="color:var(--coop-color)">V.32</div>
+            <div class="lp-mock-chip green">Öppet</div>
+          </div>
+          <div class="lp-mock-row">
+            <div class="lp-mock-dot" style="background:var(--ica-color)"></div>
+            <div class="lp-mock-label">ICA-avisering stänger</div>
+            <div class="lp-mock-week" style="color:var(--ica-color)">V.35</div>
+            <div class="lp-mock-chip yellow">Snart</div>
+          </div>
+          <div class="lp-mock-row">
+            <div class="lp-mock-dot" style="background:var(--dagab-color)"></div>
+            <div class="lp-mock-label">Dagab-lansering</div>
+            <div class="lp-mock-week" style="color:var(--dagab-color)">V.40</div>
+            <div class="lp-mock-chip red">Förbi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="lp-proof">
+    <div class="lp-proof-item"><div class="lp-proof-dot"></div>Täcker alla kategorier hos Coop, ICA och Dagab</div>
+    <div class="lp-proof-item"><div class="lp-proof-dot" style="background:var(--ica-color)"></div>Automatiska deadlines — inga manuella beräkningar</div>
+    <div class="lp-proof-item"><div class="lp-proof-dot" style="background:var(--dagab-color)"></div>Byggd för leverantörer inom dagligvaruhandeln</div>
+  </div>
+
+  <div class="lp-features">
+    <div class="lp-feature">
+      <div class="lp-feature-text">
+        <div class="lp-feature-eyebrow">Fönsteröversikt</div>
+        <h2>Fönsteröversikt i realtid</h2>
+        <p class="lp-feature-desc">Se alla öppna listningsfönster för dina produktkategorier samlade på ett ställe. Filtrera per kedja, sortera på datum, och se exakt hur lång tid som återstår till varje avisering och lansering.</p>
+        <ul class="lp-feature-checklist">
+          <li>Alla tre kedjor i en vy</li>
+          <li>Automatisk datumberäkning varje år</li>
+          <li>Filtrera per kategori eller kedja</li>
+        </ul>
+      </div>
+      <div class="lp-feature-visual">
+        <div class="lp-mock-table">
+          <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:0 12px 8px;display:grid;grid-template-columns:1fr 100px 100px 80px;gap:8px;">
+            <span>Kategori</span><span>Avisering</span><span>Lansering</span><span>Status</span>
+          </div>
+          <div class="lp-mock-row" style="display:grid;grid-template-columns:1fr 100px 100px 80px;gap:8px;align-items:center;">
+            <div style="font-size:12px;font-weight:500;">Mejeri</div>
+            <div style="font-size:12px;color:var(--muted);">V.32 (Coop)</div>
+            <div style="font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;color:var(--coop-color);">V.37</div>
+            <div class="lp-mock-chip green">Öppet</div>
+          </div>
+          <div class="lp-mock-row" style="display:grid;grid-template-columns:1fr 100px 100px 80px;gap:8px;align-items:center;">
+            <div style="font-size:12px;font-weight:500;">Chark & deli</div>
+            <div style="font-size:12px;color:var(--muted);">V.30 (ICA)</div>
+            <div style="font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;color:var(--ica-color);">V.37</div>
+            <div class="lp-mock-chip yellow">Snart</div>
+          </div>
+          <div class="lp-mock-row" style="display:grid;grid-template-columns:1fr 100px 100px 80px;gap:8px;align-items:center;">
+            <div style="font-size:12px;font-weight:500;">Kalla drycker</div>
+            <div style="font-size:12px;color:var(--muted);">V.28 (Dagab)</div>
+            <div style="font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;color:var(--dagab-color);">V.37</div>
+            <div class="lp-mock-chip red">Förbi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lp-feature reversed">
+      <div class="lp-feature-text">
+        <div class="lp-feature-eyebrow">Handlingsplan</div>
+        <h2>Din handlingsplan — automatisk</h2>
+        <p class="lp-feature-desc">Varje lansering får en automatisk tidslinje med steg som validoo, avisering och lansering. Lägg till egna deadlines, sätt ansvariga och följ upp statusen — allt i ett och samma vy.</p>
+        <ul class="lp-feature-checklist">
+          <li>Automatisk tidslinje per lansering</li>
+          <li>Egna uppgifter med deadlines och ansvariga</li>
+          <li>Kontaktlogg per kedja</li>
+        </ul>
+      </div>
+      <div class="lp-feature-visual">
+        <div class="lp-mock-timeline">
+          <div class="lp-mock-step">
+            <div class="lp-mock-step-dot" style="background:#4ade80;"></div>
+            <div class="lp-mock-step-body">
+              <div class="lp-mock-step-name" style="text-decoration:line-through;opacity:0.5;">Validoo-registrering</div>
+              <div class="lp-mock-step-date">V.28 — Klar</div>
+            </div>
+          </div>
+          <div class="lp-mock-step">
+            <div class="lp-mock-step-dot" style="background:#f59e0b;border:2px solid var(--surface);"></div>
+            <div class="lp-mock-step-body">
+              <div class="lp-mock-step-name" style="font-weight:600;">Avisering till ICA</div>
+              <div class="lp-mock-step-date" style="color:#d97706;">V.30 — Agera nu</div>
+            </div>
+          </div>
+          <div class="lp-mock-step">
+            <div class="lp-mock-step-dot" style="background:var(--border2);border:2px solid var(--border2);"></div>
+            <div class="lp-mock-step-body">
+              <div class="lp-mock-step-name" style="color:var(--muted);">Lansering ICA</div>
+              <div class="lp-mock-step-date">V.37</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="lp-pricing">
+    <div class="lp-pricing-header">
+      <div class="lp-pricing-eyebrow">Prissättning</div>
+      <h2>Enkelt och transparent</h2>
+    </div>
+    <div class="lp-pricing-cards">
+      <div class="lp-pricing-card">
+        <div class="lp-pricing-name">Workspace</div>
+        <div class="lp-pricing-price">2 000<span> kr/mån</span></div>
+        <div class="lp-pricing-sub">Inkluderar 1 användare. Obegränsat antal varumärken.</div>
+        <ul class="lp-pricing-features">
+          <li>Alla listningsfönster — Coop, ICA, Dagab</li>
+          <li>Obegränsat antal varumärken</li>
+          <li>Automatiska handlingsplaner</li>
+          <li>Kontaktlogg per kedja</li>
+          <li>Kalkylator för listningskostnader</li>
+        </ul>
+        <button class="lp-btn-primary" onclick="openAuthOverlay('register')" style="width:100%;padding:12px;">Kom igång</button>
+      </div>
+      <div class="lp-pricing-card featured">
+        <div class="lp-pricing-badge">Populärast</div>
+        <div class="lp-pricing-name">Team</div>
+        <div class="lp-pricing-price">2 000<span> kr/mån</span></div>
+        <div class="lp-pricing-sub">+ 500 kr/mån per extra användare.</div>
+        <ul class="lp-pricing-features">
+          <li>Allt i Workspace</li>
+          <li>Flera användare med roller</li>
+          <li>Delad aktivitetslogg</li>
+          <li>Bjud in kollegor</li>
+        </ul>
+        <button class="lp-btn-primary" onclick="openAuthOverlay('register')" style="width:100%;padding:12px;">Kom igång</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-cta">
+    <h2>Redo att ta kontroll?</h2>
+    <p class="lp-cta-sub">Sluta gissa. Börja planera med exakta datum och automatiska påminnelser.</p>
+    <div class="lp-cta-btns">
+      <button class="lp-btn-white" onclick="openAuthOverlay('register')">Skapa konto gratis</button>
+      <button class="lp-btn-outline-white" onclick="openAuthOverlay('login')">Logga in</button>
+    </div>
+  </section>
+
+  <footer class="lp-footer">
+    <div class="lp-footer-copy">© 2026 Foodster AB · ListingWIN</div>
+    <div class="lp-footer-links">
+      <span class="lp-footer-link">Integritetspolicy</span>
+      <span class="lp-footer-link">Villkor</span>
+    </div>
+  </footer>
+</div>
+
 <script src="app.js"></script>
 
 <!-- BRAND FORM MODAL -->
@@ -174,7 +379,7 @@
     <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:440px;max-width:94vw;position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <div id="share-modal-title" style="font-family:var(--display);font-weight:700;font-size:17px;"></div>
-        <button onclick="closeShareModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:0.6;">✕</button>
+        <button onclick="closeShareModal()" style="background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;opacity:0.6;">✕</button>
       </div>
 
       <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;opacity:0.45;margin-bottom:8px;">Synlighet</div>
@@ -193,7 +398,7 @@
     <div id="settings-modal" style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:360px;max-width:90vw;position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <div style="font-family:var(--display);font-weight:700;font-size:18px;">⚙ Inställningar</div>
-        <button onclick="closeSettings()" style="background:none;border:none;color:#ffffff;font-size:18px;cursor:pointer;opacity:0.6;line-height:1;">✕</button>
+        <button onclick="closeSettings()" style="background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;opacity:0.6;line-height:1;">✕</button>
       </div>
 
       <!-- Company logo setting -->
@@ -210,6 +415,20 @@
           <button onclick="removeCompanyLogo(event)" id="settings-remove-logo" class="inline-btn secondary" style="display:none;">
             Ta bort
           </button>
+        </div>
+      </div>
+
+      <!-- Dark mode toggle -->
+      <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px;">
+        <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Utseende</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">
+          <div>
+            <div>Mörkt läge</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">Byt till mörkt tema</div>
+          </div>
+          <div class="settings-toggle" id="settings-dark-toggle" onclick="toggleDarkModeSettings()" style="background:var(--border2);">
+            <div class="settings-toggle-knob"></div>
+          </div>
         </div>
       </div>
 
@@ -235,9 +454,9 @@
 
         <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;margin-bottom:8px;">Bjud in kollega</div>
         <div style="display:flex;gap:8px;">
-          <input id="invite-email" type="email" placeholder="kollega@foretag.se" 
-            style="flex:1;background:#28211e;border:1px solid #524540;border-radius:8px;padding:8px 12px;color:#fff;font-family:var(--font);font-size:13px;outline:none;"
-            onfocus="this.style.borderColor='#a78bfa'" onblur="this.style.borderColor='#524540'"
+          <input id="invite-email" type="email" placeholder="kollega@foretag.se"
+            style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor=''"
             onkeydown="if(event.key==='Enter')sendInvitation()">
           <button onclick="sendInvitation()" class="inline-btn">Bjud in</button>
         </div>
