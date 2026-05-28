@@ -763,7 +763,6 @@ function renderCategories() {
               onclick="state.catTab='${k}';state.catSearch='';state.selectedCat=null;renderCategories()"
               style="border-bottom-color:${col};gap:8px">
               <img src="${LOGOS[k]}" style="height:14px;object-fit:contain;max-width:36px">
-              ${lbl}
             </button>`;
   }).join('');
 
