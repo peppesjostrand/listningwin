@@ -48,7 +48,7 @@
     --surface2: #0F2A5A;
     --sidebar-bg: #071530;
     /* Borders */
-    --border: #1A3A6E;
+    --border: #F0F4F8;
     --border2: #244880;
     /* Text */
     --text: #F0F4F8;
@@ -446,7 +446,7 @@
   .round-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 8px;
     overflow: hidden;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -665,9 +665,10 @@
   .detail-panel {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 20px;
     margin-top: 20px;
+    box-shadow: var(--shadow-sm);
   }
   .detail-title {
     font-family: var(--display);
@@ -812,8 +813,9 @@
   .bov-box {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
   }
   .bov-header {
     display: flex;
@@ -903,7 +905,7 @@
 
   /* Varumärkesregister */
   .brand-register { display: flex; flex-direction: column; gap: 14px; }
-  .brand-register-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .brand-register-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
   .brand-register-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
   .brand-register-name { font-family: var(--display); font-weight: 700; font-size: 15px; }
   .brand-register-body { display: grid; grid-template-columns: 1fr 1fr; }
@@ -1007,7 +1009,7 @@
   @media (max-width: 900px) { .lansering-layout { grid-template-columns: 1fr; } }
 
   .lansering-list { display: flex; flex-direction: column; gap: 8px; }
-  .lansering-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s; box-shadow: var(--shadow-sm); }
+  .lansering-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s; box-shadow: var(--shadow-sm); }
   .lansering-card:hover { box-shadow: var(--shadow-md); }
   .lansering-card:hover { border-color: var(--border2); }
   .lansering-card.selected { border-color: #f59e0b; background: rgba(245,158,11,0.05); }
@@ -1016,7 +1018,7 @@
   .lansering-add-btn { background: none; border: 1px dashed var(--border2); color: var(--muted2); padding: 10px 14px; border-radius: 8px; cursor: pointer; font-family: var(--font); font-size: 12px; width: 100%; text-align: left; transition: all 0.12s; margin-top: 4px; }
   .lansering-add-btn:hover { border-color: #f59e0b; color: #f59e0b; }
 
-  .lansering-detail { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; box-shadow: var(--shadow-sm); }
+  .lansering-detail { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-sm); }
   .lansering-detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .lansering-detail-name { font-family: var(--display); font-weight: 700; font-size: 22px; flex: 1; }
   .lansering-action-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: var(--font); font-size: 11px; }
@@ -1126,14 +1128,14 @@
   .kalkyl-page { padding: 20px; max-width: 960px; }
   .kalkyl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 800px) { .kalkyl-grid { grid-template-columns: 1fr; } }
-  .kalkyl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px; box-shadow: var(--shadow-sm); }
+  .kalkyl-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; box-shadow: var(--shadow-sm); }
   .kalkyl-card-title { font-family: var(--display); font-weight: 700; font-size: 16px; margin-bottom: 4px; }
   .kalkyl-card-sub { font-size: 11px; color: var(--muted); margin-bottom: 18px; }
   .kalkyl-field { margin-bottom: 14px; }
   .kalkyl-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
   .kalkyl-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; border-radius: 6px; padding: 8px 10px; }
   .kalkyl-input:focus { outline: none; border-color: #f59e0b; }
-  .kalkyl-result-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
+  .kalkyl-result-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-top: 16px; }
   .kalkyl-result-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
   .kalkyl-result-row:last-child { border-bottom: none; }
   .kalkyl-result-label { color: var(--muted); }
@@ -1149,10 +1151,10 @@
 
   /* ── PÅMINNELSER ── */
   .pam-page { padding: 20px; max-width: 800px; }
-  .pam-intro { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .pam-intro { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; font-size: 12px; color: var(--muted); line-height: 1.6; box-shadow: var(--shadow-sm); }
   .pam-section { margin-bottom: 24px; }
   .pam-section-title { font-family: var(--display); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
-  .pam-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 6px; }
+  .pam-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 6px; box-shadow: var(--shadow-sm); }
   .pam-row-label { flex: 1; font-size: 13px; }
   .pam-row-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
   .pam-toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
@@ -1205,7 +1207,7 @@
 
   /* ONBOARDING */
   .onboard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 400; display: flex; align-items: center; justify-content: center; }
-  .onboard-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 520px; max-width: 95vw; overflow: hidden; }
+  .onboard-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 520px; max-width: 95vw; overflow: hidden; box-shadow: var(--shadow-lg); }
   .onboard-progress { height: 3px; background: var(--surface2); }
   .onboard-progress-fill { height: 100%; background: #f59e0b; transition: width 0.3s; }
   .onboard-body { padding: 36px 36px 28px; }
@@ -1229,7 +1231,7 @@
   .dash-widgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px 0; }
   @media (max-width: 900px) { .dash-widgets { grid-template-columns: repeat(2,1fr); } }
   @media (max-width: 500px) { .dash-widgets { grid-template-columns: 1fr 1fr; } }
-  .dash-widget { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: var(--shadow-sm); }
+  .dash-widget { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: var(--shadow-sm); }
   .dash-widget:hover { border-color: var(--border2); box-shadow: var(--shadow-md); }
   .dash-widget-value { font-family: var(--display); font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
   .dash-widget-label { font-size: 11px; color: var(--muted); }
@@ -1253,7 +1255,7 @@
   .agenda-page { padding: 20px; }
   .agenda-week { margin-bottom: 24px; }
   .agenda-week-title { font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
-  .agenda-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
+  .agenda-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 6px; box-shadow: var(--shadow-sm); }
   .agenda-item-date { font-size: 10px; color: var(--muted); min-width: 60px; margin-top: 2px; }
   .agenda-item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
   .agenda-item-body { flex: 1; }
@@ -1601,7 +1603,7 @@
   .mobile-quick { display: none; }
   @media (max-width: 768px) {
     .mobile-quick { display: block; }
-    .mq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+    .mq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
     .mq-card-title { font-family: var(--display); font-size: 15px; font-weight: 700; margin-bottom: 8px; }
     .mq-check { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
     .mq-check:last-child { border-bottom: none; }
@@ -1773,9 +1775,9 @@
   .lp-visual-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 16px 20px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
   }
   .lp-visual-card-label {
     font-size: 10px;
