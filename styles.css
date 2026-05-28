@@ -620,6 +620,7 @@
   .wchip.past { opacity: 0.35; }
   .wchip.near { border-color: rgba(74,222,128,0.4); color: var(--coop-color); background: rgba(74,222,128,0.06); }
   .wchip.soon { border-color: rgba(250,204,21,0.4); color: #facc15; background: rgba(250,204,21,0.06); }
+  .wchip-pair { font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
 
   .source-tag {
     font-size: 10px;

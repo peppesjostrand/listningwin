@@ -448,6 +448,8 @@ const state = {
   showPast: false,
   tab: 'overview',
   selectedCat: null,
+  catTab: 'coop',
+  catSearch: '',
 };
 
 function allRounds() {
@@ -748,121 +750,110 @@ function renderOverview() {
 // RENDER CATEGORIES
 // ═══════════════════════════════════════════════
 function renderCategories() {
-  const q = (document.getElementById('cat-search')?.value || '').toLowerCase();
-  const activeSources = [];
-  if (state.active.coop) activeSources.push('coop');
-  if (state.active.ica) activeSources.push('ica');
-  if (state.active.dagab) activeSources.push('dagab');
+  if (!state.catTab) state.catTab = 'coop';
+  const activeChain = state.catTab;
+  const q = (state.catSearch || '').toLowerCase();
 
+  // Chain tabs with logos
+  const tabBar = ['coop', 'ica', 'dagab'].map(k => {
+    const lbl = k === 'coop' ? 'Coop' : k === 'ica' ? 'ICA' : 'Dagab';
+    const active = activeChain === k;
+    const col = active ? 'var(--' + k + '-color)' : 'transparent';
+    return `<button class="tl-cust-tab${active ? ' active' : ''}"
+              onclick="state.catTab='${k}';state.catSearch='';state.selectedCat=null;renderCategories()"
+              style="border-bottom-color:${col};gap:8px">
+              <img src="${LOGOS[k]}" style="height:14px;object-fit:contain;max-width:36px">
+              ${lbl}
+            </button>`;
+  }).join('');
+
+  // Rounds for active chain
+  const sourceRounds = activeChain === 'coop'
+    ? [...COOP_FOOD_ROUNDS, ...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])]
+    : activeChain === 'ica' ? ICA_ROUNDS : DAGAB_ROUNDS;
+
+  // Filter categories for active chain + search
   const filtered = CATEGORIES.filter(c => {
-    if (!activeSources.includes(c.source)) return false;
-    if (c.sub === 'Coop Hemma' && !state.active.coopHemma) return false;
+    if (c.source !== activeChain) return false;
+    if (c.source === 'coop' && c.sub === 'Coop Hemma' && !state.active.coopHemma) return false;
     if (q && !c.name.toLowerCase().includes(q)) return false;
     return true;
   });
 
-  const colorMap = { coop: 'var(--coop-color)', ica: 'var(--ica-color)', dagab: 'var(--dagab-color)' };
-
-  // Lookup: source -> all rounds
-  const allRoundsLookup = {
-    coop:  [...COOP_FOOD_ROUNDS, ...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])],
-    ica:   ICA_ROUNDS,
-    dagab: DAGAB_ROUNDS,
-  };
-
   const rows = filtered.map(c => {
-    const sourceRounds = allRoundsLookup[c.source] || [];
-
-    // For each launch window, pair it with its avisering step
-    const windowData = c.windows.map(w => {
+    // Build avisering→fönster pair badges
+    const pairBadges = c.windows.map(w => {
       const round = sourceRounds.find(r => r.launch === w);
-      const primaryStep = round ? round.steps.find(s => s.primary) : null;
-      const launchDate = round ? round.launchDate : weekDate(w, w < 36 ? 2026 : 2025, 1);
-      return { w, round, primaryStep, launchDate, lDays: daysLeft(launchDate) };
-    });
-
-    // Next upcoming avisering = the one with smallest days >= 0
-    const nextAv = windowData
-      .filter(x => x.primaryStep && x.primaryStep.days >= 0)
-      .sort((a, b) => a.primaryStep.days - b.primaryStep.days)[0];
-
-    // Avisering chips
-    const avChips = windowData.map(x => {
-      if (!x.primaryStep) return '<span class="wchip past">—</span>';
-      const isNext = nextAv && x.w === nextAv.w;
-      const d = x.primaryStep.days;
-      const cls = isNext ? 'near' : d < 0 ? 'past' : d < 84 ? 'soon' : '';
-      return '<span class="wchip ' + cls + '">v.' + x.primaryStep.week + '</span>';
-    }).join('');
-
-    // Launch chips — highlight the one paired with next avisering
-    const launchChips = windowData.map(x => {
-      const isNext = nextAv && x.w === nextAv.w;
-      const cls = isNext ? 'near' : x.lDays < 0 ? 'past' : x.lDays < 84 ? 'soon' : '';
-      return '<span class="wchip ' + cls + '">v.' + x.w + '</span>';
+      const primary = round ? round.steps.find(s => s.primary) : null;
+      if (primary) {
+        return `<span class="wchip wchip-pair">v.${primary.week}&thinsp;→&thinsp;v.${w}</span>`;
+      }
+      return `<span class="wchip">v.${w}</span>`;
     }).join('');
 
     const sel = state.selectedCat === c.name ? 'selected' : '';
     const rowId = 'sg-' + c.source + '-' + (c.area||0) + '-' + Math.random().toString(36).slice(2,6);
     const hasSubs = c.subgroups && c.subgroups.length > 0;
     const safeName = c.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const areaLabel = c.area ? `<span style="font-size:9px;color:var(--muted);margin-right:5px">Omr.${c.area}</span>` : '';
+    const trClick = hasSubs ? '' : `onclick="selectCat('${safeName}')"`;
+    const tdClick = `onclick="selectCat('${safeName}')" style="cursor:pointer"`;
     const sgToggle = hasSubs
-      ? ('<span class="subgroup-toggle" onclick="event.stopPropagation();toggleSubgroup(\'' + rowId + '\')">'
-         + '⊞ ' + c.subgroups.length + ' artikelgrupp' + (c.subgroups.length > 1 ? 'er' : '')
-         + '</span>')
+      ? `<span class="subgroup-toggle" onclick="event.stopPropagation();toggleSubgroup('${rowId}')">⊞ ${c.subgroups.length} artikelgrupp${c.subgroups.length > 1 ? 'er' : ''}</span>`
       : '';
     const sgRows = hasSubs
-      ? c.subgroups.map(s => '<tr><td>' + s.hg + '</td><td>' + s.pg + '</td><td>' + s.name + '</td></tr>').join('')
+      ? c.subgroups.map(s => `<tr><td>${s.hg}</td><td>${s.pg}</td><td>${s.name}</td></tr>`).join('')
       : '';
     const sgPanel = sgRows
-      ? ('<tr class="subgroup-tr"><td colspan="5"><div class="subgroup-panel" id="' + rowId + '">'
-         + '<table class="sg-table">' + sgRows + '</table></div></td></tr>')
+      ? `<tr class="subgroup-tr"><td colspan="3"><div class="subgroup-panel" id="${rowId}"><table class="sg-table">${sgRows}</table></div></td></tr>`
       : '';
-    const areaLabel = c.area ? '<span style="font-size:9px;color:var(--muted);margin-right:5px">Omr.' + c.area + '</span>' : '';
-    const trClick = hasSubs ? '' : 'onclick="selectCat(\'' + safeName + '\')"';
-    const tdClick = 'onclick="selectCat(\'' + safeName + '\')" style="cursor:pointer"';
-    return '<tr class="cat-row ' + sel + (hasSubs ? ' has-subgroup' : '') + '" ' + trClick + '>'
-      + '<td><img src="' + LOGOS[c.source] + '" style="height:13px;object-fit:contain;opacity:1;max-width:38px;vertical-align:middle"> <span style="font-size:10px;color:var(--muted)">' + c.sub + '</span></td>'
-      + '<td style="font-size:10px;color:var(--muted2)">' + (c.group || c.sub) + '</td>'
-      + '<td class="cat-name-cell" ' + tdClick + '>' + areaLabel + c.name + '</td>'
-      + '<td><div class="window-chips">' + avChips + '</div></td>'
-      + '<td><div class="window-chips">' + launchChips + '</div></td>'
-      + '</tr>' + sgPanel;
+
+    return `<tr class="cat-row ${sel}${hasSubs ? ' has-subgroup' : ''}" ${trClick}>
+      <td style="font-size:10px;color:var(--muted2)">${c.group || c.sub}</td>
+      <td class="cat-name-cell" ${tdClick}>${areaLabel}${c.name}${sgToggle ? ' ' + sgToggle : ''}</td>
+      <td><div class="window-chips">${pairBadges}</div></td>
+    </tr>${sgPanel}`;
   }).join('');
 
-  const table = `<div style="padding:12px 20px 0">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-      <span style="font-size:14px;color:var(--muted)">⌕</span>
-      <input style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;border-radius:6px;padding:6px 10px;width:260px" type="text" id="cat-search" placeholder="Sök kategori..." oninput="renderCategories()">
+  const tableHTML = `
+    <div style="padding:16px 20px 0">
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px">${tabBar}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:14px;color:var(--muted)">⌕</span>
+        <input style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;border-radius:6px;padding:6px 10px;width:260px"
+               type="text" id="cat-search" placeholder="Sök kategori..."
+               oninput="state.catSearch=this.value;renderCategories()">
+      </div>
     </div>
-  </div>
-  <table class="cat-table">
-    <thead><tr>
-      <th>Kund</th>
-      <th>Grupp</th>
-      <th>Kategori</th>
-      <th>Avisering</th>
-      <th>Lanseringsfönster</th>
-    </tr></thead>
-    <tbody>${rows || '<tr><td colspan="3" style="color:var(--muted);padding:20px">Inga kategorier hittades</td></tr>'}</tbody>
-  </table>`;
+    <table class="cat-table">
+      <thead><tr>
+        <th>Grupp</th>
+        <th>Kategori</th>
+        <th>Fönster</th>
+      </tr></thead>
+      <tbody>${rows || '<tr><td colspan="3" style="color:var(--muted);padding:20px">Inga kategorier hittades</td></tr>'}</tbody>
+    </table>`;
 
-  // Category detail panel
-  let detail = '';
+  // Restore search input value (innerHTML wipes it)
+  let detailHTML = '';
   if (state.selectedCat) {
-    const cat = CATEGORIES.find(c => c.name === state.selectedCat);
+    const cat = CATEGORIES.find(c => c.name === state.selectedCat && c.source === activeChain);
     if (cat) {
-      const roundsForCat = allRounds().filter(r => cat.windows.includes(r.launch));
-      const filteredRounds = state.showPast ? roundsForCat : roundsForCat.filter(r => daysLeft(r.launchDate) >= -21);
-      detail = `<div class="detail-panel">
+      const roundsForCat = sourceRounds.filter(r => cat.windows.includes(r.launch));
+      const visibleRounds = state.showPast ? roundsForCat : roundsForCat.filter(r => daysLeft(r.launchDate) >= -21);
+      detailHTML = `<div class="detail-panel">
         <div class="detail-title">${cat.name}</div>
         <div class="detail-sub">${cat.sub} · Revideringsfönster: ${cat.windows.map(w=>'v.'+w).join(', ')}</div>
-        ${filteredRounds.length ? filteredRounds.map(renderRoundCard).join('') : '<div class="empty-state">Inga matchande omgångar</div>'}
+        ${visibleRounds.length ? visibleRounds.map(renderRoundCard).join('') : '<div class="empty-state">Inga matchande omgångar</div>'}
       </div>`;
     }
   }
 
-  document.getElementById('cat-content').innerHTML = table + detail;
+  document.getElementById('cat-content').innerHTML = tableHTML + detailHTML;
+
+  // Restore search value (lost when innerHTML was replaced)
+  const inp = document.getElementById('cat-search');
+  if (inp && state.catSearch) { inp.value = state.catSearch; inp.setSelectionRange(inp.value.length, inp.value.length); }
 }
 
 function selectCat(name) {
