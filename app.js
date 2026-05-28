@@ -822,6 +822,7 @@ function renderCategories() {
         <span style="font-size:14px;color:var(--muted)">⌕</span>
         <input style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;border-radius:6px;padding:6px 10px;width:260px"
                type="text" id="cat-search" placeholder="Sök kategori..."
+               autocomplete="off" name="search-cats"
                oninput="state.catSearch=this.value;renderCategories()">
       </div>
     </div>
