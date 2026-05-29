@@ -427,6 +427,72 @@
   }
   .tl-week-cat-row:last-child { border-bottom: none; }
 
+  /* ── BRANSCHKUNSKAP ── */
+  .bk-wrap { max-width: 760px; }
+  .bk-section { margin-bottom: 36px; }
+  .bk-section-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--primary);
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border2);
+    letter-spacing: -0.2px;
+  }
+  .bk-item {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+    margin-bottom: 6px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .bk-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .bk-item-header:hover { background: var(--table-hover); }
+  .bk-headline {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    line-height: 1.45;
+  }
+  .bk-chevron {
+    font-size: 16px;
+    color: var(--muted);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+  .bk-item.open .bk-chevron { transform: rotate(180deg); }
+  .bk-item-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .bk-item.open .bk-item-body { max-height: 400px; }
+  .bk-item-body-inner {
+    padding: 14px 16px 16px;
+    border-top: 1px solid var(--border2);
+  }
+  .bk-body-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.72;
+  }
+  .bk-source {
+    font-size: 11px;
+    color: var(--muted2);
+    margin-top: 10px;
+  }
+
   /* TABS */
   .tabs {
     display: flex;

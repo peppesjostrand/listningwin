@@ -1016,12 +1016,12 @@ function togglePast() {
 
 function showTab(tab) {
   state.tab = tab;
-  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser','aktivitetslogg'].forEach(t => {
+  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser','branschkunskap','aktivitetslogg'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
     const navEl = document.getElementById(`nav-${t}`);
     if (navEl) navEl.classList.toggle('active', t === tab);
   });
-  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', aktivitetslogg: 'Aktivitetslogg' };
+  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', branschkunskap: 'Branschkunskap', aktivitetslogg: 'Aktivitetslogg' };
   document.getElementById('page-title').textContent = titles[tab] || tab;
   closeMobileMenu();
   renderAll();
@@ -1039,6 +1039,7 @@ function renderAll() {
   if (state.tab === 'arkiv') renderArkiv();
   if (state.tab === 'kalkyl') renderKalkyl();
   if (state.tab === 'paminnelser') renderPaminnelser();
+  if (state.tab === 'branschkunskap') renderBranschkunskap();
   if (state.tab === 'aktivitetslogg') renderAktivitetslogg();
 }
 
@@ -3721,6 +3722,170 @@ function formatActivityTime(date) {
   const d = date.toLocaleDateString('sv-SE');
   const t = date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
   return `${d} ${t}`;
+}
+
+// ═══════════════════════════════════════════════
+// BRANSCHKUNSKAP
+// ═══════════════════════════════════════════════
+let bkOpenState = {};
+
+const BRANSCHKUNSKAP_DATA = [
+  {
+    title: 'Processen – från idé till butikshylla',
+    insights: [
+      {
+        headline: 'Det tar 15 veckor från avisering till butikshylla.',
+        body: 'ECRs rekommenderade process har 9 steg fördelade över 15 veckor. Det är inte en rekommendation – det är den tid processen faktiskt kräver. Börjar du för sent finns ingenting att göra.'
+      },
+      {
+        headline: 'Deadlines är absoluta – inte riktlinjer.',
+        body: 'ECR Sverige är tydliga: datumen i processen ska betraktas som absolut sista tillfälle. Det kan vara svårt att komma fram till support och administration hos kedjorna när deadline närmar sig. En miss i ett steg blockerar alla efterföljande steg.'
+      },
+      {
+        headline: 'Planera 12 månader framåt, agera 6 månader innan.',
+        body: 'Bästa praxis är en 12-månaders grovplan för kommande lanseringar och en fastlagd gemensam lanseringsplan senast 6 månader före lansering. Det är standarden för stora professionella aktörer – och möjligt för alla.'
+      },
+      {
+        headline: 'Tre saker stoppar fler lanseringar än dåliga produkter.',
+        body: 'Inkomplett artikeldata, för sen avisering och utebliven Validoo-kvalitetssäkring. Produkten kan vara utmärkt – men om ett av dessa steg missas finns den aldrig i hyllan.'
+      }
+    ]
+  },
+  {
+    title: 'Mötet – där affären avgörs',
+    insights: [
+      {
+        headline: 'Mötet avgörs innan du kliver in i rummet.',
+        body: 'Förberedelsen är allt. En stark kundpresentation är byggd långt innan mötet självt. Det handlar om att förstå kategorichefens värld och var du kan skapa verkligt värde – inte om att leverera en perfekt pitch.'
+      },
+      {
+        headline: '8 veckor innan är grön zon. 3 veckor är för sent.',
+        body: 'Med 8–6 veckor kvar till aviseringsdeadline har kategorichefen luft i kalendern. Med 3 veckor kvar är kalendern redan fylld. Be alltid om möte oavsett tidpunkt – men sannolikheten minskar dramatiskt ju senare du hör av dig. Tänk på det som att boka middag: en månad framåt tackar folk ja, samma kväll är de redan upptagna.'
+      },
+      {
+        headline: 'Coop vill ha mötet innan du aviserar.',
+        body: 'ICA och Coop har liknande rytm men olika ordning. Coop vill ha mötet på plats innan avisering sker. Missar du den ordningen riskerar du att avisera utan att ha haft dialogen som ökar sannolikheten för ett ja.'
+      },
+      {
+        headline: 'Små aktörer får ofta en presentationsbegäran – inte ett möte.',
+        body: 'Kategorichefer kan inte träffa alla. Nya och mindre aktörer hänvisas ofta till att skicka in en presentation. Det leder sällan till affär. Svaret är inte att ge upp mötet – utan att be om det tidigare och se till att presentationen är så stark att den öppnar dörren till nästa steg.'
+      },
+      {
+        headline: 'Kategorichefer hjälper de som är ordentliga.',
+        body: 'En kategorichef på ICA formulerade det så här: ”Jag hjälper gärna till men är mer benägen till de som är ordentliga.” Professionalism är inte bara trevligt – det är en konkurrensfördel.'
+      }
+    ]
+  },
+  {
+    title: 'Kategorin – tänk som en kategorichef',
+    insights: [
+      {
+        headline: 'Kategorichefen tänker på kategorin – inte ditt varumärke.',
+        body: 'Alla listningsbeslut fattas utifrån vad som gynnar kategorin som helhet – inte enskilda varumärken. Forskning visar att leverantörer förväntas, och i många fall är skyldiga, att bara föreslå introduktioner som tillför kategorin värde. Presentera alltid ur ett kategoriperspektiv.'
+      },
+      {
+        headline: 'Category Management och Brand Management är två olika discipliner.',
+        body: 'Det är vanligt att leverantörer tänker varumärkesutveckling när de hör kategoriutveckling. Det är inte samma sak. En lansering som bara flyttar försäljning från ett varumärke till ett annat i kategorin utan att tillföra högre värde räknas inte som kategoritillväxt.'
+      },
+      {
+        headline: 'En kategori växer bara när den totala konsumtionen eller lönsamheten ökar.',
+        body: 'Det räcker inte att din produkt säljer bra. Kategorichefen mäter om kategorin som helhet har vuxit i volym, värde eller lönsamhet. Visa hur din produkt bidrar till det – inte hur den konkurrerar med befintliga produkter.'
+      },
+      {
+        headline: 'Hålet i marknaden är starkare argument än produktens kvalitet.',
+        body: 'Rätt smak, bra kvalitet och höga ambitioner räcker inte för att få plats i kategorin. Det som avgör är om produkten fyller ett konsumentbehov som inte redan täcks. Identifiera hålet i marknaden och bygg hela presentationen runt det.'
+      }
+    ]
+  },
+  {
+    title: 'Vanliga misstag – och hur du undviker dem',
+    insights: [
+      {
+        headline: '”Vi hinner nog” är branschens dyraste mening.',
+        body: 'Sena starter är det vanligaste problemet i branschen. Leverantörer tror att de har kontroll men saknar den. Konsekvensen är stress, irritation, administrativa fel och i värsta fall en utebliven lansering.'
+      },
+      {
+        headline: '75–80 procent av alla nyhetslanseringar är efterlikningar – och 80 procent av dem är borta inom 12 månader.',
+        body: 'Europeisk forskning från ECR visar att de flesta nyheter inte är riktiga nyheter. De kopierar produkter som redan finns och tillför ingenting nytt till kategorin. Det förklarar varför kategorichefer är skeptiska till nya leverantörer – och varför din position måste vara genuint differentierad.'
+      },
+      {
+        headline: 'En inkomplett artikeldata stoppar hela processen.',
+        body: 'EAN-kod, kolli, mått, bild, livsmedelsinformation – ett enda fel eller saknat fält stoppar kvalitetssäkringen i Validoo och blockerar resten av processen. Säkerställ artikeldata så tidigt som möjligt, inte i sista minuten.'
+      },
+      {
+        headline: 'Att jaga alla kedjor samtidigt är en strategi för att inte lyckas med någon.',
+        body: 'Fokus är en förutsättning för framgång. En lansering mot en kedja som genomförs professionellt är starkare än tre halvdana parallella försök. Välj kedja med utgångspunkt i var din produkt passar bäst – och gör det rätt.'
+      },
+      {
+        headline: 'Problemet sitter sällan i produkten – det sitter i hur den förstås.',
+        body: 'Om kategorichefen inte snabbt ser varför produkten finns, vem den är relevant för och när den ska väljas – blir beslutet enkelt att skjuta upp. Tydlighet i positionering, sammanhang och värde är avgörande för att komma vidare.'
+      }
+    ]
+  },
+  {
+    title: 'Affärslogiken – förstå din motparts siffror',
+    insights: [
+      {
+        headline: 'Kedjan har lägre marginal än dig – men högre lönsamhet.',
+        body: 'En dagligvarubutik kan ha en rörelsemarginal på bara 2% medan en dagligvaruproducent har 9%. Ändå kan butiken ha nästan 20% avkastning på sitt kapital mot producentens 11%. Det beror på att butiken binder mycket lite kapital. Att argumentera för att kedjan borde acceptera ditt pris för att de tjänar mindre är att jämföra handboll med fotboll – antalet mål säger ingenting om vem som vinner.',
+        source: 'Källa: Lönsamhetsguiden, BildRunsten Financial Learning 2024.'
+      },
+      {
+        headline: 'Rörelsemarginal är ett dåligt mått på lönsamhet.',
+        body: 'Vinsten i kronor och rörelsemarginalen i procent är missvisande som lönsamhetsmått. Det meningsfulla måttet är avkastning på kapitalet – hur mycket rörelseresultat man genererar i förhållande till hur mycket kapital som är bundet i verksamheten. En leverantör med höga lager och lång kredittid till kunder kan ha fin marginal men dålig avkastning.'
+      },
+      {
+        headline: '60-plussarna driver 40% av all dagligvaruförsäljning – men är egentligen tre helt olika grupper.',
+        body: 'Konsumenter över 60 år står för 40% av dagligvaruförsäljningen i Sverige och handlar 156 gånger per år. Men gruppen spänner över 25–30 år – en aktiv 62-åring och en 87-åring är lika olika som en 15-åring och en 40-åring. En produkt riktad mot aktiva 60–70-åringar är ett starkare kategoripresentationsargument än att bara peka på gruppens totala andel.',
+        source: 'Källa: DLF Konsumentprofiler 2023, CPS GfK.'
+      },
+      {
+        headline: 'Barnfamiljen spenderar mest per besök – de äldre handlar mest frekvent.',
+        body: '30–44-åringar spenderar 336 kr per inköpstillfälle – högst av alla grupper. 60-plussarna handlar däremot 156 gånger per år mot 110 gånger för de yngsta. Vet du vilken konsumentgrupp din produkt tilltalar är det avgörande för hur du motiverar värdet för kategorin.',
+        source: 'Källa: DLF Konsumentprofiler 2023, CPS GfK.'
+      }
+    ]
+  }
+];
+
+function renderBranschkunskap() {
+  const el = document.getElementById('branschkunskap-content');
+  if (!el) return;
+  const sectionsHtml = BRANSCHKUNSKAP_DATA.map((section, si) => {
+    const insightsHtml = section.insights.map((insight, ii) => {
+      const isOpen = bkOpenState[si] === ii;
+      return `<div class="bk-item${isOpen ? ' open' : ''}" id="bk-item-${si}-${ii}">
+        <div class="bk-item-header" onclick="toggleInsight(${si},${ii})">
+          <div class="bk-headline">${insight.headline}</div>
+          <i class="ti ti-chevron-down bk-chevron"></i>
+        </div>
+        <div class="bk-item-body">
+          <div class="bk-item-body-inner">
+            <div class="bk-body-text">${insight.body}</div>
+            ${insight.source ? `<div class="bk-source">${insight.source}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="bk-section">
+      <div class="bk-section-title">${section.title}</div>
+      ${insightsHtml}
+    </div>`;
+  }).join('');
+  el.innerHTML = `<div class="bk-wrap">${sectionsHtml}</div>`;
+}
+
+function toggleInsight(si, ii) {
+  const prev = bkOpenState[si];
+  if (prev !== null && prev !== undefined) {
+    document.getElementById(`bk-item-${si}-${prev}`)?.classList.remove('open');
+  }
+  if (prev === ii) {
+    bkOpenState[si] = null;
+  } else {
+    document.getElementById(`bk-item-${si}-${ii}`)?.classList.add('open');
+    bkOpenState[si] = ii;
+  }
 }
 
 function renderAktivitetslogg() {
