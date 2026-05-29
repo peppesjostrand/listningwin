@@ -1811,6 +1811,10 @@ function renderWizardModal() {
   overlay.id = 'lansering-wizard';
   overlay.innerHTML = buildWizardHTML();
   document.body.appendChild(overlay);
+  overlay.querySelectorAll('input[name="cat-filter-x7k"]').forEach(inp => {
+    inp.setAttribute('readonly', '');
+    inp.addEventListener('focus', function() { this.removeAttribute('readonly'); }, { once: true });
+  });
 }
 
 function buildWizardHTML() {
