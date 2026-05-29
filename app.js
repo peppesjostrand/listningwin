@@ -1016,12 +1016,12 @@ function togglePast() {
 
 function showTab(tab) {
   state.tab = tab;
-  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser','branschkunskap','marknaden','aktivitetslogg'].forEach(t => {
+  ['overview','categories','timeline','contacts','brands','lansering','arkiv','kalkyl','paminnelser','branschkunskap','marknaden','aktivitetslogg'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
     const navEl = document.getElementById(`nav-${t}`);
     if (navEl) navEl.classList.toggle('active', t === tab);
   });
-  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', branschkunskap: 'Branschkunskap', marknaden: 'Marknaden', aktivitetslogg: 'Aktivitetslogg' };
+  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', contacts: 'Kontakter', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', branschkunskap: 'Branschkunskap', marknaden: 'Marknaden', aktivitetslogg: 'Aktivitetslogg' };
   document.getElementById('page-title').textContent = titles[tab] || tab;
   closeMobileMenu();
   renderAll();
@@ -1034,6 +1034,7 @@ function renderAll() {
   if (state.tab === 'overview') renderOverview();
   if (state.tab === 'categories') renderCategories();
   if (state.tab === 'timeline') renderTimeline();
+  if (state.tab === 'contacts') renderContacts();
   if (state.tab === 'brands') renderBrands();
   if (state.tab === 'lansering') renderLansering();
   if (state.tab === 'arkiv') renderArkiv();
@@ -1126,6 +1127,10 @@ let catModalSelected = [];
 // brands-arrayen behålls för kompatibilitet med all renderingskod
 // men varje brand har nu även: projectId, visibility, permission
 let brands = [];
+let contacts = [];
+let lanseringContactLinks = {}; // { lid: [contactId,...] | null(loading) | undefined(not loaded) }
+let editingContactId = null;
+let contactModalLanseringId = null;
 
 // Map: brandId → projectId (för sparande)
 const brandProjectMap = {};
@@ -1403,6 +1408,7 @@ async function authOnLogin(user) {
 
   loadBrands();
   loadLanseringar();
+  loadContacts();
   loadWindowNotes();
   loadAgenda();
   loadActivityLog();
@@ -1420,6 +1426,8 @@ async function authLogout() {
   currentUser = null;
   currentWorkspaceId = null;
   brands = [];
+  contacts = [];
+  lanseringContactLinks = {};
   applyCompanyLogo(null);
   localStorage.removeItem('listwin_company_logo');
   document.getElementById('app-root').style.display = 'none';
@@ -1602,6 +1610,13 @@ function getLanseringProgress(l) {
 function renderLansering() {
   const el = document.getElementById('lansering-content');
   if (!el) return;
+
+  // Lazy-load contact links for selected lansering
+  const _selL = getLansering(selectedLanseringId);
+  if (_selL && lanseringContactLinks[_selL.id] === undefined) {
+    lanseringContactLinks[_selL.id] = null; // mark as loading
+    loadLanseringContactLinks(_selL.id);    // re-renders when done
+  }
 
   const listHtml = `
     <div class="lansering-list">
@@ -3738,6 +3753,266 @@ function formatActivityTime(date) {
 }
 
 // ═══════════════════════════════════════════════
+// CONTACTS
+// ═══════════════════════════════════════════════
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function contactCustomerBg(c) {
+  return c==='coop' ? 'rgba(0,171,70,0.12)' : c==='ica' ? 'rgba(227,0,11,0.12)' : 'rgba(13,79,53,0.12)';
+}
+
+async function loadContacts() {
+  if (!currentWorkspaceId) return;
+  const { data, error } = await supabaseClient
+    .from('contacts')
+    .select('*')
+    .eq('workspace_id', currentWorkspaceId)
+    .order('name');
+  if (error) { console.error('loadContacts error', error); return; }
+  contacts = data || [];
+  if (state.tab === 'contacts') renderContacts();
+}
+
+async function loadLanseringContactLinks(lid) {
+  const { data, error } = await supabaseClient
+    .from('contacts_projects')
+    .select('contact_id')
+    .eq('project_id', lid);
+  lanseringContactLinks[lid] = error ? [] : (data || []).map(r => r.contact_id);
+  if (state.tab === 'lansering') renderLansering();
+}
+
+function renderContacts() {
+  const el = document.getElementById('contacts-content');
+  if (!el) return;
+
+  const rows = contacts.map(c => `
+    <tr>
+      <td style="font-weight:600">${escHtml(c.name)}</td>
+      <td><span class="contact-chain-badge" style="background:${contactCustomerBg(c.customer)};color:${CHAIN_COLORS[c.customer]||'var(--muted)'}">${CHAIN_LABELS[c.customer]||c.customer}</span></td>
+      <td>${escHtml(c.category)}</td>
+      <td>${escHtml(c.role)}</td>
+      <td><a href="tel:${escHtml(c.phone)}" style="color:var(--text);text-decoration:none">${escHtml(c.phone)}</a></td>
+      <td><a href="mailto:${escHtml(c.email)}" style="color:var(--accent);text-decoration:none">${escHtml(c.email)}</a></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="lansering-action-btn" onclick="openContactModal('${c.id}')">Redigera</button>
+        <button class="lansering-action-btn danger" onclick="deleteContact('${c.id}')">Ta bort</button>
+      </td>
+    </tr>`).join('');
+
+  el.innerHTML = `
+    <div class="contacts-page">
+      <div class="contacts-page-header">
+        <span style="font-size:13px;color:var(--muted)">${contacts.length} kontakt${contacts.length!==1?'er':''} i workspacet</span>
+        <button class="inline-btn" onclick="openContactModal()"><i class="ti ti-plus"></i> Lägg till kontakt</button>
+      </div>
+      ${contacts.length ? `
+        <div style="overflow-x:auto">
+          <table class="contacts-table">
+            <thead><tr>
+              <th>Namn</th><th>Kund</th><th>Kategori</th><th>Roll</th><th>Telefon</th><th>Mail</th><th></th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>` :
+        `<div class="empty-state">
+           <div>Inga kontakter ännu</div>
+           <div style="font-size:12px;color:var(--muted);margin-top:8px">Lägg till kontaktpersoner hos Coop, ICA och Dagab för att koppla dem till dina lanseringar</div>
+         </div>`}
+    </div>`;
+}
+
+function openContactModal(editId, lanseringId) {
+  editingContactId = editId || null;
+  contactModalLanseringId = lanseringId || null;
+  document.getElementById('contact-modal-overlay')?.remove();
+  const c = editId ? contacts.find(x => x.id === editId) : null;
+  const overlay = document.createElement('div');
+  overlay.id = 'contact-modal-overlay';
+  overlay.className = 'lansering-modal';
+  overlay.style.display = 'flex';
+  overlay.onclick = e => { if (e.target === overlay) closeContactModal(); };
+  overlay.innerHTML = `
+    <div class="lansering-modal-box" style="max-width:460px;width:100%">
+      <div class="lansering-modal-title">${editId ? 'Redigera kontakt' : 'Lägg till kontakt'}</div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Namn <span style="color:var(--ica-color)">*</span></label>
+        <input class="lansering-form-input" id="cm-name" value="${escHtml(c?.name)}" placeholder="Anna Svensson" autocomplete="off">
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Kund <span style="color:var(--ica-color)">*</span></label>
+        <select class="lansering-form-input" id="cm-customer">
+          <option value="">Välj kund...</option>
+          <option value="coop" ${c?.customer==='coop'?'selected':''}>Coop</option>
+          <option value="ica"  ${c?.customer==='ica'?'selected':''}>ICA</option>
+          <option value="dagab" ${c?.customer==='dagab'?'selected':''}>Dagab</option>
+        </select>
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Roll <span style="color:var(--muted);font-size:10px">(valfritt)</span></label>
+        <input class="lansering-form-input" id="cm-role" value="${escHtml(c?.role)}" placeholder="T.ex. Category Manager" autocomplete="off">
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Kategori <span style="color:var(--muted);font-size:10px">(valfritt)</span></label>
+        <input class="lansering-form-input" id="cm-category" value="${escHtml(c?.category)}" placeholder="T.ex. Mejeri" autocomplete="off">
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Telefon <span style="color:var(--ica-color)">*</span></label>
+        <input class="lansering-form-input" id="cm-phone" value="${escHtml(c?.phone)}" placeholder="070-123 45 67" autocomplete="off">
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Mail <span style="color:var(--ica-color)">*</span></label>
+        <input class="lansering-form-input" id="cm-email" value="${escHtml(c?.email)}" placeholder="anna@coop.se" autocomplete="off">
+      </div>
+      <div class="lansering-modal-btns">
+        <button class="lansering-action-btn" onclick="closeContactModal()">Avbryt</button>
+        <button class="inline-btn" onclick="saveContact()">Spara kontakt</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.querySelector('#cm-name')?.focus(), 50);
+}
+
+function closeContactModal() {
+  document.getElementById('contact-modal-overlay')?.remove();
+  editingContactId = null;
+  contactModalLanseringId = null;
+}
+
+async function saveContact() {
+  const name     = document.getElementById('cm-name')?.value.trim();
+  const customer = document.getElementById('cm-customer')?.value;
+  const role     = document.getElementById('cm-role')?.value.trim();
+  const category = document.getElementById('cm-category')?.value.trim();
+  const phone    = document.getElementById('cm-phone')?.value.trim();
+  const email    = document.getElementById('cm-email')?.value.trim();
+
+  if (!name || !customer || !phone || !email) {
+    addNotif('Fyll i Namn, Kund, Telefon och Mail', 'error');
+    return;
+  }
+
+  const payload = { name, customer, category: category||null, role: role||null, phone, email };
+
+  if (editingContactId) {
+    const { error } = await supabaseClient.from('contacts').update(payload).eq('id', editingContactId);
+    if (error) { addNotif('Kunde inte uppdatera kontakt: ' + error.message, 'error'); return; }
+    const idx = contacts.findIndex(c => c.id === editingContactId);
+    if (idx >= 0) contacts[idx] = { ...contacts[idx], ...payload };
+    addActivity('📋', `Kontakt "${name}" uppdaterad`);
+  } else {
+    const { data, error } = await supabaseClient
+      .from('contacts')
+      .insert({ ...payload, workspace_id: currentWorkspaceId })
+      .select().single();
+    if (error) { addNotif('Kunde inte spara kontakt: ' + error.message, 'error'); return; }
+    contacts.push(data);
+    addActivity('📋', `Kontakt "${name}" tillagd`);
+    if (contactModalLanseringId && data) {
+      await addContactToLansering(contactModalLanseringId, data.id, false);
+    }
+  }
+
+  const savedLid = contactModalLanseringId;
+  closeContactModal();
+  if (state.tab === 'contacts') renderContacts();
+  if (state.tab === 'lansering' && savedLid) renderLansering();
+}
+
+async function deleteContact(id) {
+  const c = contacts.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm(`Ta bort "${c.name}"? Kontakten kopplas också bort från alla lanseringar.`)) return;
+  const { error } = await supabaseClient.from('contacts').delete().eq('id', id);
+  if (error) { addNotif('Kunde inte ta bort kontakt: ' + error.message, 'error'); return; }
+  contacts = contacts.filter(x => x.id !== id);
+  Object.keys(lanseringContactLinks).forEach(lid => {
+    if (Array.isArray(lanseringContactLinks[lid]))
+      lanseringContactLinks[lid] = lanseringContactLinks[lid].filter(cid => cid !== id);
+  });
+  addActivity('📋', `Kontakt "${c.name}" borttagen`);
+  if (state.tab === 'contacts') renderContacts();
+  if (state.tab === 'lansering') renderLansering();
+}
+
+async function addContactToLansering(lid, contactId, rerender = true) {
+  const ids = lanseringContactLinks[lid];
+  if (Array.isArray(ids) && ids.includes(contactId)) return;
+  const { error } = await supabaseClient
+    .from('contacts_projects')
+    .insert({ contact_id: contactId, project_id: lid });
+  if (error && !error.message?.includes('unique')) {
+    addNotif('Kunde inte koppla kontakt: ' + error.message, 'error'); return;
+  }
+  lanseringContactLinks[lid] = [...(Array.isArray(ids) ? ids : []), contactId];
+  if (rerender && state.tab === 'lansering') renderLansering();
+}
+
+async function addContactToLanseringFromSelect(lid) {
+  const sel = document.getElementById(`lansering-contact-select-${lid}`);
+  const contactId = sel?.value;
+  if (!contactId) return;
+  await addContactToLansering(lid, contactId);
+}
+
+async function removeContactFromLansering(lid, contactId) {
+  const { error } = await supabaseClient
+    .from('contacts_projects')
+    .delete()
+    .eq('contact_id', contactId)
+    .eq('project_id', lid);
+  if (error) { addNotif('Kunde inte ta bort koppling: ' + error.message, 'error'); return; }
+  lanseringContactLinks[lid] = (lanseringContactLinks[lid] || []).filter(id => id !== contactId);
+  renderLansering();
+}
+
+function renderLanseringContactsSection(l) {
+  const linkState = lanseringContactLinks[l.id];
+  if (linkState === null) {
+    return `<div class="lansering-contacts-section">
+      <div class="lansering-contacts-title"><i class="ti ti-address-book" style="font-size:12px;margin-right:5px;opacity:0.7"></i>Kontaktpersoner</div>
+      <div style="color:var(--muted);font-size:12px">Laddar...</div>
+    </div>`;
+  }
+
+  const linkIds = linkState || [];
+  const linked  = contacts.filter(c => linkIds.includes(c.id));
+  const chains  = (l.chains || []);
+  const available = contacts.filter(c => chains.includes(c.customer) && !linkIds.includes(c.id));
+
+  const linkedRows = linked.map(c => `
+    <div class="lansering-contact-row">
+      <span class="contact-chain-badge" style="background:${contactCustomerBg(c.customer)};color:${CHAIN_COLORS[c.customer]||'var(--muted)'}">${CHAIN_LABELS[c.customer]||c.customer}</span>
+      <span class="lansering-contact-name">${escHtml(c.name)}</span>
+      ${c.role ? `<span class="lansering-contact-meta">${escHtml(c.role)}</span>` : ''}
+      ${c.category ? `<span class="lansering-contact-meta" style="opacity:0.55">${escHtml(c.category)}</span>` : ''}
+      <button onclick="removeContactFromLansering('${l.id}','${c.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;margin-left:auto;padding:2px 4px" title="Ta bort koppling">×</button>
+    </div>`).join('');
+
+  const selectOpts = available.length
+    ? available.map(c => `<option value="${c.id}">${escHtml(c.name)} (${CHAIN_LABELS[c.customer]||c.customer})</option>`).join('')
+    : `<option value="" disabled>Inga fler kontakter för dessa kedjor</option>`;
+
+  return `
+    <div class="lansering-contacts-section">
+      <div class="lansering-contacts-title"><i class="ti ti-address-book" style="font-size:12px;margin-right:5px;opacity:0.7"></i>Kontaktpersoner</div>
+      ${linked.length
+        ? `<div class="lansering-contacts-list">${linkedRows}</div>`
+        : `<div style="color:var(--muted);font-size:12px;margin-bottom:8px">Inga kontakter kopplade till denna lansering</div>`}
+      <div class="lansering-contacts-add">
+        <select class="contact-input" id="lansering-contact-select-${l.id}" style="flex:1;font-size:12px">
+          <option value="">Lägg till befintlig kontakt...</option>
+          ${selectOpts}
+        </select>
+        <button class="inline-btn" style="padding:5px 10px;font-size:12px" onclick="addContactToLanseringFromSelect('${l.id}')">Lägg till</button>
+        <button class="lansering-action-btn" style="font-size:12px" onclick="openContactModal(null,'${l.id}')">+ Ny kontakt</button>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
 // BRANSCHKUNSKAP
 // ═══════════════════════════════════════════════
 let bkOpenState = {};
@@ -4500,6 +4775,19 @@ function renderCustomerTabContent(l, tabId) {
   const log = (l.contactLog || []).filter(e => e.customerTab === custKey);
   const allLog = l.contactLog || [];
 
+  // Contact select for log form
+  const logLinkedIds = lanseringContactLinks[l.id] || [];
+  const allLinked = contacts.filter(c => logLinkedIds.includes(c.id));
+  const logCandidates = (isChain && CHAIN_COLORS[tabId])
+    ? allLinked.filter(c => c.customer === tabId)
+    : allLinked;
+  const logContactField = logCandidates.length
+    ? `<select class="contact-input" id="log-contact-${l.id}-${custKey}" style="flex:1">
+         <option value="">Välj kontaktperson...</option>
+         ${logCandidates.map(c => `<option value="${c.name.replace(/"/g,'&quot;')}">${c.name}${c.role ? ' — ' + c.role : ''}</option>`).join('')}
+       </select>`
+    : `<div style="font-size:11px;color:var(--muted);padding:0 6px;opacity:0.8;display:flex;align-items:center">Lägg till kontakter i Kontaktpersoner-sektionen</div>`;
+
   const checklistHtml = CHECKLIST_ITEMS.map(item => `
     <div class="check-item ${checks[item.id] ? 'done' : ''}">
       <input type="checkbox" ${checks[item.id] ? 'checked' : ''} 
@@ -4570,7 +4858,7 @@ function renderCustomerTabContent(l, tabId) {
       <div class="section-block-title">Kontaktlogg</div>
       <div class="contact-add-form">
         <div class="contact-form-row">
-          <input class="contact-input" id="log-contact-${l.id}-${custKey}" placeholder="Kontaktperson..." autocomplete="off">
+          ${logContactField}
           <input class="contact-input" id="log-date-${l.id}-${custKey}" type="date" value="${new Date().toISOString().slice(0,10)}" autocomplete="off">
         </div>
         <textarea class="contact-input" id="log-note-${l.id}-${custKey}" rows="2"
@@ -4630,6 +4918,8 @@ function renderLanseringDetail(l) {
     <div style="padding:4px 0 0">
       <div class="progress-bar-wrap" style="margin-bottom:12px"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
     </div>
+
+    ${renderLanseringContactsSection(l)}
 
     <div style="display:flex;align-items:flex-end;gap:0;border-bottom:1px solid var(--border);flex-wrap:wrap;padding:0 0 0 4px">
       ${tabsHtml}

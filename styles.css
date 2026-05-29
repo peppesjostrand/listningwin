@@ -2345,4 +2345,88 @@
   .lp-mock-step-name { font-size: 13px; font-weight: 500; }
   .lp-mock-step-date { font-size: 11px; color: var(--muted); }
 
+/* ═══════════════════════════════════════════
+   CONTACTS PAGE
+═══════════════════════════════════════════ */
+.contacts-page { max-width: 960px; }
+.contacts-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.contacts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.contacts-table th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.contacts-table td {
+  font-size: 12px;
+  padding: 10px;
+  border-bottom: 1px solid var(--border2);
+  vertical-align: middle;
+}
+.contacts-table tr:hover td { background: var(--surface2); }
+.contact-chain-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════
+   LANSERING CONTACTS SECTION
+═══════════════════════════════════════════ */
+.lansering-contacts-section {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.lansering-contacts-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+.lansering-contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 10px;
+}
+.lansering-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border2);
+}
+.lansering-contact-row:last-child { border-bottom: none; }
+.lansering-contact-name { font-size: 12px; font-weight: 600; }
+.lansering-contact-meta { font-size: 11px; color: var(--muted); }
+.lansering-contacts-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
