@@ -1394,7 +1394,7 @@ async function authOnLogin(user) {
       '<div style="font-size:10px;opacity:0.4;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">' + wsName + '</div>' +
       (fullName ? '<div style="font-size:13px;font-weight:600;margin-bottom:2px;">' + fullName + '</div>' : '') +
       (userJobRole ? '<div style="font-size:11px;opacity:0.45;margin-bottom:8px;">' + userJobRole + '</div>' : '') +
-      '<button class="nav-btn" onclick="authLogout()" style="opacity:0.6;"><i class="ti ti-logout nav-icon" aria-hidden="true"></i><span class="nav-label">Logga ut</span></button>';
+      '<button class="nav-btn" onclick="authLogout()" style="opacity:0.6;" data-tooltip="Logga ut"><i class="ti ti-logout nav-icon" aria-hidden="true"></i><span class="nav-label">Logga ut</span></button>';
   }
 
   // Handle pending invite token

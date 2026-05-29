@@ -237,6 +237,33 @@
   .sidebar-collapse-icon { display: inline-block; transition: transform 0.22s ease; }
   .sidebar.sidebar-collapsed .sidebar-collapse-icon { transform: rotate(180deg); }
 
+  /* ── SIDEBAR TOOLTIPS (collapsed mode only) ── */
+  .sidebar.sidebar-collapsed .nav-btn { position: relative; overflow: visible; }
+  .sidebar.sidebar-collapsed .nav-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+    transition-delay: 0s;
+    z-index: 200;
+  }
+  .sidebar.sidebar-collapsed .nav-btn[data-tooltip]:hover::after {
+    opacity: 1;
+    transition-delay: 0.2s;
+  }
 
   .sub-toggle {
     display: flex; align-items: center; gap: 8px;
@@ -1369,6 +1396,49 @@
   .article-input { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 5px; padding: 5px 8px; }
   .article-input::placeholder { color: var(--muted2); }
   .group-add-row { display: flex; gap: 8px; margin-top: 8px; }
+
+  /* ── LANSERING DETAIL REDESIGN ── */
+  .chain-selector-row { display: flex; align-items: center; gap: 8px; padding: 12px 0 8px; }
+  .chain-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; font-weight: 600; border-radius: 7px; padding: 7px 12px; cursor: pointer; min-width: 120px; }
+  .chain-add-picker { display: flex; align-items: center; gap: 6px; padding: 4px 0 10px; flex-wrap: wrap; }
+  .chain-add-option { background: none; border: 1px solid; border-radius: 20px; padding: 3px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: opacity 0.12s; }
+  .chain-add-option:hover { opacity: 0.7; }
+  .chain-add-cancel { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; }
+
+  .detail-tabs { display: flex; border-bottom: 1px solid var(--border); gap: 0; }
+  .detail-tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; font-family: var(--font); font-size: 12px; font-weight: 500; padding: 8px 16px; transition: all 0.12s; white-space: nowrap; margin-bottom: -1px; }
+  .detail-tab-btn:hover { color: var(--text); }
+  .detail-tab-btn.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  .detail-tab-area { padding-top: 16px; }
+  .detail-tab-content { }
+
+  .task-info-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; font-size: 12px; }
+  .task-info-cat { font-weight: 700; font-size: 11px; letter-spacing: 0.5px; }
+  .task-info-sep { color: var(--border2); }
+  .task-info-item { color: var(--muted); }
+  .task-info-days { font-weight: 700; }
+  .task-info-bar-empty { color: var(--muted2); font-size: 12px; }
+
+  .hybrid-task-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .hybrid-task-row { display: grid; grid-template-columns: 20px 1fr 130px 140px; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .hybrid-task-row:last-child { border-bottom: none; }
+  .hybrid-task-row:hover { background: rgba(255,255,255,0.025); }
+  .hybrid-task-row.custom-task-row { grid-template-columns: 20px 1fr 130px 140px 22px; }
+  .hybrid-task-row.done { opacity: 0.5; }
+  .hybrid-task-check { width: 14px; height: 14px; cursor: pointer; accent-color: #4ade80; flex-shrink: 0; }
+  .hybrid-task-name { font-size: 12px; }
+  .hybrid-task-name.done-text { text-decoration: line-through; }
+  .hybrid-task-name-input { background: transparent; border: none; color: var(--text); font-family: var(--font); font-size: 12px; width: 100%; outline: none; }
+  .hybrid-task-name-input::placeholder { color: var(--muted2); }
+  .hybrid-task-date { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 11px; border-radius: 5px; padding: 3px 6px; width: 100%; box-sizing: border-box; }
+  .task-owner-select { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 11px; border-radius: 5px; padding: 3px 6px; width: 100%; }
+
+  .activity-feed { display: flex; flex-direction: column; gap: 6px; }
+  .activity-entry { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; }
+  .activity-entry-header { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
+  .activity-entry-date { font-size: 10px; color: var(--muted); }
+  .activity-entry-contact { font-size: 11px; font-weight: 600; }
+  .activity-entry-text { font-size: 12px; }
 
   /* ── SJOK 2: AVISERINGSHISTORIK ── */
   .history-section { padding: 20px; }
