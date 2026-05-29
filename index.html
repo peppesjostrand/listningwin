@@ -30,6 +30,7 @@
   <!-- SIDEBAR -->
   <nav class="sidebar" id="app-sidebar">
     <button onclick="closeMobileMenu()" style="display:none;position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:0.6;line-height:1;" id="sidebar-close-btn">✕</button>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()"><i class="ti ti-chevron-left sidebar-collapse-icon"></i></button>
     <div class="logo">
       <div class="logo-wordmark">
         <span class="listing">LISTING</span><span class="win">WIN</span>
@@ -43,41 +44,37 @@
     </div>
 
     <div class="sidebar-section">
-      <button class="nav-btn active" onclick="showTab('overview')" id="nav-overview">Hem</button>
+      <button class="nav-btn active" onclick="showTab('overview')" id="nav-overview"><i class="ti ti-home nav-icon" aria-hidden="true"></i><span class="nav-label">Hem</span></button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Planera</div>
-      <button class="nav-btn" onclick="showTab('categories')" id="nav-categories">Fönster & Kategorier</button>
-      <button class="nav-btn" onclick="showTab('timeline')" id="nav-timeline">Tidslinje</button>
-      <button class="nav-btn" onclick="showTab('contacts')" id="nav-contacts"><i class="ti ti-address-book icon"></i>Kontakter</button>
+      <button class="nav-btn" onclick="showTab('categories')" id="nav-categories"><i class="ti ti-calendar nav-icon" aria-hidden="true"></i><span class="nav-label">Fönster & Kategorier</span></button>
+      <button class="nav-btn" onclick="showTab('timeline')" id="nav-timeline"><i class="ti ti-timeline nav-icon" aria-hidden="true"></i><span class="nav-label">Tidslinje</span></button>
+      <button class="nav-btn" onclick="showTab('contacts')" id="nav-contacts"><i class="ti ti-address-book nav-icon" aria-hidden="true"></i><span class="nav-label">Kontakter</span></button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
-      <button class="nav-btn" onclick="showTab('brands')" id="nav-brands">Varumärken</button>
+      <button class="nav-btn" onclick="showTab('brands')" id="nav-brands"><i class="ti ti-tag nav-icon" aria-hidden="true"></i><span class="nav-label">Varumärken</span></button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Lanseringar</div>
-      <button class="nav-btn" onclick="showTab('lansering')" id="nav-lansering">Aktiva</button>
-      <button class="nav-btn" onclick="showTab('arkiv')" id="nav-arkiv">Arkiv</button>
+      <button class="nav-btn" onclick="showTab('lansering')" id="nav-lansering"><i class="ti ti-rocket nav-icon" aria-hidden="true"></i><span class="nav-label">Aktiva</span></button>
+      <button class="nav-btn" onclick="showTab('arkiv')" id="nav-arkiv"><i class="ti ti-archive nav-icon" aria-hidden="true"></i><span class="nav-label">Arkiv</span></button>
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Verktyg</div>
-      <button class="nav-btn" onclick="showTab('kalkyl')" id="nav-kalkyl">Kalkyl</button>
-      <button class="nav-btn" onclick="showTab('paminnelser')" id="nav-paminnelser">Påminnelser</button>
-      <button class="nav-btn" onclick="showTab('branschkunskap')" id="nav-branschkunskap"><i class="ti ti-school icon"></i>Branschkunskap</button>
-      <button class="nav-btn" onclick="showTab('marknaden')" id="nav-marknaden"><i class="ti ti-building-store icon"></i>Marknaden</button>
+      <button class="nav-btn" onclick="showTab('kalkyl')" id="nav-kalkyl"><i class="ti ti-calculator nav-icon" aria-hidden="true"></i><span class="nav-label">Kalkyl</span></button>
+      <button class="nav-btn" onclick="showTab('paminnelser')" id="nav-paminnelser"><i class="ti ti-bell nav-icon" aria-hidden="true"></i><span class="nav-label">Påminnelser</span></button>
+      <button class="nav-btn" onclick="showTab('branschkunskap')" id="nav-branschkunskap"><i class="ti ti-school nav-icon" aria-hidden="true"></i><span class="nav-label">Branschkunskap</span></button>
+      <button class="nav-btn" onclick="showTab('marknaden')" id="nav-marknaden"><i class="ti ti-map nav-icon" aria-hidden="true"></i><span class="nav-label">Marknaden</span></button>
     </div>
 
     <div class="sidebar-section" style="margin-top:auto; padding: 0 14px 20px;">
-      <button class="nav-btn" onclick="openSettings()" style="width:100%;display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <i class="ti ti-settings icon"></i> Inställningar
-      </button>
-      <button class="nav-btn" onclick="showTab('aktivitetslogg')" id="nav-aktivitetslogg" style="width:100%;display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        Aktivitetslogg
-      </button>
+      <button class="nav-btn" onclick="openSettings()" style="margin-bottom:8px;"><i class="ti ti-settings nav-icon" aria-hidden="true"></i><span class="nav-label">Inställningar</span></button>
+      <button class="nav-btn" onclick="showTab('aktivitetslogg')" id="nav-aktivitetslogg" style="margin-bottom:8px;"><i class="ti ti-activity nav-icon" aria-hidden="true"></i><span class="nav-label">Aktivitetslogg</span></button>
       <div id="sidebar-logout"></div>
     </div>
   </nav>

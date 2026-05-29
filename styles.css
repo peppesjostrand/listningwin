@@ -216,6 +216,27 @@
   .nav-btn .icon { margin-right: 8px; opacity: 0.7; font-size: 16px; vertical-align: middle; line-height: 1; }
   .nav-btn i.icon { font-style: normal; }
 
+  /* ── SIDEBAR COLLAPSE ── */
+  .sidebar { transition: width 0.22s ease, min-width 0.22s ease; }
+  .sidebar.sidebar-collapsed { width: 60px; min-width: 60px; }
+  .sidebar.sidebar-collapsed .logo { padding: 8px 0; }
+  .sidebar.sidebar-collapsed .logo-wordmark,
+  .sidebar.sidebar-collapsed .logo-for,
+  .sidebar.sidebar-collapsed .logo-company-drop { display: none; }
+  .sidebar.sidebar-collapsed .sidebar-label { display: none; }
+  .sidebar.sidebar-collapsed .sidebar-section { padding: 0 6px; }
+  .sidebar.sidebar-collapsed .sidebar-divider { margin: 4px 8px 6px; }
+  .sidebar.sidebar-collapsed .nav-btn { padding: 9px 4px; display: flex; justify-content: center; align-items: center; border-left: none; border-radius: 6px; }
+  .sidebar.sidebar-collapsed .nav-label { display: none; }
+  .sidebar.sidebar-collapsed .nav-icon { display: inline-block !important; font-size: 18px; margin: 0; }
+  .sidebar:not(.sidebar-collapsed) .nav-icon { display: none; }
+
+  .sidebar-toggle-btn { background: none; border: none; color: var(--muted2); cursor: pointer; font-size: 14px; padding: 4px 12px 6px; width: 100%; text-align: right; transition: color 0.12s; line-height: 1; }
+  .sidebar-toggle-btn:hover { color: var(--text); }
+  .sidebar.sidebar-collapsed .sidebar-toggle-btn { text-align: center; padding: 6px 0; }
+  .sidebar-collapse-icon { display: inline-block; transition: transform 0.22s ease; }
+  .sidebar.sidebar-collapsed .sidebar-collapse-icon { transform: rotate(180deg); }
+
 
   .sub-toggle {
     display: flex; align-items: center; gap: 8px;
