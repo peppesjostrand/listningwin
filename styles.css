@@ -1435,10 +1435,17 @@
 
   .activity-feed { display: flex; flex-direction: column; gap: 6px; }
   .activity-entry { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; }
+  .activity-entry-editing { border-color: var(--accent); }
   .activity-entry-header { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
   .activity-entry-date { font-size: 10px; color: var(--muted); }
   .activity-entry-contact { font-size: 11px; font-weight: 600; }
+  .activity-entry-intern { font-size: 11px; font-weight: 500; color: var(--muted); font-style: italic; }
   .activity-entry-text { font-size: 12px; }
+  .activity-entry-actions { display: flex; gap: 4px; margin-left: auto; }
+  .activity-entry-btn { background: none; border: none; color: var(--muted2); cursor: pointer; font-family: var(--font); font-size: 11px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s; line-height: 1; }
+  .activity-entry-btn:hover { color: var(--text); background: var(--surface); }
+  .activity-entry-btn-delete:hover { color: #f87171; }
+  .activity-edit-textarea { width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 6px; padding: 8px 10px; resize: vertical; box-sizing: border-box; margin-top: 6px; outline: none; }
 
   /* ── SJOK 2: AVISERINGSHISTORIK ── */
   .history-section { padding: 20px; }

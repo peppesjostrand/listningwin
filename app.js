@@ -1135,6 +1135,7 @@ const openArticleRows = new Set(); // key: `${lid}|${custKey}|${articleId}`
 let detailTabState = {};           // { lid: 'tasks'|'articles'|'activity'|'deadlines' }
 let wsTeamMembers = [];            // [{ user_id, email, name }] loaded at login
 let addingChainForLid = null;      // lid while chain-add picker is visible
+let editingActivityEntry = null;   // { lid, type: 'contact'|'comment', origIdx }
 
 // Map: brandId → projectId (för sparande)
 const brandProjectMap = {};
@@ -1435,6 +1436,7 @@ async function authLogout() {
   lanseringContactLinks = {};
   wsTeamMembers = [];
   detailTabState = {};
+  editingActivityEntry = null;
   applyCompanyLogo(null);
   localStorage.removeItem('listwin_company_logo');
   document.getElementById('app-root').style.display = 'none';
@@ -3798,7 +3800,10 @@ function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function contactCustomerBg(c) {
-  return c==='coop' ? 'rgba(0,171,70,0.12)' : c==='ica' ? 'rgba(227,0,11,0.12)' : 'rgba(13,79,53,0.12)';
+  return c==='coop' ? 'rgba(0,171,70,0.12)'
+       : c==='ica'  ? 'rgba(227,0,11,0.12)'
+       : c==='dagab'? 'rgba(13,79,53,0.12)'
+       : 'rgba(100,116,139,0.12)';
 }
 
 async function loadWsTeamMembers() {
@@ -3869,7 +3874,7 @@ function renderContacts() {
         </div>` :
         `<div class="empty-state">
            <div>Inga kontakter ännu</div>
-           <div style="font-size:12px;color:var(--muted);margin-top:8px">Lägg till kontaktpersoner hos Coop, ICA och Dagab för att koppla dem till dina lanseringar</div>
+           <div style="font-size:12px;color:var(--muted);margin-top:8px">Lägg till kontaktpersoner hos dina kunder för att koppla dem till lanseringar</div>
          </div>`}
     </div>`;
 }
@@ -3888,33 +3893,29 @@ function openContactModal(editId, lanseringId) {
     <div class="lansering-modal-box" style="max-width:460px;width:100%">
       <div class="lansering-modal-title">${editId ? 'Redigera kontakt' : 'Lägg till kontakt'}</div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Namn <span style="color:var(--ica-color)">*</span></label>
-        <input class="lansering-form-input" id="cm-name" value="${escHtml(c?.name)}" placeholder="Anna Svensson" autocomplete="off">
+        <label class="lansering-form-label">Namn</label>
+        <input class="lansering-form-input" id="cm-name" value="${escHtml(c?.name||'')}" placeholder="Anna Svensson" autocomplete="off">
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Kund <span style="color:var(--ica-color)">*</span></label>
-        <select class="lansering-form-input" id="cm-customer">
-          <option value="">Välj kund...</option>
-          <option value="coop" ${c?.customer==='coop'?'selected':''}>Coop</option>
-          <option value="ica"  ${c?.customer==='ica'?'selected':''}>ICA</option>
-          <option value="dagab" ${c?.customer==='dagab'?'selected':''}>Dagab</option>
-        </select>
+        <label class="lansering-form-label">Kund</label>
+        <input class="lansering-form-input" id="cm-customer" value="${escHtml(c?.customer||'')}" placeholder="T.ex. ICA, Coop, Dagab, Foodservice..." autocomplete="off">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Exempel: ICA, Coop, Dagab, Foodservice, Servicehandel</div>
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Roll <span style="color:var(--muted);font-size:10px">(valfritt)</span></label>
-        <input class="lansering-form-input" id="cm-role" value="${escHtml(c?.role)}" placeholder="T.ex. Category Manager" autocomplete="off">
+        <label class="lansering-form-label">Roll</label>
+        <input class="lansering-form-input" id="cm-role" value="${escHtml(c?.role||'')}" placeholder="T.ex. Category Manager" autocomplete="off">
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Kategori <span style="color:var(--muted);font-size:10px">(valfritt)</span></label>
-        <input class="lansering-form-input" id="cm-category" value="${escHtml(c?.category)}" placeholder="T.ex. Mejeri" autocomplete="off">
+        <label class="lansering-form-label">Kategori</label>
+        <input class="lansering-form-input" id="cm-category" value="${escHtml(c?.category||'')}" placeholder="T.ex. Mejeri" autocomplete="off">
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Telefon <span style="color:var(--ica-color)">*</span></label>
-        <input class="lansering-form-input" id="cm-phone" value="${escHtml(c?.phone)}" placeholder="070-123 45 67" autocomplete="off">
+        <label class="lansering-form-label">Telefon</label>
+        <input class="lansering-form-input" id="cm-phone" value="${escHtml(c?.phone||'')}" placeholder="070-123 45 67" autocomplete="off">
       </div>
       <div class="lansering-form-group">
-        <label class="lansering-form-label">Mail <span style="color:var(--ica-color)">*</span></label>
-        <input class="lansering-form-input" id="cm-email" value="${escHtml(c?.email)}" placeholder="anna@coop.se" autocomplete="off">
+        <label class="lansering-form-label">Mail</label>
+        <input class="lansering-form-input" id="cm-email" value="${escHtml(c?.email||'')}" placeholder="anna@foretag.se" autocomplete="off">
       </div>
       <div class="lansering-modal-btns">
         <button class="lansering-action-btn" onclick="closeContactModal()">Avbryt</button>
@@ -3932,19 +3933,14 @@ function closeContactModal() {
 }
 
 async function saveContact() {
-  const name     = document.getElementById('cm-name')?.value.trim();
-  const customer = document.getElementById('cm-customer')?.value;
-  const role     = document.getElementById('cm-role')?.value.trim();
-  const category = document.getElementById('cm-category')?.value.trim();
-  const phone    = document.getElementById('cm-phone')?.value.trim();
-  const email    = document.getElementById('cm-email')?.value.trim();
+  const name     = document.getElementById('cm-name')?.value.trim()     || '';
+  const customer = document.getElementById('cm-customer')?.value.trim() || '';
+  const role     = document.getElementById('cm-role')?.value.trim()     || null;
+  const category = document.getElementById('cm-category')?.value.trim() || null;
+  const phone    = document.getElementById('cm-phone')?.value.trim()    || '';
+  const email    = document.getElementById('cm-email')?.value.trim()    || '';
 
-  if (!name || !customer || !phone || !email) {
-    addNotif('Fyll i Namn, Kund, Telefon och Mail', 'error');
-    return;
-  }
-
-  const payload = { name, customer, category: category||null, role: role||null, phone, email };
+  const payload = { name, customer, category, role, phone, email };
 
   if (editingContactId) {
     const { error } = await supabaseClient.from('contacts').update(payload).eq('id', editingContactId);
@@ -4029,12 +4025,11 @@ function renderLanseringContactsSection(l) {
 
   const linkIds = linkState || [];
   const linked  = contacts.filter(c => linkIds.includes(c.id));
-  const chains  = (l.chains || []);
-  const available = contacts.filter(c => chains.includes(c.customer) && !linkIds.includes(c.id));
+  const available = contacts.filter(c => !linkIds.includes(c.id));
 
   const linkedRows = linked.map(c => `
     <div class="lansering-contact-row">
-      <span class="contact-chain-badge" style="background:${contactCustomerBg(c.customer)};color:${CHAIN_COLORS[c.customer]||'var(--muted)'}">${CHAIN_LABELS[c.customer]||c.customer}</span>
+      ${c.customer ? `<span class="contact-chain-badge" style="background:${contactCustomerBg(c.customer)};color:${CHAIN_COLORS[c.customer]||'var(--muted)'}">${escHtml(CHAIN_LABELS[c.customer]||c.customer)}</span>` : ''}
       <span class="lansering-contact-name">${escHtml(c.name)}</span>
       ${c.role ? `<span class="lansering-contact-meta">${escHtml(c.role)}</span>` : ''}
       ${c.category ? `<span class="lansering-contact-meta" style="opacity:0.55">${escHtml(c.category)}</span>` : ''}
@@ -4042,8 +4037,11 @@ function renderLanseringContactsSection(l) {
     </div>`).join('');
 
   const selectOpts = available.length
-    ? available.map(c => `<option value="${c.id}">${escHtml(c.name)} (${CHAIN_LABELS[c.customer]||c.customer})</option>`).join('')
-    : `<option value="" disabled>Inga fler kontakter för dessa kedjor</option>`;
+    ? available.map(c => {
+        const label = [c.name, c.customer, c.role].filter(Boolean).join(' — ');
+        return `<option value="${c.id}">${escHtml(label)}</option>`;
+      }).join('')
+    : `<option value="" disabled>Inga fler kontakter i workspacet</option>`;
 
   return `
     <div class="lansering-contacts-section">
@@ -5224,8 +5222,6 @@ function renderLanseringDetail(l) {
       <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
     </div>
 
-    ${renderLanseringContactsSection(l)}
-
     <div class="chain-selector-row">
       <select class="chain-select" style="color:${chainColor}" onchange="handleChainSelectChange('${l.id}',this.value)">
         ${chainOptions}
@@ -5372,6 +5368,33 @@ function addActivityEntry(lid, custKey) {
   renderLansering();
 }
 
+// ── ACTIVITY ENTRY EDITING ──
+function startEditActivity(lid, type, origIdx) {
+  editingActivityEntry = { lid, type, origIdx };
+  renderLansering();
+}
+
+function saveEditActivity(lid, type, origIdx) {
+  const l = getLansering(lid);
+  if (!l) return;
+  const textEl = document.getElementById(`activity-edit-${lid}-${type}-${origIdx}`);
+  const newText = textEl?.value.trim();
+  if (!newText) return;
+  if (type === 'contact') {
+    if (l.contactLog?.[origIdx]) l.contactLog[origIdx].note = newText;
+  } else {
+    if (l.comments?.[origIdx]) l.comments[origIdx].text = newText;
+  }
+  saveLansering(lid);
+  editingActivityEntry = null;
+  renderLansering();
+}
+
+function cancelEditActivity() {
+  editingActivityEntry = null;
+  renderLansering();
+}
+
 // ── DETAIL TAB RENDERERS ──
 function renderDetailTabTasks(l, chainKey) {
   const isChain = !chainKey.startsWith('free_');
@@ -5456,18 +5479,22 @@ function renderDetailTabTasks(l, chainKey) {
 }
 
 function renderDetailTabActivity(l, chainKey) {
-  const isChain = !chainKey.startsWith('free_');
   const logLinkedIds = lanseringContactLinks[l.id] || [];
   const allLinked = contacts.filter(c => logLinkedIds.includes(c.id));
-  const logCandidates = (isChain && CHAIN_COLORS[chainKey])
-    ? allLinked.filter(c => c.customer === chainKey)
-    : allLinked;
 
-  const contactSelectHtml = `<select class="contact-input" id="act-contact-${l.id}-${chainKey}" style="flex:2;min-width:120px">
-    <option value="">Intern kommentar</option>
-    ${logCandidates.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}${c.role ? ' — ' + c.role : ''}</option>`).join('')}
+  // ── Kontaktpersoner-sektionen ──
+  const contactsSection = renderLanseringContactsSection(l);
+
+  // ── Loggformulär ──
+  const contactSelectHtml = `<select class="contact-input" id="act-contact-${l.id}-${chainKey}" style="flex:2;min-width:140px">
+    <option value="">Intern anteckning</option>
+    ${allLinked.map(c => {
+      const label = [c.name, c.role].filter(Boolean).join(' — ');
+      return `<option value="${escHtml(c.name)}">${escHtml(label)}</option>`;
+    }).join('')}
   </select>`;
 
+  // ── Flöde: contactLog (per kedja) + comments (globala) ──
   const entries = [];
   (l.contactLog || []).forEach((e, i) => {
     if (e.customerTab === chainKey) {
@@ -5481,14 +5508,44 @@ function renderDetailTabActivity(l, chainKey) {
 
   const feedHtml = entries.length
     ? entries.map(e => {
+        const isEditing = editingActivityEntry &&
+          editingActivityEntry.lid === l.id &&
+          editingActivityEntry.type === e.type &&
+          editingActivityEntry.origIdx === e.origIdx;
+
         const deleteOnclick = e.type === 'contact'
           ? `deleteContactEntry('${l.id}',${e.origIdx})`
           : `deleteComment('${l.id}',${e.origIdx})`;
+
+        const contactLabel = e.contact
+          ? `<span class="activity-entry-contact">${escHtml(e.contact)}</span>`
+          : `<span class="activity-entry-contact activity-entry-intern">Intern anteckning</span>`;
+
+        if (isEditing) {
+          return `<div class="activity-entry activity-entry-editing">
+            <div class="activity-entry-header">
+              ${contactLabel}
+              <span class="activity-entry-date">${escHtml(e.date)}</span>
+            </div>
+            <textarea class="activity-edit-textarea" id="activity-edit-${l.id}-${e.type}-${e.origIdx}"
+              rows="3">${escHtml(e.text)}</textarea>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button class="inline-btn" style="font-size:11px;padding:4px 10px"
+                onclick="saveEditActivity('${l.id}','${e.type}',${e.origIdx})">Spara</button>
+              <button class="lansering-action-btn" style="font-size:11px"
+                onclick="cancelEditActivity()">Avbryt</button>
+            </div>
+          </div>`;
+        }
+
         return `<div class="activity-entry">
           <div class="activity-entry-header">
-            ${e.contact ? `<span class="activity-entry-contact">${escHtml(e.contact)}</span>` : ''}
+            ${contactLabel}
             <span class="activity-entry-date">${escHtml(e.date)}</span>
-            <button onclick="${deleteOnclick}" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:14px;margin-left:auto;padding:0;line-height:1">×</button>
+            <div class="activity-entry-actions">
+              <button class="activity-entry-btn" onclick="startEditActivity('${l.id}','${e.type}',${e.origIdx})">Redigera</button>
+              <button class="activity-entry-btn activity-entry-btn-delete" onclick="${deleteOnclick}">×</button>
+            </div>
           </div>
           <div class="activity-entry-text">${escHtml(e.text)}</div>
         </div>`;
@@ -5496,15 +5553,20 @@ function renderDetailTabActivity(l, chainKey) {
     : `<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga aktiviteter loggade ännu</div>`;
 
   return `
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-      ${contactSelectHtml}
-      <input type="date" class="contact-input" id="act-date-${l.id}-${chainKey}"
-        value="${new Date().toISOString().slice(0, 10)}" style="flex:1;min-width:110px">
-      <input type="text" class="contact-input" id="act-text-${l.id}-${chainKey}"
-        placeholder="Vad gjordes / vad sades?..." style="flex:4;min-width:180px" autocomplete="off"
-        onkeydown="if(event.key==='Enter')addActivityEntry('${l.id}','${chainKey}')">
-      <button class="inline-btn" style="flex-shrink:0" onclick="addActivityEntry('${l.id}','${chainKey}')">Logga</button>
+    ${contactsSection}
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Logga aktivitet</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        ${contactSelectHtml}
+        <input type="date" class="contact-input" id="act-date-${l.id}-${chainKey}"
+          value="${new Date().toISOString().slice(0, 10)}" style="flex:1;min-width:110px">
+        <input type="text" class="contact-input" id="act-text-${l.id}-${chainKey}"
+          placeholder="Vad gjordes / vad sades?..." style="flex:4;min-width:180px" autocomplete="off"
+          onkeydown="if(event.key==='Enter')addActivityEntry('${l.id}','${chainKey}')">
+        <button class="inline-btn" style="flex-shrink:0" onclick="addActivityEntry('${l.id}','${chainKey}')">Logga</button>
+      </div>
     </div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Historik</div>
     <div class="activity-feed">${feedHtml}</div>`;
 }
 
