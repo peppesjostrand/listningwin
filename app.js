@@ -1132,6 +1132,9 @@ let lanseringContactLinks = {}; // { lid: [contactId,...] | null(loading) | unde
 let editingContactId = null;
 let contactModalLanseringId = null;
 const openArticleRows = new Set(); // key: `${lid}|${custKey}|${articleId}`
+let detailTabState = {};           // { lid: 'tasks'|'articles'|'activity'|'deadlines' }
+let wsTeamMembers = [];            // [{ user_id, email, name }] loaded at login
+let addingChainForLid = null;      // lid while chain-add picker is visible
 
 // Map: brandId → projectId (för sparande)
 const brandProjectMap = {};
@@ -1410,6 +1413,7 @@ async function authOnLogin(user) {
   loadBrands();
   loadLanseringar();
   loadContacts();
+  loadWsTeamMembers();
   loadWindowNotes();
   loadAgenda();
   loadActivityLog();
@@ -1429,6 +1433,8 @@ async function authLogout() {
   brands = [];
   contacts = [];
   lanseringContactLinks = {};
+  wsTeamMembers = [];
+  detailTabState = {};
   applyCompanyLogo(null);
   localStorage.removeItem('listwin_company_logo');
   document.getElementById('app-root').style.display = 'none';
@@ -1549,6 +1555,16 @@ const CHECKLIST_ITEMS = [
   { id: 'mote',       label: 'Mötesbokning kedja' },
   { id: 'presentation', label: 'Presentation' },
   { id: 'offert',     label: 'Offert kedja' },
+];
+
+// Fixed tasks shown in the new hybrid task list (Tab 1)
+const FIXED_TASK_ITEMS = [
+  { id: 'validoo',      label: 'Artikeldata Validoo' },
+  { id: 'varuprover',   label: 'Varuprover till kedja' },
+  { id: 'mote',         label: 'Mötesbokning kedja' },
+  { id: 'presentation', label: 'Presentation' },
+  { id: 'offert',       label: 'Offert kedja' },
+  { id: 'avisering',    label: 'Avisering' },
 ];
 
 const TASK_STATUSES = ['Ej påbörjad','Pågående','Klar','Blockerad'];
@@ -3785,6 +3801,18 @@ function contactCustomerBg(c) {
   return c==='coop' ? 'rgba(0,171,70,0.12)' : c==='ica' ? 'rgba(227,0,11,0.12)' : 'rgba(13,79,53,0.12)';
 }
 
+async function loadWsTeamMembers() {
+  if (!currentWorkspaceId) return;
+  const { data } = await supabaseClient.rpc('get_workspace_members_with_email', {
+    p_workspace_id: currentWorkspaceId
+  });
+  wsTeamMembers = (data || []).map(m => ({
+    user_id: m.user_id,
+    email: m.email || '',
+    name: [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email || 'Okänd'
+  }));
+}
+
 async function loadContacts() {
   if (!currentWorkspaceId) return;
   const { data, error } = await supabaseClient
@@ -4962,10 +4990,13 @@ function renderArticleBlock(l, custKey) {
     const rabatt = parseFloat(p.rabatt) || 0;
     const butikspaslag = parseFloat(p.butikspaslag) || 0;
     const konsumentpris = parseFloat(p.konsumentpris) || 0;
+    const momsStr = p.moms || '';
+    const momsRate = momsStr === '25%' ? 25 : momsStr === '12%' ? 12 : momsStr === '6%' ? 6 : 0;
     const nettoPris = listpris * (1 - rabatt / 100);
     const butikPris = nettoPris * (1 + butikspaslag / 100);
-    const marginalKr = konsumentpris - butikPris;
-    const marginalPct = konsumentpris > 0 ? (marginalKr / konsumentpris * 100) : 0;
+    const konsExkl = momsRate > 0 ? konsumentpris / (1 + momsRate / 100) : konsumentpris;
+    const marginalKr = konsExkl - butikPris;
+    const marginalPct = konsExkl > 0 ? (marginalKr / konsExkl * 100) : 0;
 
     const priceGridHtml = isOpen ? `
       <div class="article-price-grid">
@@ -4975,9 +5006,19 @@ function renderArticleBlock(l, custKey) {
             onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','artikelnummer',this.value)">
         </div>
         <div class="article-price-field">
-          <label>EAN</label>
-          <input type="text" class="article-price-input" value="${escHtml(p.ean||'')}" autocomplete="off"
-            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','ean',this.value)">
+          <label>EAN KFP</label>
+          <input type="text" class="article-price-input" value="${escHtml(p.ean_kfp||p.ean||'')}" autocomplete="off"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','ean_kfp',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>EAN DFP</label>
+          <input type="text" class="article-price-input" value="${escHtml(p.ean_dfp||'')}" autocomplete="off"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','ean_dfp',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>EAN PALL</label>
+          <input type="text" class="article-price-input" value="${escHtml(p.ean_pall||'')}" autocomplete="off"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','ean_pall',this.value)">
         </div>
         <div class="article-price-field">
           <label>Innehåll</label>
@@ -5023,10 +5064,15 @@ function renderArticleBlock(l, custKey) {
         </div>
         <div class="article-price-field">
           <label>Moms</label>
-          <select class="article-price-input" onchange="saveArticlePriceField('${l.id}','${custKey}','${art.id}','moms',this.value)">
+          <select id="${pfx}-moms" class="article-price-input"
+            onchange="saveArticlePriceField('${l.id}','${custKey}','${art.id}','moms',this.value);calcArticleRow('${l.id}','${custKey}','${art.id}')">
             <option value="">—</option>
             ${['6%','12%','25%'].map(m => `<option ${p.moms===m?'selected':''}>${m}</option>`).join('')}
           </select>
+        </div>
+        <div class="article-price-field">
+          <label>Kons. exkl moms kr</label>
+          <span class="article-calc-value" id="${pfx}-konsex-calc">${konsumentpris ? konsExkl.toFixed(2) : '—'}</span>
         </div>
         <div class="article-price-field">
           <label>Marginal kr</label>
@@ -5078,49 +5124,92 @@ function calcArticleRow(lid, custKey, articleId) {
   const rabatt = parseFloat(document.getElementById(pfx+'-rabatt')?.value) || 0;
   const butikspaslag = parseFloat(document.getElementById(pfx+'-butikspaslag')?.value) || 0;
   const konsumentpris = parseFloat(document.getElementById(pfx+'-konsumentpris')?.value) || 0;
+  const momsStr = document.getElementById(pfx+'-moms')?.value || '';
+  const momsRate = momsStr === '25%' ? 25 : momsStr === '12%' ? 12 : momsStr === '6%' ? 6 : 0;
+
   const nettoPris = listpris * (1 - rabatt / 100);
   const butikPris = nettoPris * (1 + butikspaslag / 100);
-  const marginalKr = konsumentpris - butikPris;
-  const marginalPct = konsumentpris > 0 ? (marginalKr / konsumentpris * 100) : 0;
+  const konsExkl = momsRate > 0 ? konsumentpris / (1 + momsRate / 100) : konsumentpris;
+  const marginalKr = konsExkl - butikPris;
+  const marginalPct = konsExkl > 0 ? (marginalKr / konsExkl * 100) : 0;
+
   const fmt2 = n => n.toFixed(2);
   const fmtPct = n => n.toFixed(1) + '%';
-  const nettoEl = document.getElementById(pfx+'-netto-calc');
-  const butikEl = document.getElementById(pfx+'-butik-calc');
-  const margKrEl = document.getElementById(pfx+'-marg-kr-calc');
+  const nettoEl   = document.getElementById(pfx+'-netto-calc');
+  const butikEl   = document.getElementById(pfx+'-butik-calc');
+  const konsexEl  = document.getElementById(pfx+'-konsex-calc');
+  const margKrEl  = document.getElementById(pfx+'-marg-kr-calc');
   const margPctEl = document.getElementById(pfx+'-marg-pct-calc');
-  if (nettoEl) nettoEl.textContent = listpris ? fmt2(nettoPris) : '—';
-  if (butikEl) butikEl.textContent = listpris ? fmt2(butikPris) : '—';
-  if (margKrEl) margKrEl.textContent = konsumentpris ? fmt2(marginalKr) : '—';
+  if (nettoEl)   nettoEl.textContent   = listpris ? fmt2(nettoPris) : '—';
+  if (butikEl)   butikEl.textContent   = listpris ? fmt2(butikPris) : '—';
+  if (konsexEl)  konsexEl.textContent  = konsumentpris ? fmt2(konsExkl) : '—';
+  if (margKrEl)  margKrEl.textContent  = konsumentpris ? fmt2(marginalKr) : '—';
   if (margPctEl) margPctEl.textContent = konsumentpris ? fmtPct(marginalPct) : '—';
 }
 
 function renderLanseringDetail(l) {
   const customers = getLanseringCustomers(l);
-  const activeTab = l.activeCustomerTab || customers[0]?.id || '';
+  const activeChain = l.activeCustomerTab || customers[0]?.id || '';
+  const currentTab = detailTabState[l.id] || 'tasks';
 
-  // Tabbar
-  const tabsHtml = customers.map(c => `
-    <button onclick="setLanseringTab('${l.id}','${c.id}')"
-      style="padding:7px 16px;border-radius:7px 7px 0 0;border:1px solid ${c.id===activeTab?'var(--border)':'transparent'};border-bottom:${c.id===activeTab?'1px solid var(--surface)':'none'};background:${c.id===activeTab?'var(--surface)':'transparent'};color:${c.id===activeTab?c.color:'var(--muted)'};cursor:pointer;font-family:var(--font);font-size:12px;font-weight:${c.id===activeTab?'700':'400'};transition:all 0.12s;white-space:nowrap">
-      ${c.id===activeTab?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${c.color};margin-right:5px;vertical-align:middle"></span>`:''}${c.label}
-      <span onclick="event.stopPropagation();${c.type==='free'?`removeFreeCustomer('${l.id}','${c.label}')`:`removeChainTab('${l.id}','${c.id}')`}" style="opacity:0.3;margin-left:4px;cursor:pointer">×</span>
-    </button>`).join('');
+  // Chain dropdown options
+  const chainOptions = customers.map(c =>
+    `<option value="${escHtml(c.id)}" ${c.id === activeChain ? 'selected' : ''}>${escHtml(c.label)}</option>`
+  ).join('');
 
-  // Lägg till kund-knapp
-  const addCustomerHtml = `
-    <div style="display:flex;align-items:center;gap:6px;margin-left:8px">
-      <input id="free-cust-input-${l.id}" class="contact-input"
-        placeholder="Lägg till kund..." style="width:140px;padding:5px 8px;font-size:11px"
-        autocomplete="off"
-        onkeydown="if(event.key==='Enter')addFreeCustomer('${l.id}')">
-      <button class="inline-btn" style="padding:5px 10px;font-size:11px"
-        onclick="addFreeCustomer('${l.id}')">+</button>
+  // Available chains to add
+  const removedChains = l.removedChains || [];
+  const activeChainIds = (l.chains || []).filter(c => !removedChains.includes(c));
+  const availableToAdd = ['coop', 'ica', 'dagab'].filter(c => !activeChainIds.includes(c));
+
+  let chainAddPickerHtml = '';
+  if (addingChainForLid === l.id) {
+    const opts = availableToAdd.length
+      ? availableToAdd.map(c => {
+          const col = CHAIN_COLORS[c];
+          return `<button class="chain-add-option" style="color:${col};border-color:${col}" onclick="addChainToLansering('${l.id}','${c}')">${CHAIN_LABELS[c]}</button>`;
+        }).join('')
+      : '<span style="color:var(--muted);font-size:11px">Alla kedjor redan tillagda</span>';
+    chainAddPickerHtml = `<div class="chain-add-picker">
+      ${opts}
+      <button class="chain-add-cancel" onclick="cancelAddChain('${l.id}')">×</button>
     </div>`;
+  }
 
-  const tabContent = activeTab ? renderCustomerTabContent(l, activeTab) : 
-    `<div style="color:var(--muted);font-size:13px;padding:20px">Inga kunder kopplade — lägg till via kategorierna på produktgruppen</div>`;
+  // Remove button for active chain/customer
+  const activeCustomer = customers.find(c => c.id === activeChain);
+  let removeChainBtn = '';
+  if (activeChain && customers.length > 1 && activeCustomer) {
+    const removeOnclick = activeCustomer.type === 'free'
+      ? `removeFreeCustomer('${l.id}','${activeCustomer.label.replace(/'/g, "\\'")}')`
+      : `removeChainTab('${l.id}','${activeChain}')`;
+    removeChainBtn = `<button class="lansering-action-btn" onclick="${removeOnclick}" style="opacity:0.5;font-size:10px">Ta bort</button>`;
+  }
 
-  // Progress baserat på aktiv tab
+  const chainColor = CHAIN_COLORS[activeChain] || '#a78bfa';
+
+  // Inner tabs
+  const tabs = [
+    { id: 'tasks',     label: 'Uppgifter' },
+    { id: 'articles',  label: 'Artiklar & priser' },
+    { id: 'activity',  label: 'Aktivitet' },
+    { id: 'deadlines', label: 'Deadlines' },
+  ];
+  const tabButtons = tabs.map(t =>
+    `<button class="detail-tab-btn ${currentTab === t.id ? 'active' : ''}" onclick="setDetailTab('${l.id}','${t.id}')">${t.label}</button>`
+  ).join('');
+
+  // Tab content
+  let tabContent = '';
+  if (activeChain) {
+    if (currentTab === 'tasks')          tabContent = renderDetailTabTasks(l, activeChain);
+    else if (currentTab === 'articles')  tabContent = renderArticleBlock(l, activeChain);
+    else if (currentTab === 'activity')  tabContent = renderDetailTabActivity(l, activeChain);
+    else if (currentTab === 'deadlines') tabContent = renderDetailTabDeadlines(l, activeChain);
+  } else {
+    tabContent = `<div style="color:var(--muted);font-size:13px;padding:20px">Inga kedjor kopplade — välj kategori i lanseringsguiden</div>`;
+  }
+
   const pct = getLanseringProgress(l);
 
   return `<div class="lansering-detail">
@@ -5131,20 +5220,23 @@ function renderLanseringDetail(l) {
       <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
     </div>
 
-    ${renderSnabbinfo(l)}
-
-    <div style="padding:4px 0 0">
-      <div class="progress-bar-wrap" style="margin-bottom:12px"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    <div style="padding:4px 0 8px">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
     </div>
 
     ${renderLanseringContactsSection(l)}
 
-    <div style="display:flex;align-items:flex-end;gap:0;border-bottom:1px solid var(--border);flex-wrap:wrap;padding:0 0 0 4px">
-      ${tabsHtml}
-      ${addCustomerHtml}
+    <div class="chain-selector-row">
+      <select class="chain-select" style="color:${chainColor}" onchange="handleChainSelectChange('${l.id}',this.value)">
+        ${chainOptions}
+        <option value="__add__" style="color:var(--muted)">+ Lägg till kedja</option>
+      </select>
+      ${removeChainBtn}
     </div>
+    ${chainAddPickerHtml}
 
-    <div style="padding-top:4px">
+    <div class="detail-tabs">${tabButtons}</div>
+    <div class="detail-tab-area">
       ${tabContent}
     </div>
   </div>`;
@@ -5213,6 +5305,216 @@ function addCustomerContactEntry(lid, custKey) {
   renderLansering();
 }
 
+
+// ── DETAIL TAB STATE ──
+function setDetailTab(lid, tab) {
+  detailTabState[lid] = tab;
+  renderLansering();
+}
+
+function handleChainSelectChange(lid, value) {
+  if (value === '__add__') {
+    addingChainForLid = lid;
+    renderLansering();
+    return;
+  }
+  addingChainForLid = null;
+  const l = getLansering(lid);
+  if (!l) return;
+  l.activeCustomerTab = value;
+  renderLansering();
+}
+
+function addChainToLansering(lid, chainId) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.chains) l.chains = [];
+  if (!l.chains.includes(chainId)) l.chains.push(chainId);
+  l.removedChains = (l.removedChains || []).filter(c => c !== chainId);
+  l.activeCustomerTab = chainId;
+  addingChainForLid = null;
+  saveLansering(lid);
+  addActivity('', `Kedja ${CHAIN_LABELS[chainId]} tillagd i "${l.name}"`);
+  renderLansering();
+}
+
+function cancelAddChain(lid) {
+  addingChainForLid = null;
+  renderLansering();
+}
+
+function toggleFixedTask(lid, custKey, itemId, checked) {
+  toggleCustomerCheckItem(lid, custKey, itemId, checked);
+}
+
+function saveFixedTaskMeta(lid, custKey, itemId, field, value) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.customers) l.customers = {};
+  if (!l.customers[custKey]) l.customers[custKey] = { checklist: {}, tasks: [], taskMeta: {} };
+  if (!l.customers[custKey].taskMeta) l.customers[custKey].taskMeta = {};
+  if (!l.customers[custKey].taskMeta[itemId]) l.customers[custKey].taskMeta[itemId] = {};
+  l.customers[custKey].taskMeta[itemId][field] = value;
+  saveLansering(lid);
+}
+
+function addActivityEntry(lid, custKey) {
+  const l = getLansering(lid);
+  if (!l) return;
+  const contact = document.getElementById(`act-contact-${lid}-${custKey}`)?.value.trim() || '';
+  const date = document.getElementById(`act-date-${lid}-${custKey}`)?.value || new Date().toISOString().slice(0, 10);
+  const text = document.getElementById(`act-text-${lid}-${custKey}`)?.value.trim() || '';
+  if (!text) return;
+  if (!l.contactLog) l.contactLog = [];
+  l.contactLog.push({ customerTab: custKey, contact, date, note: text, next: '' });
+  saveLansering(lid);
+  addActivity('', `Aktivitet: ${custKey} — ${text.slice(0, 40)}`);
+  renderLansering();
+}
+
+// ── DETAIL TAB RENDERERS ──
+function renderDetailTabTasks(l, chainKey) {
+  const isChain = !chainKey.startsWith('free_');
+  const custData = (l.customers || {})[chainKey] || {};
+  const checks = custData.checklist || {};
+  const taskMeta = custData.taskMeta || {};
+  const customTasks = custData.tasks || [];
+
+  let infoBarHtml = '';
+  if (isChain) {
+    const win = getNextWindowForChain(l, chainKey);
+    const cd = l.chainData?.[chainKey];
+    const cat = cd?.category || '';
+    if (win) {
+      const avStep = win.steps?.find(s => s.primary);
+      const avWeek = avStep ? avStep.week : null;
+      const avDate = avWeek ? isoWeekToDate(avWeek) : null;
+      const dToAv = avDate ? daysLeft(avDate) : null;
+      const daysStr = dToAv === null ? '' : dToAv > 0 ? `${dToAv}d kvar` : dToAv === 0 ? 'Idag' : `${Math.abs(dToAv)}d sedan`;
+      const urgency = dToAv !== null && dToAv <= 14 ? '#E3000B' : dToAv !== null && dToAv <= 42 ? '#f59e0b' : '#4ade80';
+      infoBarHtml = `<div class="task-info-bar">
+        ${cat ? `<span class="task-info-cat">${escHtml(cat)}</span><span class="task-info-sep">·</span>` : ''}
+        ${avWeek ? `<span class="task-info-item">Avisering <b>v.${avWeek}</b></span><span class="task-info-sep">·</span>` : ''}
+        <span class="task-info-item">Lansering <b>v.${win.launch}</b></span>
+        ${daysStr ? `<span class="task-info-sep">·</span><span class="task-info-days" style="color:${urgency}">${daysStr}</span>` : ''}
+      </div>`;
+    } else {
+      infoBarHtml = `<div class="task-info-bar"><span class="task-info-bar-empty">Ingen kategori kopplad — lägg till i lanseringsguiden</span></div>`;
+    }
+  }
+
+  const fixedRowsHtml = FIXED_TASK_ITEMS.map(item => {
+    const done = !!checks[item.id];
+    const meta = taskMeta[item.id] || {};
+    const ownerOpts = wsTeamMembers.map(m =>
+      `<option value="${escHtml(m.email)}" ${meta.owner === m.email ? 'selected' : ''}>${escHtml(m.name || m.email)}</option>`
+    ).join('');
+    return `<div class="hybrid-task-row ${done ? 'done' : ''}">
+      <input type="checkbox" class="hybrid-task-check" ${done ? 'checked' : ''}
+        onchange="toggleFixedTask('${l.id}','${chainKey}','${item.id}',this.checked)">
+      <span class="hybrid-task-name ${done ? 'done-text' : ''}">${escHtml(item.label)}</span>
+      <input type="date" class="hybrid-task-date" value="${escHtml(meta.date || '')}"
+        onchange="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','date',this.value)">
+      <select class="task-owner-select" onchange="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','owner',this.value)">
+        <option value="">Ansvarig...</option>
+        ${ownerOpts}
+      </select>
+    </div>`;
+  }).join('');
+
+  const customRowsHtml = customTasks.map((t, i) => {
+    const done = t.status === 'Klar';
+    const ownerOpts = wsTeamMembers.map(m =>
+      `<option value="${escHtml(m.email)}" ${t.owner === m.email ? 'selected' : ''}>${escHtml(m.name || m.email)}</option>`
+    ).join('');
+    return `<div class="hybrid-task-row custom-task-row ${done ? 'done' : ''}">
+      <input type="checkbox" class="hybrid-task-check" ${done ? 'checked' : ''}
+        onchange="updateCustomerTask('${l.id}','${chainKey}',${i},'status',this.checked?'Klar':'Ej påbörjad');renderLansering()">
+      <input type="text" class="hybrid-task-name-input ${done ? 'done-text' : ''}" value="${escHtml(t.name || '')}"
+        placeholder="Uppgift..." autocomplete="off"
+        onblur="updateCustomerTask('${l.id}','${chainKey}',${i},'name',this.value)">
+      <input type="date" class="hybrid-task-date" value="${escHtml(t.deadline || '')}"
+        onchange="updateCustomerTask('${l.id}','${chainKey}',${i},'deadline',this.value)">
+      <select class="task-owner-select" onchange="updateCustomerTask('${l.id}','${chainKey}',${i},'owner',this.value)">
+        <option value="">Ansvarig...</option>
+        ${ownerOpts}
+      </select>
+      <button style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:16px;padding:0;line-height:1"
+        onclick="deleteCustomerTask('${l.id}','${chainKey}',${i})">×</button>
+    </div>`;
+  }).join('');
+
+  return `
+    ${infoBarHtml}
+    <div class="hybrid-task-list">
+      ${fixedRowsHtml}
+      ${customRowsHtml}
+    </div>
+    <div style="margin-top:10px">
+      <button class="inline-btn" onclick="addCustomerTask('${l.id}','${chainKey}')">+ Lägg till uppgift</button>
+    </div>`;
+}
+
+function renderDetailTabActivity(l, chainKey) {
+  const isChain = !chainKey.startsWith('free_');
+  const logLinkedIds = lanseringContactLinks[l.id] || [];
+  const allLinked = contacts.filter(c => logLinkedIds.includes(c.id));
+  const logCandidates = (isChain && CHAIN_COLORS[chainKey])
+    ? allLinked.filter(c => c.customer === chainKey)
+    : allLinked;
+
+  const contactSelectHtml = `<select class="contact-input" id="act-contact-${l.id}-${chainKey}" style="flex:2;min-width:120px">
+    <option value="">Intern kommentar</option>
+    ${logCandidates.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}${c.role ? ' — ' + c.role : ''}</option>`).join('')}
+  </select>`;
+
+  const entries = [];
+  (l.contactLog || []).forEach((e, i) => {
+    if (e.customerTab === chainKey) {
+      entries.push({ type: 'contact', origIdx: i, date: e.date || '', contact: e.contact || '', text: e.note || '' });
+    }
+  });
+  (l.comments || []).forEach((e, i) => {
+    entries.push({ type: 'comment', origIdx: i, date: e.date || '', contact: e.author || '', text: e.text || '' });
+  });
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+
+  const feedHtml = entries.length
+    ? entries.map(e => {
+        const deleteOnclick = e.type === 'contact'
+          ? `deleteContactEntry('${l.id}',${e.origIdx})`
+          : `deleteComment('${l.id}',${e.origIdx})`;
+        return `<div class="activity-entry">
+          <div class="activity-entry-header">
+            ${e.contact ? `<span class="activity-entry-contact">${escHtml(e.contact)}</span>` : ''}
+            <span class="activity-entry-date">${escHtml(e.date)}</span>
+            <button onclick="${deleteOnclick}" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:14px;margin-left:auto;padding:0;line-height:1">×</button>
+          </div>
+          <div class="activity-entry-text">${escHtml(e.text)}</div>
+        </div>`;
+      }).join('')
+    : `<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga aktiviteter loggade ännu</div>`;
+
+  return `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      ${contactSelectHtml}
+      <input type="date" class="contact-input" id="act-date-${l.id}-${chainKey}"
+        value="${new Date().toISOString().slice(0, 10)}" style="flex:1;min-width:110px">
+      <input type="text" class="contact-input" id="act-text-${l.id}-${chainKey}"
+        placeholder="Vad gjordes / vad sades?..." style="flex:4;min-width:180px" autocomplete="off"
+        onkeydown="if(event.key==='Enter')addActivityEntry('${l.id}','${chainKey}')">
+      <button class="inline-btn" style="flex-shrink:0" onclick="addActivityEntry('${l.id}','${chainKey}')">Logga</button>
+    </div>
+    <div class="activity-feed">${feedHtml}</div>`;
+}
+
+function renderDetailTabDeadlines(l, chainKey) {
+  if (chainKey.startsWith('free_')) {
+    return `<div style="color:var(--muted);font-size:12px;padding:8px 0">Deadlines visas bara för kedjor.</div>`;
+  }
+  const custData = (l.customers || {})[chainKey] || {};
+  return renderDeadlineTimeline(l, chainKey, custData.checklist);
+}
 
 // ── TEMA ──
 function initTheme() {
