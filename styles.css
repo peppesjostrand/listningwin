@@ -1751,6 +1751,39 @@
     padding-right: 28px;
     cursor: pointer;
   }
+  .wz-cat-trigger {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    min-height: 36px;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+    padding-right: 28px;
+  }
+  .wz-cat-placeholder {
+    color: var(--muted2);
+  }
+  .wz-cat-search-wrap {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border2);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  .wz-cat-search-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 4px;
+    box-sizing: border-box;
+  }
   .wz-cat-arrow {
     position: absolute;
     right: 10px;

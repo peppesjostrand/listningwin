@@ -1811,10 +1811,6 @@ function renderWizardModal() {
   overlay.id = 'lansering-wizard';
   overlay.innerHTML = buildWizardHTML();
   document.body.appendChild(overlay);
-  overlay.querySelectorAll('input[name="cat-filter-x7k"]').forEach(inp => {
-    inp.setAttribute('readonly', '');
-    inp.addEventListener('focus', function() { this.removeAttribute('readonly'); }, { once: true });
-  });
 }
 
 function buildWizardHTML() {
@@ -2008,21 +2004,18 @@ function buildWizardCatSection(chain) {
       </div>`;
   }
 
-  const inputVal = (sel?.cat || '').replace(/"/g, '&quot;');
+  const triggerLabel = sel?.cat || '';
 
   return `
     <div class="wz-chain-section" style="border-left-color:${col}">
       <div class="wz-chain-label" style="color:${col}">${lbl}</div>
       <div class="wz-cat-dropdown" id="wz-cat-wrap-${chain}">
-        <input class="lansering-form-input wz-cat-input" type="search"
-               placeholder="Sök kategori..."
-               value="${inputVal}"
-               autocomplete="new-password" name="cat-filter-x7k"
-               onfocus="wizardOpenCatDropdown('${chain}')"
-               oninput="wizardFilterCats('${chain}',this.value)"
-               onblur="wizardCatBlur('${chain}')">
+        <div class="lansering-form-input wz-cat-trigger" id="wz-cat-trigger-${chain}"
+             onclick="wizardOpenCatDropdown('${chain}')">
+          ${triggerLabel ? triggerLabel : '<span class="wz-cat-placeholder">Sök kategori...</span>'}
+        </div>
         <span class="wz-cat-arrow">▾</span>
-        <div class="wz-cat-list-float" id="wz-cat-list-${chain}">${listHTML}</div>
+        <div class="wz-cat-list-float" id="wz-cat-list-${chain}"></div>
       </div>
       ${badgesHTML}
     </div>`;
@@ -2031,19 +2024,29 @@ function buildWizardCatSection(chain) {
 function wizardOpenCatDropdown(chain) {
   const listEl = document.getElementById(`wz-cat-list-${chain}`);
   if (!listEl) return;
-  listEl.innerHTML = wizardBuildCatListHTML(chain, '', wizardData.categories[chain]);
+  if (listEl.style.display === 'block') { listEl.style.display = 'none'; return; }
+  listEl.innerHTML =
+    `<div class="wz-cat-search-wrap">
+       <input class="wz-cat-search-input" type="text" placeholder="Sök kategori..."
+              oninput="wizardFilterCats('${chain}',this.value)"
+              onblur="wizardCatBlur('${chain}')">
+     </div>
+     <div id="wz-cat-items-${chain}">
+       ${wizardBuildCatListHTML(chain, '', wizardData.categories[chain])}
+     </div>`;
   listEl.style.display = 'block';
-  const active = listEl.querySelector('.wz-cat-item.active');
-  if (active) active.scrollIntoView({ block: 'nearest' });
+  setTimeout(() => {
+    listEl.querySelector('.wz-cat-search-input')?.focus();
+    listEl.querySelector('.wz-cat-item.active')?.scrollIntoView({ block: 'nearest' });
+  }, 10);
 }
 
 function wizardFilterCats(chain, value) {
   wizardData.catSearch[chain] = value;
   const q = value.trim().toLowerCase();
-  const listEl = document.getElementById(`wz-cat-list-${chain}`);
-  if (!listEl) return;
-  listEl.innerHTML = wizardBuildCatListHTML(chain, q, wizardData.categories[chain]);
-  listEl.style.display = 'block';
+  const itemsEl = document.getElementById(`wz-cat-items-${chain}`);
+  if (!itemsEl) return;
+  itemsEl.innerHTML = wizardBuildCatListHTML(chain, q, wizardData.categories[chain]);
 }
 
 function wizardCatBlur(chain) {
@@ -2060,8 +2063,8 @@ function wizardCatPick(chain, idx) {
   wizardData.catSearch[chain] = cat?.cat || '';
 
   const wrap = document.getElementById(`wz-cat-wrap-${chain}`);
-  const inputEl = wrap?.querySelector('.wz-cat-input');
-  if (inputEl) inputEl.value = cat?.cat || '';
+  const triggerEl = wrap?.querySelector('.wz-cat-trigger');
+  if (triggerEl) triggerEl.innerHTML = cat?.cat || '<span class="wz-cat-placeholder">Sök kategori...</span>';
 
   const listEl = document.getElementById(`wz-cat-list-${chain}`);
   if (listEl) listEl.style.display = 'none';
