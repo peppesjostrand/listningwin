@@ -1760,6 +1760,7 @@ function closeLanseringModal() {
 // ═══════════════════════════════════════════════
 
 let wizardData = null;
+let wizardCatSearch = { coop: '', ica: '', dagab: '' };
 
 function openLanseringWizard(prefillBrandId = null) {
   wizardData = {
@@ -1805,6 +1806,10 @@ function openEditWizard(lid) {
 }
 
 function renderWizardModal() {
+  if (!wizardData._catSearchInit) {
+    wizardCatSearch = { coop: '', ica: '', dagab: '' };
+    wizardData._catSearchInit = true;
+  }
   document.getElementById('lansering-wizard')?.remove();
   const overlay = document.createElement('div');
   overlay.className = 'lansering-modal';
@@ -2042,7 +2047,7 @@ function wizardOpenCatDropdown(chain) {
 }
 
 function wizardFilterCats(chain, value) {
-  wizardData.catSearch[chain] = value;
+  wizardCatSearch[chain] = value;
   const q = value.trim().toLowerCase();
   const itemsEl = document.getElementById(`wz-cat-items-${chain}`);
   if (!itemsEl) return;
