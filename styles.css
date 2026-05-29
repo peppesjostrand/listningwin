@@ -1236,6 +1236,43 @@
   .lansering-action-btn:hover { border-color: #f59e0b; color: #f59e0b; }
   .lansering-action-btn.danger:hover { border-color: rgba(248,113,113,0.4); color: #f87171; }
 
+  /* Collapsable left panel */
+  .lansering-list-panel { display: flex; flex-direction: column; }
+  .lansering-list-content { display: flex; flex-direction: column; gap: 8px; }
+  .panel-toggle-btn { background: none; border: 1px solid var(--border2); color: var(--muted); cursor: pointer; font-size: 13px; border-radius: 6px; padding: 4px 9px; align-self: flex-end; margin-bottom: 6px; transition: all 0.12s; line-height: 1; }
+  .panel-toggle-btn:hover { color: var(--text); border-color: var(--border); }
+  .lansering-layout.panel-collapsed { grid-template-columns: 36px 1fr; }
+  .lansering-layout.panel-collapsed .lansering-list-content { display: none; }
+  .lansering-layout.panel-collapsed .panel-toggle-btn { writing-mode: vertical-lr; padding: 10px 5px; align-self: flex-start; font-size: 11px; }
+
+  /* Snabbinfo header */
+  .lansering-snabbinfo { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; }
+  .snabbinfo-group { display: flex; align-items: center; gap: 6px; }
+  .snabbinfo-chain-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; }
+  .snabbinfo-cat { font-size: 11px; color: var(--text); }
+  .snabbinfo-week { font-size: 10px; color: var(--muted); padding: 1px 5px; background: var(--surface); border-radius: 5px; }
+  .snabbinfo-days { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px; background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+  /* Artiklar & priser block */
+  .article-prices-list { display: flex; flex-direction: column; gap: 4px; }
+  .article-price-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+  .article-price-row-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background 0.1s; }
+  .article-price-row-header:hover { background: rgba(255,255,255,0.04); }
+  .article-price-row-toggle { font-size: 9px; color: var(--muted); flex-shrink: 0; width: 12px; }
+  .article-price-row-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .article-price-row-summary { font-size: 11px; color: var(--muted); }
+  .article-price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; padding: 12px 14px 14px; border-top: 1px solid var(--border); }
+  .article-price-field { display: flex; flex-direction: column; gap: 3px; }
+  .article-price-field label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+  .article-price-input { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 5px; padding: 5px 8px; width: 100%; box-sizing: border-box; }
+  .article-price-input:focus { outline: none; border-color: var(--input-focus); }
+  .article-calc-value { font-size: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; display: block; opacity: 0.65; }
+
+  /* Kontaktlogg one-row form */
+  .contact-log-form-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .contact-log-form-row .contact-input[type=date] { flex: 0 0 130px; min-width: 0; }
+  .contact-log-form-row .log-note-input { flex: 1; min-width: 160px; }
+
   .section-block { margin-bottom: 28px; }
   .section-block-title { font-family: var(--display); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
 

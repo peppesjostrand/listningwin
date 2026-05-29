@@ -1131,6 +1131,7 @@ let contacts = [];
 let lanseringContactLinks = {}; // { lid: [contactId,...] | null(loading) | undefined(not loaded) }
 let editingContactId = null;
 let contactModalLanseringId = null;
+const openArticleRows = new Set(); // key: `${lid}|${custKey}|${articleId}`
 
 // Map: brandId → projectId (för sparande)
 const brandProjectMap = {};
@@ -1618,24 +1619,31 @@ function renderLansering() {
     loadLanseringContactLinks(_selL.id);    // re-renders when done
   }
 
+  const panelCollapsed = localStorage.getItem('lw_panel_collapsed') === '1';
+  const toggleIcon = panelCollapsed ? '›' : '‹';
+  const toggleTitle = panelCollapsed ? 'Visa lista' : 'Dölj lista';
+
   const listHtml = `
-    <div class="lansering-list">
-      ${lanseringar.map(l => {
-        const pct = getLanseringProgress(l);
-        return `<div class="lansering-card ${selectedLanseringId===l.id?'selected':''}" onclick="selectLansering('${l.id}')">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="width:10px;height:10px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
-            <div class="lansering-card-name">${l.name}</div>
-          </div>
-          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
-          <div class="lansering-card-meta" style="margin-top:6px">
-            <span>${pct}% klart</span>
-            ${l.brand ? `<span style="opacity:0.6">· ${l.brand}</span>` : ''}
-            ${l.chain ? `<span style="color:${l.chain==='coop'?'#00AB46':l.chain==='ica'?'#E3000B':'#0D4F35'}">${l.chain==='coop'?'Coop':l.chain==='ica'?'ICA':l.chain==='dagab'?'Dagab':'Flera'}</span>` : ''}
-          </div>
-        </div>`;
-      }).join('')}
-      <button class="lansering-add-btn" onclick="openLanseringModal()">+ Ny lansering</button>
+    <div class="lansering-list-panel">
+      <button class="panel-toggle-btn" onclick="toggleLanseringPanel()" title="${toggleTitle}">${toggleIcon}</button>
+      <div class="lansering-list-content">
+        ${lanseringar.map(l => {
+          const pct = getLanseringProgress(l);
+          return `<div class="lansering-card ${selectedLanseringId===l.id?'selected':''}" onclick="selectLansering('${l.id}')">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="width:10px;height:10px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
+              <div class="lansering-card-name">${l.name}</div>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+            <div class="lansering-card-meta" style="margin-top:6px">
+              <span>${pct}% klart</span>
+              ${l.brand ? `<span style="opacity:0.6">· ${l.brand}</span>` : ''}
+              ${l.chain ? `<span style="color:${l.chain==='coop'?'#00AB46':l.chain==='ica'?'#E3000B':'#0D4F35'}">${l.chain==='coop'?'Coop':l.chain==='ica'?'ICA':l.chain==='dagab'?'Dagab':'Flera'}</span>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+        <button class="lansering-add-btn" onclick="openLanseringModal()">+ Ny lansering</button>
+      </div>
     </div>`;
 
   let detailHtml = `<div class="lansering-detail" style="display:flex;align-items:center;justify-content:center;min-height:200px">
@@ -1647,10 +1655,17 @@ function renderLansering() {
     detailHtml = renderLanseringDetail(l);
   }
 
-  el.innerHTML = `<div class="lansering-layout">${listHtml}${detailHtml}</div>`;
+  const collapsedClass = panelCollapsed ? ' panel-collapsed' : '';
+  el.innerHTML = `<div class="lansering-layout${collapsedClass}">${listHtml}${detailHtml}</div>`;
 
   // Render lansering modal if open
   if (document.getElementById('lansering-modal')) return;
+}
+
+function toggleLanseringPanel() {
+  const collapsed = localStorage.getItem('lw_panel_collapsed') === '1';
+  localStorage.setItem('lw_panel_collapsed', collapsed ? '0' : '1');
+  renderLansering();
 }
 
 function selectLansering(lid) {
@@ -4853,26 +4868,18 @@ function renderCustomerTabContent(l, tabId) {
       <div class="checklist">${checklistHtml}</div>
     </div>
 
-    <div class="section-block">
-      <div class="section-block-title">Projektuppgifter</div>
-      <div class="custom-tasks">${tasksHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga uppgifter ännu</div>'}</div>
-      <div class="task-add-row" style="margin-top:8px">
-        <button class="inline-btn" onclick="addCustomerTask('${l.id}','${custKey}')">+ Lägg till uppgift</button>
-      </div>
-    </div>
+    ${renderArticleBlock(l, custKey)}
 
     <div class="section-block">
       <div class="section-block-title">Kontaktlogg</div>
       <div class="contact-add-form">
-        <div class="contact-form-row">
+        <div class="contact-log-form-row">
           ${logContactField}
-          <input class="contact-input" id="log-date-${l.id}-${custKey}" type="date" value="${new Date().toISOString().slice(0,10)}" autocomplete="off">
-        </div>
-        <textarea class="contact-input" id="log-note-${l.id}-${custKey}" rows="2"
-          placeholder="Vad gjordes / vad sades?..." style="resize:vertical"></textarea>
-        <input class="contact-input" id="log-next-${l.id}-${custKey}" placeholder="Nästa steg (valfritt)..." autocomplete="off">
-        <div style="display:flex;justify-content:flex-end">
-          <button class="inline-btn" onclick="addCustomerContactEntry('${l.id}','${custKey}')">+ Lägg till i logg</button>
+          <input class="contact-input" id="log-date-${l.id}-${custKey}" type="date"
+            value="${new Date().toISOString().slice(0,10)}" autocomplete="off">
+          <input class="contact-input log-note-input" id="log-note-${l.id}-${custKey}"
+            placeholder="Vad gjordes / vad sades?..." autocomplete="off">
+          <button class="inline-btn" style="flex-shrink:0" onclick="addCustomerContactEntry('${l.id}','${custKey}')">Logga</button>
         </div>
       </div>
       <div class="contact-log" style="margin-top:10px">${logHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga loggade moment ännu</div>'}</div>
@@ -4882,7 +4889,209 @@ function renderCustomerTabContent(l, tabId) {
 
     <div class="section-block">
       ${renderComments(l.id)}
+    </div>
+
+    <div class="section-block">
+      <div class="section-block-title">Projektuppgifter</div>
+      <div class="custom-tasks">${tasksHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Inga uppgifter ännu</div>'}</div>
+      <div class="task-add-row" style="margin-top:8px">
+        <button class="inline-btn" onclick="addCustomerTask('${l.id}','${custKey}')">+ Lägg till uppgift</button>
+      </div>
     </div>`;
+}
+
+function renderSnabbinfo(l) {
+  const chains = (l.chains || []).filter(c => !(l.removedChains || []).includes(c));
+  if (!chains.length) return '';
+
+  const pills = chains.map(chain => {
+    const cd = l.chainData?.[chain];
+    const cat = cd?.category || '';
+    const color = CHAIN_COLORS[chain] || '#a78bfa';
+
+    let weekStr = '';
+    let dayStr = '';
+    if (cd?.aviseringsVeckor?.length) {
+      const avWeeks = cd.aviseringsVeckor.map(Number);
+      const now = new Date();
+      let bestWeek = null;
+      let bestDate = null;
+      for (const w of avWeeks) {
+        const d = isoWeekToDate(w);
+        if (d > now && (bestDate === null || d < bestDate)) {
+          bestWeek = w; bestDate = d;
+        }
+      }
+      if (bestWeek !== null) {
+        const days = daysLeft(bestDate);
+        weekStr = `v.${bestWeek}`;
+        if (days === 0) dayStr = 'Idag';
+        else if (days > 0) dayStr = `${days}d`;
+      }
+    }
+
+    return `<div class="snabbinfo-group">
+      <span class="snabbinfo-chain-badge" style="background:${color}20;color:${color}">${CHAIN_LABELS[chain]||chain}</span>
+      ${cat ? `<span class="snabbinfo-cat">${escHtml(cat)}</span>` : ''}
+      ${weekStr ? `<span class="snabbinfo-week">${weekStr}</span>` : ''}
+      ${dayStr ? `<span class="snabbinfo-days">${dayStr}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="lansering-snabbinfo">${pills}</div>`;
+}
+
+function renderArticleBlock(l, custKey) {
+  const articles = l.articles || [];
+  const artPrices = ((l.articlePrices || {})[custKey]) || {};
+
+  if (!articles.length) {
+    return `<div class="section-block">
+      <div class="section-block-title">Artiklar & priser</div>
+      <div style="color:var(--muted);font-size:12px;padding:8px 0">Inga artiklar — lägg till i lanseringsguiden</div>
+    </div>`;
+  }
+
+  const rowsHtml = articles.map(art => {
+    const key = `${l.id}|${custKey}|${art.id}`;
+    const isOpen = openArticleRows.has(key);
+    const p = artPrices[art.id] || {};
+    const pfx = `art-${l.id}-${custKey}-${art.id}`;
+
+    const listpris = parseFloat(p.listpris) || 0;
+    const rabatt = parseFloat(p.rabatt) || 0;
+    const butikspaslag = parseFloat(p.butikspaslag) || 0;
+    const konsumentpris = parseFloat(p.konsumentpris) || 0;
+    const nettoPris = listpris * (1 - rabatt / 100);
+    const butikPris = nettoPris * (1 + butikspaslag / 100);
+    const marginalKr = konsumentpris - butikPris;
+    const marginalPct = konsumentpris > 0 ? (marginalKr / konsumentpris * 100) : 0;
+
+    const priceGridHtml = isOpen ? `
+      <div class="article-price-grid">
+        <div class="article-price-field">
+          <label>Artikelnr</label>
+          <input type="text" class="article-price-input" value="${escHtml(p.artikelnummer||'')}" autocomplete="off"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','artikelnummer',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>EAN</label>
+          <input type="text" class="article-price-input" value="${escHtml(p.ean||'')}" autocomplete="off"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','ean',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>Innehåll</label>
+          <input type="text" class="article-price-input" value="${escHtml(p.innehall||'')}" autocomplete="off"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','innehall',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>Kostnad kr</label>
+          <input type="number" class="article-price-input" value="${p.kostnad||''}" step="0.01" autocomplete="off"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','kostnad',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>Listpris kr</label>
+          <input id="${pfx}-listpris" type="number" class="article-price-input" value="${p.listpris||''}" step="0.01" autocomplete="off"
+            oninput="calcArticleRow('${l.id}','${custKey}','${art.id}')"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','listpris',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>Rabatt %</label>
+          <input id="${pfx}-rabatt" type="number" class="article-price-input" value="${p.rabatt||''}" step="0.1" autocomplete="off"
+            oninput="calcArticleRow('${l.id}','${custKey}','${art.id}')"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','rabatt',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>Nettopris kr</label>
+          <span class="article-calc-value" id="${pfx}-netto-calc">${listpris ? nettoPris.toFixed(2) : '—'}</span>
+        </div>
+        <div class="article-price-field">
+          <label>Butikspåslag %</label>
+          <input id="${pfx}-butikspaslag" type="number" class="article-price-input" value="${p.butikspaslag||''}" step="0.1" autocomplete="off"
+            oninput="calcArticleRow('${l.id}','${custKey}','${art.id}')"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','butikspaslag',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>Butikpris kr</label>
+          <span class="article-calc-value" id="${pfx}-butik-calc">${listpris ? butikPris.toFixed(2) : '—'}</span>
+        </div>
+        <div class="article-price-field">
+          <label>Konsumentpris kr</label>
+          <input id="${pfx}-konsumentpris" type="number" class="article-price-input" value="${p.konsumentpris||''}" step="0.01" autocomplete="off"
+            oninput="calcArticleRow('${l.id}','${custKey}','${art.id}')"
+            onblur="saveArticlePriceField('${l.id}','${custKey}','${art.id}','konsumentpris',this.value)">
+        </div>
+        <div class="article-price-field">
+          <label>Moms</label>
+          <select class="article-price-input" onchange="saveArticlePriceField('${l.id}','${custKey}','${art.id}','moms',this.value)">
+            <option value="">—</option>
+            ${['6%','12%','25%'].map(m => `<option ${p.moms===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="article-price-field">
+          <label>Marginal kr</label>
+          <span class="article-calc-value" id="${pfx}-marg-kr-calc">${konsumentpris ? marginalKr.toFixed(2) : '—'}</span>
+        </div>
+        <div class="article-price-field">
+          <label>Marginal %</label>
+          <span class="article-calc-value" id="${pfx}-marg-pct-calc">${konsumentpris ? marginalPct.toFixed(1)+'%' : '—'}</span>
+        </div>
+      </div>` : '';
+
+    return `<div class="article-price-row">
+      <div class="article-price-row-header" onclick="toggleArticleRow('${l.id}','${custKey}','${art.id}')">
+        <span class="article-price-row-toggle">${isOpen ? '▼' : '▶'}</span>
+        <span class="article-price-row-name">${escHtml(art.name)}</span>
+        ${p.listpris ? `<span class="article-price-row-summary">${parseFloat(p.listpris).toFixed(2)} kr lista</span>` : ''}
+        ${p.konsumentpris ? `<span class="article-price-row-summary" style="color:#4ade80">${parseFloat(p.konsumentpris).toFixed(2)} kr konsument</span>` : ''}
+      </div>
+      ${priceGridHtml}
+    </div>`;
+  }).join('');
+
+  return `<div class="section-block">
+    <div class="section-block-title">Artiklar & priser</div>
+    <div class="article-prices-list">${rowsHtml}</div>
+  </div>`;
+}
+
+function toggleArticleRow(lid, custKey, articleId) {
+  const key = `${lid}|${custKey}|${articleId}`;
+  if (openArticleRows.has(key)) openArticleRows.delete(key);
+  else openArticleRows.add(key);
+  renderLansering();
+}
+
+function saveArticlePriceField(lid, custKey, articleId, field, value) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.articlePrices) l.articlePrices = {};
+  if (!l.articlePrices[custKey]) l.articlePrices[custKey] = {};
+  if (!l.articlePrices[custKey][articleId]) l.articlePrices[custKey][articleId] = {};
+  l.articlePrices[custKey][articleId][field] = value;
+  saveLansering(lid);
+}
+
+function calcArticleRow(lid, custKey, articleId) {
+  const pfx = `art-${lid}-${custKey}-${articleId}`;
+  const listpris = parseFloat(document.getElementById(pfx+'-listpris')?.value) || 0;
+  const rabatt = parseFloat(document.getElementById(pfx+'-rabatt')?.value) || 0;
+  const butikspaslag = parseFloat(document.getElementById(pfx+'-butikspaslag')?.value) || 0;
+  const konsumentpris = parseFloat(document.getElementById(pfx+'-konsumentpris')?.value) || 0;
+  const nettoPris = listpris * (1 - rabatt / 100);
+  const butikPris = nettoPris * (1 + butikspaslag / 100);
+  const marginalKr = konsumentpris - butikPris;
+  const marginalPct = konsumentpris > 0 ? (marginalKr / konsumentpris * 100) : 0;
+  const fmt2 = n => n.toFixed(2);
+  const fmtPct = n => n.toFixed(1) + '%';
+  const nettoEl = document.getElementById(pfx+'-netto-calc');
+  const butikEl = document.getElementById(pfx+'-butik-calc');
+  const margKrEl = document.getElementById(pfx+'-marg-kr-calc');
+  const margPctEl = document.getElementById(pfx+'-marg-pct-calc');
+  if (nettoEl) nettoEl.textContent = listpris ? fmt2(nettoPris) : '—';
+  if (butikEl) butikEl.textContent = listpris ? fmt2(butikPris) : '—';
+  if (margKrEl) margKrEl.textContent = konsumentpris ? fmt2(marginalKr) : '—';
+  if (margPctEl) margPctEl.textContent = konsumentpris ? fmtPct(marginalPct) : '—';
 }
 
 function renderLanseringDetail(l) {
@@ -4921,6 +5130,8 @@ function renderLanseringDetail(l) {
       <button class="lansering-action-btn" onclick="openEditWizard('${l.id}')">Redigera</button>
       <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
     </div>
+
+    ${renderSnabbinfo(l)}
 
     <div style="padding:4px 0 0">
       <div class="progress-bar-wrap" style="margin-bottom:12px"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
