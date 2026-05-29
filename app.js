@@ -2010,10 +2010,10 @@ function buildWizardCatSection(chain) {
     <div class="wz-chain-section" style="border-left-color:${col}">
       <div class="wz-chain-label" style="color:${col}">${lbl}</div>
       <div class="wz-cat-dropdown" id="wz-cat-wrap-${chain}">
-        <input class="lansering-form-input wz-cat-input" type="text"
+        <input class="lansering-form-input wz-cat-input" type="search"
                placeholder="Sök kategori..."
                value="${inputVal}"
-               autocomplete="off"
+               autocomplete="new-password" name="cat-filter-x7k"
                onfocus="wizardOpenCatDropdown('${chain}')"
                oninput="wizardFilterCats('${chain}',this.value)"
                onblur="wizardCatBlur('${chain}')">
