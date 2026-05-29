@@ -86,7 +86,7 @@
       <div class="week-badge" id="week-badge"></div>
       <div class="search-wrap" style="position:relative">
         <i class="ti ti-search search-icon"></i>
-        <input class="search-input search-input-global" type="text" placeholder="Sök allt..." id="global-search" oninput="renderGlobalSearch(this.value)" onfocus="showSearchPanel()" onblur="setTimeout(hideSearchPanel,200)">
+        <input class="search-input search-input-global" type="text" placeholder="Sök allt..." id="global-search" autocomplete="off" oninput="renderGlobalSearch(this.value)" onfocus="showSearchPanel()" onblur="setTimeout(hideSearchPanel,200)">
         <div id="search-panel" style="display:none" class="search-results-panel"></div>
       </div>
       <div class="notif-bell-wrap" onclick="toggleNotifPanel()" id="notif-bell" style="margin-left:4px">
@@ -340,7 +340,7 @@
     <div class="modal-sub">Fyll i namn och välj färg — logga är valfritt</div>
     <div class="form-row">
       <div class="form-label">Varumärke</div>
-      <input class="modal-search" id="brand-name-input" placeholder="T.ex. Eldorado Pizza..." style="margin-bottom:0">
+      <input class="modal-search" id="brand-name-input" placeholder="T.ex. Eldorado Pizza..." autocomplete="off" style="margin-bottom:0">
     </div>
     <div class="form-row">
       <div class="form-label">Logga <span style="color:var(--muted);font-size:10px">(valfritt)</span></div>
@@ -373,7 +373,7 @@
   <div class="modal">
     <div class="modal-title">Koppla kategori</div>
     <div class="modal-sub" id="cat-modal-sub">Välj vilka kategorier som är relevanta för denna produkt</div>
-    <input class="modal-search" id="cat-modal-search" placeholder="Sök kategori..." oninput="renderCatModal()">
+    <input class="modal-search" id="cat-modal-search" placeholder="Sök kategori..." autocomplete="off" oninput="renderCatModal()">
     <div id="cat-modal-list"></div>
     <div class="modal-footer">
       <button class="inline-btn secondary" onclick="closeCatModal()">Avbryt</button>
@@ -465,7 +465,7 @@
 
         <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.5;margin-bottom:8px;">Bjud in kollega</div>
         <div style="display:flex;gap:8px;">
-          <input id="invite-email" type="email" placeholder="kollega@foretag.se"
+          <input id="invite-email" type="email" placeholder="kollega@foretag.se" autocomplete="off"
             style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor=''"
             onkeydown="if(event.key==='Enter')sendInvitation()">

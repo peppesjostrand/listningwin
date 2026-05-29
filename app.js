@@ -1739,7 +1739,7 @@ function openLanseringModal(lid) {
       </div>
       <div class="lansering-form-group">
         <label class="lansering-form-label">Namn</label>
-        <input class="lansering-form-input" id="lm-name" value="${l ? l.name || '' : ''}" placeholder="Namn på lansering">
+        <input class="lansering-form-input" id="lm-name" value="${l ? l.name || '' : ''}" placeholder="Namn på lansering" autocomplete="off">
       </div>
       <div class="lansering-modal-btns">
         <button class="lansering-action-btn" onclick="closeLanseringModal()">Avbryt</button>
@@ -1892,6 +1892,7 @@ function buildWizardStep1() {
         <input type="text" class="lansering-form-input" id="wz-new-brand-name"
                value="${wizardData.newBrandName.replace(/"/g, '&quot;')}"
                placeholder="T.ex. Foodster"
+               autocomplete="off"
                oninput="wizardData.newBrandName=this.value">
       </div>
     </div>`;
@@ -1926,6 +1927,7 @@ function buildWizardStep2() {
       <input type="text" class="lansering-form-input" id="wz-group"
              value="${wizardData.groupName.replace(/"/g, '&quot;')}"
              placeholder="T.ex. Havredryck"
+             autocomplete="off"
              oninput="wizardData.groupName=this.value">
     </div>
     <div class="lansering-form-group">
@@ -2085,6 +2087,7 @@ function buildWizardStep4() {
     <div class="wz-article-row">
       <input type="text" class="lansering-form-input" value="${name.replace(/"/g, '&quot;')}"
              placeholder="Artikelnamn (t.ex. Havredryck Naturell 1L)"
+             autocomplete="off"
              oninput="wizardData.articles[${i}]=this.value">
       ${wizardData.articles.length > 1
         ? `<button class="wz-remove-btn" onclick="wizardRemoveArticle(${i})" title="Ta bort">✕</button>`
@@ -2359,8 +2362,8 @@ function renderArticleSection(brand) {
       <div class="product-group-body" id="pgb-${brand.id}-${gi}" style="display:none">
         <div class="article-list">${articleRows || '<div style="color:var(--muted);font-size:11px;padding:4px 0">Inga artiklar ännu</div>'}</div>
         <div class="article-add-row">
-          <input class="article-input" id="art-name-${brand.id}-${gi}" placeholder="Artikelnamn..." style="flex:2;min-width:120px">
-          <input class="article-input" id="art-ean-${brand.id}-${gi}" placeholder="EAN (valfritt)" style="width:130px">
+          <input class="article-input" id="art-name-${brand.id}-${gi}" placeholder="Artikelnamn..." autocomplete="off" style="flex:2;min-width:120px">
+          <input class="article-input" id="art-ean-${brand.id}-${gi}" placeholder="EAN (valfritt)" autocomplete="off" style="width:130px">
           <button class="inline-btn" onclick="addArticle('${brand.id}',${gi})">+ Artikel</button>
         </div>
       </div>
@@ -2371,7 +2374,7 @@ function renderArticleSection(brand) {
     <div class="section-title" style="margin-bottom:10px">ARTIKLAR</div>
     ${groupsHtml || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Lägg till en produktgrupp nedan</div>'}
     <div class="group-add-row">
-      <input class="inline-input" id="new-group-input-${brand.id}" placeholder="Ny produktgrupp (t.ex. Müsli 500g)..." onkeydown="if(event.key==='Enter')addProductGroup('${brand.id}')">
+      <input class="inline-input" id="new-group-input-${brand.id}" placeholder="Ny produktgrupp (t.ex. Müsli 500g)..." autocomplete="off" onkeydown="if(event.key==='Enter')addProductGroup('${brand.id}')">
       <button class="inline-btn" onclick="addProductGroup('${brand.id}')">+ Grupp</button>
     </div>
   </div>`;
@@ -2747,23 +2750,23 @@ function renderKalkyl() {
 
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Konsumentpris inkl. moms (kr)</span></div>
-          <input class="kalkyl-input" id="vk-konsumentpris" type="number" placeholder="t.ex. 49.90" oninput="updateVardekedja()">
+          <input class="kalkyl-input" id="vk-konsumentpris" type="number" placeholder="t.ex. 49.90" autocomplete="off" oninput="updateVardekedja()">
         </div>
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Momssats (%)</span></div>
-          <input class="kalkyl-input" id="vk-moms" type="number" value="12" oninput="updateVardekedja()">
+          <input class="kalkyl-input" id="vk-moms" type="number" value="12" autocomplete="off" oninput="updateVardekedja()">
         </div>
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Butiksmarginal (%)</span></div>
-          <input class="kalkyl-input" id="vk-butik" type="number" value="35" oninput="updateVardekedja()">
+          <input class="kalkyl-input" id="vk-butik" type="number" value="35" autocomplete="off" oninput="updateVardekedja()">
         </div>
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Grossistmarginal / kedjerabatt (%)</span></div>
-          <input class="kalkyl-input" id="vk-grossist" type="number" value="8" oninput="updateVardekedja()">
+          <input class="kalkyl-input" id="vk-grossist" type="number" value="8" autocomplete="off" oninput="updateVardekedja()">
         </div>
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Frakt & logistik per enhet (kr)</span></div>
-          <input class="kalkyl-input" id="vk-frakt" type="number" placeholder="t.ex. 2.50" oninput="updateVardekedja()">
+          <input class="kalkyl-input" id="vk-frakt" type="number" placeholder="t.ex. 2.50" autocomplete="off" oninput="updateVardekedja()">
         </div>
 
         <div class="kalkyl-result-box" id="vk-result">
@@ -2778,15 +2781,15 @@ function renderKalkyl() {
 
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Rotation (enheter/butik/vecka)</span></div>
-          <input class="kalkyl-input" id="vol-rotation" type="number" placeholder="t.ex. 2" oninput="updateVolym()">
+          <input class="kalkyl-input" id="vol-rotation" type="number" placeholder="t.ex. 2" autocomplete="off" oninput="updateVolym()">
         </div>
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Antal butiker</span></div>
-          <input class="kalkyl-input" id="vol-butiker" type="number" placeholder="t.ex. 500" oninput="updateVolym()">
+          <input class="kalkyl-input" id="vol-butiker" type="number" placeholder="t.ex. 500" autocomplete="off" oninput="updateVolym()">
         </div>
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Tidsperiod (veckor)</span></div>
-          <input class="kalkyl-input" id="vol-veckor" type="number" value="52" oninput="updateVolym()">
+          <input class="kalkyl-input" id="vol-veckor" type="number" value="52" autocomplete="off" oninput="updateVolym()">
         </div>
 
         <div class="kalkyl-result-box" id="vol-result">
@@ -2810,17 +2813,17 @@ function renderKalkyl() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="kalkyl-field">
             <div class="kalkyl-label"><span>Kartongpris (kr/krt)</span></div>
-            <input class="kalkyl-input" id="rs-kartong" type="number" placeholder="t.ex. 180" oninput="updateRapidStart()">
+            <input class="kalkyl-input" id="rs-kartong" type="number" placeholder="t.ex. 180" autocomplete="off" oninput="updateRapidStart()">
           </div>
           <div class="kalkyl-field">
             <div class="kalkyl-label" id="rs-butiker-label"><span>Antal butiker vid lansering</span></div>
-            <input class="kalkyl-input" id="rs-butiker" type="number" placeholder="t.ex. 300" oninput="updateRapidStart()">
+            <input class="kalkyl-input" id="rs-butiker" type="number" placeholder="t.ex. 300" autocomplete="off" oninput="updateRapidStart()">
           </div>
         </div>
 
         <div class="kalkyl-field">
           <div class="kalkyl-label"><span>Enheter per kartong (kolli)</span></div>
-          <input class="kalkyl-input" id="rs-kolli" type="number" placeholder="t.ex. 6" oninput="updateRapidStart()">
+          <input class="kalkyl-input" id="rs-kolli" type="number" placeholder="t.ex. 6" autocomplete="off" oninput="updateRapidStart()">
         </div>
 
         <div class="kalkyl-result-box" id="rs-result">
@@ -2977,6 +2980,7 @@ function renderPaminnelser() {
       <div style="display:flex;align-items:center;gap:10px">
         <input class="pam-days-input" type="number" min="1" max="90"
           value="${s[key]?.days ?? 7}"
+          autocomplete="off"
           onchange="updatePamDay('${key}',this.value)"
           title="Antal dagar innan">
         <span style="font-size:10px;color:var(--muted)">dagar innan</span>
@@ -3002,6 +3006,7 @@ function renderPaminnelser() {
       <input class="pam-email-input" id="pam-email" type="email"
         placeholder="din@email.se"
         value="${s.email || ''}"
+        autocomplete="off"
         oninput="updatePamEmail(this.value)">
     </div>
 
@@ -3148,7 +3153,7 @@ function renderOnboardStep() {
     {
       title: 'Vilket varumärke representerar du?',
       desc: 'Börja med att lägga in ditt första varumärke. Du kan alltid lägga till fler senare.',
-      content: `<input class="onboard-input" id="ob-brand" placeholder="T.ex. Löfbergs, Paulúns, Oatly..." value="${onboardData.brandName}" oninput="onboardData.brandName=this.value">`,
+      content: `<input class="onboard-input" id="ob-brand" placeholder="T.ex. Löfbergs, Paulúns, Oatly..." value="${onboardData.brandName}" autocomplete="off" oninput="onboardData.brandName=this.value">`,
       next: 'Nästa →'
     },
     {
@@ -3528,9 +3533,9 @@ function renderAgenda() {
     <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Alla deadlines, aviseringsfönster och egna möten samlat</div>
 
     <div class="agenda-add-form">
-      <input class="agenda-input" id="ag-title" placeholder="Möte / händelse..." style="grid-column:1/-1">
-      <input class="agenda-input" id="ag-date" type="date" value="${new Date().toISOString().slice(0,10)}">
-      <input class="agenda-input" id="ag-sub" placeholder="Anteckning (valfritt)">
+      <input class="agenda-input" id="ag-title" placeholder="Möte / händelse..." autocomplete="off" style="grid-column:1/-1">
+      <input class="agenda-input" id="ag-date" type="date" value="${new Date().toISOString().slice(0,10)}" autocomplete="off">
+      <input class="agenda-input" id="ag-sub" placeholder="Anteckning (valfritt)" autocomplete="off">
       <button class="inline-btn" onclick="addAgendaItem()" style="grid-column:1/-1">+ Lägg till</button>
     </div>
 
@@ -4011,8 +4016,8 @@ function renderProductGroups(brand) {
           <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Artiklar</div>
           <div class="article-list">${articleRows || '<div style="color:var(--muted);font-size:11px;padding:4px 0">Inga artiklar ännu</div>'}</div>
           <div class="article-add-row" style="margin-top:6px">
-            <input class="article-input" id="art-name-${brand.id}-${gi}" placeholder="Artikelnamn..." style="flex:2;min-width:120px">
-            <input class="article-input" id="art-ean-${brand.id}-${gi}" placeholder="EAN (valfritt)" style="width:130px">
+            <input class="article-input" id="art-name-${brand.id}-${gi}" placeholder="Artikelnamn..." autocomplete="off" style="flex:2;min-width:120px">
+            <input class="article-input" id="art-ean-${brand.id}-${gi}" placeholder="EAN (valfritt)" autocomplete="off" style="width:130px">
             <button class="inline-btn" onclick="addArticle('${brand.id}',${gi})">+ Artikel</button>
           </div>
         </div>
@@ -4028,6 +4033,7 @@ function renderProductGroups(brand) {
     <div class="group-add-row" style="margin-top:10px">
       <input class="inline-input" id="new-group-input-${brand.id}"
         placeholder="Ny produktgrupp (t.ex. Müsli, Yoghurt, Snacks)..."
+        autocomplete="off"
         onkeydown="if(event.key==='Enter')addProductGroup('${brand.id}')">
       <button class="inline-btn" onclick="addProductGroup('${brand.id}')">+ Lägg till grupp</button>
     </div>
@@ -4145,14 +4151,17 @@ function renderCustomerTabContent(l, tabId) {
   const tasksHtml = tasks.map((t, i) => `
     <div class="task-row">
       <input class="task-name-input" value="${t.name||''}" placeholder="Uppgift..."
+        autocomplete="off"
         onblur="updateCustomerTask('${l.id}','${custKey}',${i},'name',this.value)">
       <input class="task-deadline-input task-deadline" value="${t.deadline||''}" type="date"
+        autocomplete="off"
         onchange="updateCustomerTask('${l.id}','${custKey}',${i},'deadline',this.value)">
       <select class="task-status-select task-status"
         onchange="updateCustomerTask('${l.id}','${custKey}',${i},'status',this.value)">
         ${TASK_STATUSES.map(s => `<option ${t.status===s?'selected':''}>${s}</option>`).join('')}
       </select>
       <input class="task-owner-input task-owner" value="${t.owner||''}" placeholder="Ansvarig..."
+        autocomplete="off"
         onblur="updateCustomerTask('${l.id}','${custKey}',${i},'owner',this.value)">
       <button class="task-delete-btn" onclick="deleteCustomerTask('${l.id}','${custKey}',${i})">×</button>
     </div>`).join('');
@@ -4201,12 +4210,12 @@ function renderCustomerTabContent(l, tabId) {
       <div class="section-block-title">Kontaktlogg</div>
       <div class="contact-add-form">
         <div class="contact-form-row">
-          <input class="contact-input" id="log-contact-${l.id}-${custKey}" placeholder="Kontaktperson...">
-          <input class="contact-input" id="log-date-${l.id}-${custKey}" type="date" value="${new Date().toISOString().slice(0,10)}">
+          <input class="contact-input" id="log-contact-${l.id}-${custKey}" placeholder="Kontaktperson..." autocomplete="off">
+          <input class="contact-input" id="log-date-${l.id}-${custKey}" type="date" value="${new Date().toISOString().slice(0,10)}" autocomplete="off">
         </div>
         <textarea class="contact-input" id="log-note-${l.id}-${custKey}" rows="2"
           placeholder="Vad gjordes / vad sades?..." style="resize:vertical"></textarea>
-        <input class="contact-input" id="log-next-${l.id}-${custKey}" placeholder="Nästa steg (valfritt)...">
+        <input class="contact-input" id="log-next-${l.id}-${custKey}" placeholder="Nästa steg (valfritt)..." autocomplete="off">
         <div style="display:flex;justify-content:flex-end">
           <button class="inline-btn" onclick="addCustomerContactEntry('${l.id}','${custKey}')">+ Lägg till i logg</button>
         </div>
@@ -4238,6 +4247,7 @@ function renderLanseringDetail(l) {
     <div style="display:flex;align-items:center;gap:6px;margin-left:8px">
       <input id="free-cust-input-${l.id}" class="contact-input"
         placeholder="Lägg till kund..." style="width:140px;padding:5px 8px;font-size:11px"
+        autocomplete="off"
         onkeydown="if(event.key==='Enter')addFreeCustomer('${l.id}')">
       <button class="inline-btn" style="padding:5px 10px;font-size:11px"
         onclick="addFreeCustomer('${l.id}')">+</button>
