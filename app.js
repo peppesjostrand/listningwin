@@ -3325,32 +3325,7 @@ const ROUNDS_BY_CHAIN = {
   dagab: () => DAGAB_ROUNDS,
 };
 
-// Hämta nästa relevanta aviseringsfönster för en lansering + kedja
-// baserat på produktgruppens kategorikopplingar
-function getNextWindowForChain(l, chainId) {
-  const brand = brands.find(b => b.id === l.brandId);
-  if (!brand) { console.warn('getNextWindowForChain: brand not found', l.brandId); return null; }
-  const groups = getOrInitGroups(brand);
-  const group = groups[l.groupIndex];
-  if (!group) { console.warn('getNextWindowForChain: group not found', l.groupIndex, groups.length); return null; }
-
-  const cats = (group.cats || []).filter(c => c.source === chainId);
-  if (cats.length === 0) { console.warn('getNextWindowForChain: no cats for chain', chainId, group.cats); return null; }
-
-  const rounds = (ROUNDS_BY_CHAIN[chainId] || (() => []))();
-  const catDefs = cats.map(c => CATEGORIES.find(cd => cd.name === c.catName && cd.source === chainId)).filter(Boolean);
-  if (catDefs.length === 0) { console.warn('getNextWindowForChain: no catDefs matched', cats); return null; }
-  const validWindows = [...new Set(catDefs.flatMap(cd => cd.windows))];
-  console.log('getNextWindowForChain: validWindows', validWindows, 'chainId', chainId);
-  const matchingRounds = rounds.filter(r => validWindows.includes(r.launch));
-  matchingRounds.forEach(r => {
-    const av = r.steps?.find(s => s.primary);
-    console.log('  round v.' + r.launch + ' avStep.days=', av?.days, 'date=', av?.date?.toISOString?.());
-  });
-
-  const validRounds = rounds.filter(r => validWindows.includes(r.launch));
-
-  // Försök hitta nästa kommande runda (aviseringen ej passerad)
+function _pickRound(validRounds) {
   const upcoming = validRounds
     .filter(r => {
       const avStep = r.steps?.find(s => s.primary);
@@ -3361,15 +3336,47 @@ function getNextWindowForChain(l, chainId) {
       const avB = b.steps?.find(s => s.primary)?.days ?? 9999;
       return avA - avB;
     });
-
   if (upcoming[0]) return upcoming[0];
-
-  // Fallback: visa den senaste passerade rundan
   const past = validRounds
     .filter(r => daysLeft(r.launchDate) < 0)
     .sort((a, b) => daysLeft(b.launchDate) - daysLeft(a.launchDate));
-
   return past[0] || validRounds[0] || null;
+}
+
+// Hämta nästa relevanta aviseringsfönster för en lansering + kedja.
+// Primär sökväg: l.chainData[chainId].fonsterVeckor (wizard-skapade lanseringar).
+// Fallback: brand.productGroups[groupIndex].cats (äldre lanseringar).
+function getNextWindowForChain(l, chainId) {
+  const rounds = (ROUNDS_BY_CHAIN[chainId] || (() => []))();
+
+  // ── Primär sökväg: chainData från wizarden ──
+  const cd = l.chainData?.[chainId];
+  if (cd?.fonsterVeckor?.length) {
+    const validWindows = cd.fonsterVeckor.map(Number);
+    const validRounds = rounds.filter(r => validWindows.includes(r.launch));
+    return _pickRound(validRounds);
+  }
+
+  // ── Fallback: gammalt brand/productGroups-system ──
+  const brand = brands.find(b => b.id === l.brandId);
+  if (!brand) return null;
+  const groups = getOrInitGroups(brand);
+  const group = groups[l.groupIndex];
+  if (!group) return null;
+
+  const cats = (group.cats || []).filter(c => c.source === chainId);
+  if (cats.length === 0) return null;
+
+  const catDefs = cats
+    .map(c => CATEGORIES.find(cd =>
+      cd.name.toLowerCase() === c.catName.toLowerCase() && cd.source === chainId
+    ))
+    .filter(Boolean);
+  if (catDefs.length === 0) return null;
+
+  const validWindows = [...new Set(catDefs.flatMap(cd => cd.windows))];
+  const validRounds = rounds.filter(r => validWindows.includes(r.launch));
+  return _pickRound(validRounds);
 }
 
 // Bygg deadlines bakåt från ett lanseringsdatum
