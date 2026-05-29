@@ -1016,12 +1016,12 @@ function togglePast() {
 
 function showTab(tab) {
   state.tab = tab;
-  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser','branschkunskap','aktivitetslogg'].forEach(t => {
+  ['overview','categories','timeline','brands','lansering','arkiv','kalkyl','paminnelser','branschkunskap','marknaden','aktivitetslogg'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
     const navEl = document.getElementById(`nav-${t}`);
     if (navEl) navEl.classList.toggle('active', t === tab);
   });
-  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', branschkunskap: 'Branschkunskap', aktivitetslogg: 'Aktivitetslogg' };
+  const titles = { overview: 'Hem', categories: 'Fönster & Kategorier', timeline: 'Tidslinje', brands: 'Varumärken', lansering: 'Aktiva lanseringar', arkiv: 'Arkiv', kalkyl: 'Kalkylator', paminnelser: 'Påminnelser', branschkunskap: 'Branschkunskap', marknaden: 'Marknaden', aktivitetslogg: 'Aktivitetslogg' };
   document.getElementById('page-title').textContent = titles[tab] || tab;
   closeMobileMenu();
   renderAll();
@@ -1040,6 +1040,7 @@ function renderAll() {
   if (state.tab === 'kalkyl') renderKalkyl();
   if (state.tab === 'paminnelser') renderPaminnelser();
   if (state.tab === 'branschkunskap') renderBranschkunskap();
+  if (state.tab === 'marknaden') renderMarknaden();
   if (state.tab === 'aktivitetslogg') renderAktivitetslogg();
 }
 
@@ -3886,6 +3887,188 @@ function toggleInsight(si, ii) {
     document.getElementById(`bk-item-${si}-${ii}`)?.classList.add('open');
     bkOpenState[si] = ii;
   }
+}
+
+// ═══════════════════════════════════════════════
+// MARKNADEN
+// ═══════════════════════════════════════════════
+let mkOpenState = {};
+
+function renderMarknaden() {
+  const el = document.getElementById('marknaden-content');
+  if (!el) return;
+
+  const MK_CHAINS = [
+    {
+      name: 'ICA',
+      color: 'var(--primary)',
+      total: 'ca 1 260 butiker',
+      formats: [
+        { name: 'ICA Nära', count: 621 },
+        { name: 'ICA Supermarket', count: 418 },
+        { name: 'ICA Kvantum', count: 129 },
+        { name: 'ICA Maxi', count: 93 }
+      ],
+      note: 'ICA Nära utgör hälften av alla ICA-butiker men är små närhetsbutiker med begränsat sortiment. ICA Maxi och Kvantum är de stora volymbutikerna.'
+    },
+    {
+      name: 'Axfood / Dagab',
+      color: '#16a34a',
+      total: 'ca 620 butiker',
+      formats: [
+        { name: 'Willys / Willys Hemma', count: 251 },
+        { name: 'Hemköp', count: 204 },
+        { name: 'City Gross', count: 40 }
+      ],
+      note: 'Willys är lågprisprofilens motor med flest butiker. Hemköp är supermarketprofilen.'
+    },
+    {
+      name: 'Coop',
+      color: 'var(--dagab-color)',
+      total: 'ca 800 butiker',
+      formats: [
+        { name: 'Coop', count: 627 },
+        { name: 'Stora Coop', count: 93 },
+        { name: 'Coop XTRA', count: 61 }
+      ],
+      note: 'Merparten av Coops butiker är medelstora Coop-butiker med rikstäckande centralsortiment.'
+    }
+  ];
+
+  const MK_REGIONS = [
+    { name: 'Stockholm',        total: 528, ica: 186, axfood: 170, coop: 121, lidl: 51 },
+    { name: 'Västra Götaland',  total: 585, ica: 224, axfood: 192, coop: 133, lidl: 36 },
+    { name: 'Södra Götaland',   total: 422, ica: 170, axfood: 112, coop: 105, lidl: 35 },
+    { name: 'Östra Götaland',   total: 475, ica: 190, axfood: 135, coop: 124, lidl: 26 },
+    { name: 'Mälardalen',       total: 337, ica: 140, axfood: 91,  coop: 80,  lidl: 26 },
+    { name: 'Västra Svealand',  total: 264, ica: 99,  axfood: 64,  coop: 85,  lidl: 16 },
+    { name: 'Södra Norrland',   total: 299, ica: 147, axfood: 63,  coop: 72,  lidl: 17 },
+    { name: 'Norra Norrland',   total: 236, ica: 106, axfood: 44,  coop: 82,  lidl: 4  }
+  ];
+
+  const MK_CONCLUSIONS = [
+    {
+      title: 'Tre samtal avgör din distribution.',
+      body: 'För att nå 90% av svenska konsumenter behöver du listning hos ICA, Axfood och Coop. Det är tre centrala beslut – inte tusentals individuella butikssamtal.'
+    },
+    {
+      title: 'Formatet avgör volymen.',
+      body: 'ICA Maxi och Kvantum är 222 butiker men genererar en stor del av ICAs omsättning. Välj rätt format för din produkt och prisbild.'
+    },
+    {
+      title: 'En regional start är möjlig.',
+      body: 'Stockholm, Västra Götaland och Södra Götaland har drygt 1 500 butiker. En selektiv regional lansering kan vara ett smartare första steg än att jaga rikslistning direkt.'
+    }
+  ];
+
+  // Sektion 1 — marknadsandelar
+  const bigCards = [
+    { name: 'ICA', share: '~50%', color: 'var(--primary)' },
+    { name: 'Axfood', share: '~25%', color: '#16a34a' },
+    { name: 'Coop', share: '~17%', color: 'var(--dagab-color)' }
+  ].map(c => `
+    <div class="mk-chain-card">
+      <div class="mk-chain-card-accent" style="background:${c.color}"></div>
+      <div class="mk-chain-card-body">
+        <div class="mk-chain-share" style="color:${c.color}">${c.share}</div>
+        <div class="mk-chain-name">${c.name}</div>
+      </div>
+    </div>`).join('');
+
+  const smallCards = [
+    { name: 'Lidl', share: '~6%', color: 'var(--muted)' },
+    { name: 'Övriga', share: '~1%', color: 'var(--muted2)' }
+  ].map(c => `
+    <div class="mk-chain-card">
+      <div class="mk-chain-card-accent" style="background:${c.color}"></div>
+      <div class="mk-chain-card-body">
+        <div class="mk-chain-share" style="color:${c.color};font-size:28px">${c.share}</div>
+        <div class="mk-chain-name">${c.name}</div>
+      </div>
+    </div>`).join('');
+
+  // Sektion 2 — kedjornas struktur
+  const structCards = MK_CHAINS.map((chain, ci) => {
+    const isOpen = !!mkOpenState[ci];
+    const formatsHtml = chain.formats.map(f =>
+      `<div class="mk-format-row"><span>${f.name}</span><span class="mk-format-count">${f.count}</span></div>`
+    ).join('');
+    return `<div class="mk-chain-struct${isOpen ? ' open' : ''}" id="mk-struct-${ci}">
+      <div class="mk-struct-header" onclick="toggleMkChain(${ci})">
+        <div>
+          <div class="mk-struct-chain-name" style="color:${chain.color}">${chain.name}</div>
+          <div class="mk-struct-total">${chain.total}</div>
+        </div>
+        <i class="ti ti-chevron-down mk-struct-chevron"></i>
+      </div>
+      <div class="mk-struct-body">
+        <div class="mk-struct-body-inner">
+          ${formatsHtml}
+          <div class="mk-struct-note">${chain.note}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Sektion 3 — regional tabell
+  const regionRows = MK_REGIONS.map(r =>
+    `<tr>
+      <td>${r.name}</td>
+      <td class="col-total">${r.total}</td>
+      <td>${r.ica}</td>
+      <td>${r.axfood}</td>
+      <td>${r.coop}</td>
+      <td>${r.lidl}</td>
+    </tr>`
+  ).join('');
+
+  // Sektion 4 — slutsatser
+  const conclusionCards = MK_CONCLUSIONS.map(c =>
+    `<div class="mk-conclusion-card">
+      <div class="mk-conclusion-title">${c.title}</div>
+      <div class="mk-conclusion-body">${c.body}</div>
+    </div>`
+  ).join('');
+
+  el.innerHTML = `<div class="mk-wrap">
+    <div class="mk-section">
+      <div class="mk-section-title">Den svenska dagligvarumarknaden</div>
+      <div class="mk-hero-stat">~350 mdr kr</div>
+      <div class="mk-hero-sub">Tre aktörer kontrollerar över 90% av all dagligvaruförsäljning i Sverige.</div>
+      <div class="mk-chain-cards">${bigCards}</div>
+      <div class="mk-chain-cards-small">${smallCards}</div>
+    </div>
+    <div class="mk-section">
+      <div class="mk-section-title">Kedjornas struktur</div>
+      ${structCards}
+    </div>
+    <div class="mk-section">
+      <div class="mk-section-title">Var finns butikerna?</div>
+      <div style="overflow-x:auto">
+        <table class="mk-region-table">
+          <thead>
+            <tr>
+              <th>Region</th><th>Totalt</th><th>ICA</th><th>Axfood</th><th>Coop</th><th>Lidl</th>
+            </tr>
+          </thead>
+          <tbody>${regionRows}</tbody>
+        </table>
+      </div>
+      <div class="mk-region-note">Stockholm, Västra Götaland och Södra Götaland står för hälften av alla butiker i Sverige.</div>
+    </div>
+    <div class="mk-section">
+      <div class="mk-section-title">Vad betyder det för dig som leverantör?</div>
+      <div class="mk-conclusion-grid">${conclusionCards}</div>
+    </div>
+  </div>`;
+}
+
+function toggleMkChain(ci) {
+  const item = document.getElementById(`mk-struct-${ci}`);
+  if (!item) return;
+  const isOpen = !!mkOpenState[ci];
+  item.classList.toggle('open', !isOpen);
+  mkOpenState[ci] = !isOpen;
 }
 
 function renderAktivitetslogg() {
