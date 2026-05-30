@@ -749,14 +749,64 @@ function renderOverview() {
 // ═══════════════════════════════════════════════
 // RENDER CATEGORIES
 // ═══════════════════════════════════════════════
+function catRowHtml(c, sourceRounds) {
+  const pairBadges = c.windows.map(w => {
+    const round = sourceRounds.find(r => r.launch === w);
+    const primary = round ? round.steps.find(s => s.primary) : null;
+    if (primary) {
+      return `<span class="wchip wchip-pair">v.${primary.week}&thinsp;→&thinsp;v.${w}</span>`;
+    }
+    return `<span class="wchip">v.${w}</span>`;
+  }).join('');
+
+  const sel = state.selectedCat === c.name ? 'selected' : '';
+  const rowId = 'sg-' + c.source + '-' + (c.area||0) + '-' + Math.random().toString(36).slice(2,6);
+  const hasSubs = c.subgroups && c.subgroups.length > 0;
+  const safeName = c.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const areaLabel = c.area ? `<span style="font-size:9px;color:var(--muted);margin-right:5px">Omr.${c.area}</span>` : '';
+  const trClick = hasSubs ? '' : `onclick="selectCat('${safeName}')"`;
+  const tdClick = `onclick="selectCat('${safeName}')" style="cursor:pointer"`;
+  const sgToggle = hasSubs
+    ? `<span class="subgroup-toggle" onclick="event.stopPropagation();toggleSubgroup('${rowId}')">⊞ ${c.subgroups.length} artikelgrupp${c.subgroups.length > 1 ? 'er' : ''}</span>`
+    : '';
+  const sgRows = hasSubs
+    ? c.subgroups.map(s => `<tr><td>${s.hg}</td><td>${s.pg}</td><td>${s.name}</td></tr>`).join('')
+    : '';
+  const sgPanel = sgRows
+    ? `<tr class="subgroup-tr"><td colspan="3"><div class="subgroup-panel" id="${rowId}"><table class="sg-table">${sgRows}</table></div></td></tr>`
+    : '';
+
+  return `<tr class="cat-row ${sel}${hasSubs ? ' has-subgroup' : ''}" ${trClick}>
+    <td style="font-size:10px;color:var(--muted2)">${c.group || c.sub}</td>
+    <td class="cat-name-cell" ${tdClick}>${areaLabel}${c.name}${sgToggle ? ' ' + sgToggle : ''}</td>
+    <td><div class="window-chips">${pairBadges}</div></td>
+  </tr>${sgPanel}`;
+}
+
+function filterCats() {
+  const q = (document.getElementById('cat-search')?.value || '').toLowerCase();
+  const tbody = document.getElementById('cat-tbody');
+  if (!tbody) return;
+  const sourceRounds = state.catTab === 'coop'
+    ? [...COOP_FOOD_ROUNDS, ...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])]
+    : state.catTab === 'ica' ? ICA_ROUNDS : DAGAB_ROUNDS;
+  const filtered = q ? cachedCatRows.filter(c => c.name.toLowerCase().includes(q)) : cachedCatRows;
+  tbody.innerHTML = filtered.length
+    ? filtered.map(c => catRowHtml(c, sourceRounds)).join('')
+    : '<tr><td colspan="3" style="color:var(--muted);padding:20px">Inga kategorier hittades</td></tr>';
+}
+
 function renderCategories() {
   if (!state.catTab) state.catTab = 'coop';
   const activeChain = state.catTab;
-  const q = (state.catSearch || '').toLowerCase();
+
+  // Preserve search value across re-renders (e.g. selectCat), clear on chain switch
+  const chainChanged = activeChain !== lastRenderedCatChain;
+  const currentSearch = chainChanged ? '' : (document.getElementById('cat-search')?.value || '');
+  lastRenderedCatChain = activeChain;
 
   // Chain tabs with logos
   const tabBar = ['coop', 'ica', 'dagab'].map(k => {
-    const lbl = k === 'coop' ? 'Coop' : k === 'ica' ? 'ICA' : 'Dagab';
     const active = activeChain === k;
     const col = active ? 'var(--' + k + '-color)' : 'transparent';
     return `<button class="tl-cust-tab${active ? ' active' : ''}"
@@ -771,48 +821,18 @@ function renderCategories() {
     ? [...COOP_FOOD_ROUNDS, ...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])]
     : activeChain === 'ica' ? ICA_ROUNDS : DAGAB_ROUNDS;
 
-  // Filter categories for active chain + search
-  const filtered = CATEGORIES.filter(c => {
+  // Cache all categories for active chain (search is handled by filterCats)
+  cachedCatRows = CATEGORIES.filter(c => {
     if (c.source !== activeChain) return false;
     if (c.source === 'coop' && c.sub === 'Coop Hemma' && !state.active.coopHemma) return false;
-    if (q && !c.name.toLowerCase().includes(q)) return false;
     return true;
   });
 
-  const rows = filtered.map(c => {
-    // Build avisering→fönster pair badges
-    const pairBadges = c.windows.map(w => {
-      const round = sourceRounds.find(r => r.launch === w);
-      const primary = round ? round.steps.find(s => s.primary) : null;
-      if (primary) {
-        return `<span class="wchip wchip-pair">v.${primary.week}&thinsp;→&thinsp;v.${w}</span>`;
-      }
-      return `<span class="wchip">v.${w}</span>`;
-    }).join('');
+  const initialFiltered = currentSearch
+    ? cachedCatRows.filter(c => c.name.toLowerCase().includes(currentSearch.toLowerCase()))
+    : cachedCatRows;
 
-    const sel = state.selectedCat === c.name ? 'selected' : '';
-    const rowId = 'sg-' + c.source + '-' + (c.area||0) + '-' + Math.random().toString(36).slice(2,6);
-    const hasSubs = c.subgroups && c.subgroups.length > 0;
-    const safeName = c.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const areaLabel = c.area ? `<span style="font-size:9px;color:var(--muted);margin-right:5px">Omr.${c.area}</span>` : '';
-    const trClick = hasSubs ? '' : `onclick="selectCat('${safeName}')"`;
-    const tdClick = `onclick="selectCat('${safeName}')" style="cursor:pointer"`;
-    const sgToggle = hasSubs
-      ? `<span class="subgroup-toggle" onclick="event.stopPropagation();toggleSubgroup('${rowId}')">⊞ ${c.subgroups.length} artikelgrupp${c.subgroups.length > 1 ? 'er' : ''}</span>`
-      : '';
-    const sgRows = hasSubs
-      ? c.subgroups.map(s => `<tr><td>${s.hg}</td><td>${s.pg}</td><td>${s.name}</td></tr>`).join('')
-      : '';
-    const sgPanel = sgRows
-      ? `<tr class="subgroup-tr"><td colspan="3"><div class="subgroup-panel" id="${rowId}"><table class="sg-table">${sgRows}</table></div></td></tr>`
-      : '';
-
-    return `<tr class="cat-row ${sel}${hasSubs ? ' has-subgroup' : ''}" ${trClick}>
-      <td style="font-size:10px;color:var(--muted2)">${c.group || c.sub}</td>
-      <td class="cat-name-cell" ${tdClick}>${areaLabel}${c.name}${sgToggle ? ' ' + sgToggle : ''}</td>
-      <td><div class="window-chips">${pairBadges}</div></td>
-    </tr>${sgPanel}`;
-  }).join('');
+  const rows = initialFiltered.map(c => catRowHtml(c, sourceRounds)).join('');
 
   const tableHTML = `
     <div style="padding:16px 20px 0">
@@ -820,9 +840,9 @@ function renderCategories() {
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <span style="font-size:14px;color:var(--muted)">⌕</span>
         <input style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;border-radius:6px;padding:6px 10px;width:260px"
-               type="text" id="cat-search" placeholder="Sök kategori..."
+               type="text" id="cat-search" value="${escHtml(currentSearch)}" placeholder="Sök kategori..."
                autocomplete="new-password" name="search-cats"
-               oninput="state.catSearch=this.value;renderCategories()">
+               oninput="filterCats()">
       </div>
     </div>
     <table class="cat-table">
@@ -831,10 +851,9 @@ function renderCategories() {
         <th>Kategori</th>
         <th>Fönster</th>
       </tr></thead>
-      <tbody>${rows || '<tr><td colspan="3" style="color:var(--muted);padding:20px">Inga kategorier hittades</td></tr>'}</tbody>
+      <tbody id="cat-tbody">${rows || '<tr><td colspan="3" style="color:var(--muted);padding:20px">Inga kategorier hittades</td></tr>'}</tbody>
     </table>`;
 
-  // Restore search input value (innerHTML wipes it)
   let detailHTML = '';
   if (state.selectedCat) {
     const cat = CATEGORIES.find(c => c.name === state.selectedCat && c.source === activeChain);
@@ -850,10 +869,6 @@ function renderCategories() {
   }
 
   document.getElementById('cat-content').innerHTML = tableHTML + detailHTML;
-
-  // Restore search value (lost when innerHTML was replaced)
-  const inp = document.getElementById('cat-search');
-  if (inp && state.catSearch) { inp.value = state.catSearch; inp.setSelectionRange(inp.value.length, inp.value.length); }
 }
 
 function selectCat(name) {
@@ -1128,6 +1143,8 @@ let catModalSelected = [];
 // men varje brand har nu även: projectId, visibility, permission
 let brands = [];
 let contacts = [];
+let cachedCatRows = [];
+let lastRenderedCatChain = null;
 let lanseringContactLinks = {}; // { lid: [contactId,...] | null(loading) | undefined(not loaded) }
 let editingContactId = null;
 let contactModalLanseringId = null;
