@@ -5629,7 +5629,7 @@ function renderDetailTabTasks(l, chainKey) {
     const ownerOpts = wsTeamMembers.map(m =>
       `<option value="${escHtml(m.email)}" ${meta.owner === m.email ? 'selected' : ''}>${escHtml(m.name || m.email)}</option>`
     ).join('');
-    return `<div class="hybrid-task-row ${done ? 'done' : ''}">
+    return `<div class="hybrid-task-row custom-task-row ${done ? 'done' : ''}">
       <input type="checkbox" class="hybrid-task-check" ${done ? 'checked' : ''}
         onchange="toggleFixedTask('${l.id}','${chainKey}','${item.id}',this.checked)">
       <span class="hybrid-task-name ${done ? 'done-text' : ''}">${escHtml(item.label)}</span>
