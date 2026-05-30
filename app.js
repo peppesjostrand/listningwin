@@ -3519,9 +3519,11 @@ function renderDeadlineTimeline(l, chainId, custChecklist) {
     const d = daysLeft(s.date);
     const done = checks[s.key];
     const cls = done ? 'done' : d < 0 ? 'late' : d <= 7 ? 'due' : 'future';
+    // Passerade och ej avklarade steg markeras med nedtonad stil
+    const isPast = !done && d < 0;
     const dateStr = d === 0 ? 'Idag' : d > 0 ? `${d}d kvar` : `${Math.abs(d)}d sedan`;
     const dateLabel = s.date.toLocaleDateString('sv-SE', { day:'numeric', month:'short' });
-    return `<div class="dl-step">
+    return `<div class="dl-step ${isPast ? 'past' : ''}">
       <div class="dl-dot ${cls}"></div>
       <div class="dl-step-body">
         <div class="dl-step-name ${done?'done-text':''}">${s.label}</div>
@@ -5506,6 +5508,17 @@ function cancelAddChain(lid) {
   renderLansering();
 }
 
+// Konverterar YYYY-MM-DD till DD/MM/YYYY för visning. Returnerar oförändrat om redan i rätt format eller tomt.
+function toSwedishDate(val) {
+  if (!val) return '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    const [y, m, d] = val.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  return val;
+}
+
 function toggleFixedTask(lid, custKey, itemId, checked) {
   toggleCustomerCheckItem(lid, custKey, itemId, checked);
 }
@@ -5620,8 +5633,9 @@ function renderDetailTabTasks(l, chainKey) {
       <input type="checkbox" class="hybrid-task-check" ${done ? 'checked' : ''}
         onchange="toggleFixedTask('${l.id}','${chainKey}','${item.id}',this.checked)">
       <span class="hybrid-task-name ${done ? 'done-text' : ''}">${escHtml(item.label)}</span>
-      <input type="date" class="hybrid-task-date" value="${escHtml(meta.date || '')}"
-        onchange="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','date',this.value)">
+      <input type="text" class="hybrid-task-date" value="${escHtml(toSwedishDate(meta.date || ''))}"
+        placeholder="DD/MM/ÅÅÅÅ" autocomplete="off"
+        onblur="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','date',this.value)">
       <select class="task-owner-select" onchange="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','owner',this.value)">
         <option value="">Ansvarig...</option>
         ${ownerOpts}
@@ -5642,8 +5656,9 @@ function renderDetailTabTasks(l, chainKey) {
       <input type="text" class="hybrid-task-name-input ${done ? 'done-text' : ''}" value="${escHtml(t.name || '')}"
         placeholder="Uppgift..." autocomplete="off"
         onblur="updateCustomerTask('${l.id}','${chainKey}',${i},'name',this.value)">
-      <input type="date" class="hybrid-task-date" value="${escHtml(t.deadline || '')}"
-        onchange="updateCustomerTask('${l.id}','${chainKey}',${i},'deadline',this.value)">
+      <input type="text" class="hybrid-task-date" value="${escHtml(toSwedishDate(t.deadline || ''))}"
+        placeholder="DD/MM/ÅÅÅÅ" autocomplete="off"
+        onblur="updateCustomerTask('${l.id}','${chainKey}',${i},'deadline',this.value)">
       <select class="task-owner-select" onchange="updateCustomerTask('${l.id}','${chainKey}',${i},'owner',this.value)">
         <option value="">Ansvarig...</option>
         ${ownerOpts}

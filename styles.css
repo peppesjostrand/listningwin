@@ -1311,7 +1311,7 @@
   .article-price-row-summary { font-size: 11px; color: var(--muted); }
   .article-price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; padding: 12px 14px 14px; border-top: 1px solid var(--border); }
   .article-price-field { display: flex; flex-direction: column; gap: 3px; }
-  .article-price-field label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+  .article-price-field label { font-size: 10px; color: var(--muted); font-weight: 600; }
   .article-price-input { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 12px; border-radius: 5px; padding: 5px 8px; width: 100%; box-sizing: border-box; }
   .article-price-input:focus { outline: none; border-color: var(--input-focus); }
   .article-calc-value { font-size: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; display: block; opacity: 0.65; }
@@ -1439,7 +1439,7 @@
   .activity-entry-header { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
   .activity-entry-date { font-size: 10px; color: var(--muted); }
   .activity-entry-contact { font-size: 11px; font-weight: 600; }
-  .activity-entry-intern { font-size: 11px; font-weight: 500; color: var(--muted); font-style: italic; }
+  .activity-entry-intern { font-size: 11px; font-weight: 500; color: var(--muted); }
   .activity-entry-text { font-size: 12px; }
   .activity-entry-actions { display: flex; gap: 4px; margin-left: auto; }
   .activity-entry-btn { background: none; border: none; color: var(--muted2); cursor: pointer; font-family: var(--font); font-size: 11px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s; line-height: 1; }
@@ -1596,6 +1596,8 @@
   .dl-step-name { font-size: 12px; font-weight: 500; }
   .dl-step-date { font-size: 10px; color: var(--muted); margin-top: 1px; }
   .dl-step-name.done-text { text-decoration: line-through; opacity: 0.45; }
+  .dl-step.past { opacity: 0.45; }
+  .dl-step.past .dl-step-name { text-decoration: line-through; }
 
   /* MÖTES-KALENDER */
   .agenda-page { padding: 20px; }
