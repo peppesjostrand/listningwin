@@ -3839,23 +3839,51 @@ async function loadLanseringContactLinks(lid) {
   if (state.tab === 'lansering') renderLansering();
 }
 
+function contactRowHtml(c) {
+  const dateStr = new Date(c.updated_at || c.created_at).toLocaleDateString('sv-SE');
+  return `<tr>
+    <td style="font-weight:600">${escHtml(c.name)}</td>
+    <td><span class="contact-chain-badge" style="background:${contactCustomerBg(c.customer)};color:${CHAIN_COLORS[c.customer]||'var(--muted)'}">${CHAIN_LABELS[c.customer]||escHtml(c.customer||'—')}</span></td>
+    <td>${escHtml(c.category||'')}</td>
+    <td>${escHtml(c.role||'')}</td>
+    <td><a href="tel:${escHtml(c.phone||'')}" style="color:var(--text);text-decoration:none">${escHtml(c.phone||'')}</a></td>
+    <td><a href="mailto:${escHtml(c.email||'')}" style="color:var(--accent);text-decoration:none">${escHtml(c.email||'')}</a></td>
+    <td style="font-size:12px;color:var(--muted);white-space:nowrap">${dateStr}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <button class="lansering-action-btn" onclick="openContactModal('${c.id}')">Redigera</button>
+      <button class="lansering-action-btn danger" onclick="deleteContact('${c.id}')">Ta bort</button>
+    </td>
+  </tr>`;
+}
+
+function filterContacts() {
+  const search = (document.getElementById('contacts-search')?.value || '').toLowerCase();
+  const cust   = document.getElementById('contacts-customer-filter')?.value || '';
+  const tbody  = document.getElementById('contacts-tbody');
+  if (!tbody) return;
+
+  const filtered = contacts.filter(c => {
+    if (cust && c.customer !== cust) return false;
+    if (!search) return true;
+    return [c.name, c.customer, c.category, c.role, c.phone, c.email]
+      .some(v => (v || '').toLowerCase().includes(search));
+  });
+
+  tbody.innerHTML = filtered.length
+    ? filtered.map(contactRowHtml).join('')
+    : `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Inga kontakter matchar sökningen</td></tr>`;
+}
+
 function renderContacts() {
   const el = document.getElementById('contacts-content');
   if (!el) return;
 
-  const rows = contacts.map(c => `
-    <tr>
-      <td style="font-weight:600">${escHtml(c.name)}</td>
-      <td><span class="contact-chain-badge" style="background:${contactCustomerBg(c.customer)};color:${CHAIN_COLORS[c.customer]||'var(--muted)'}">${CHAIN_LABELS[c.customer]||c.customer}</span></td>
-      <td>${escHtml(c.category)}</td>
-      <td>${escHtml(c.role)}</td>
-      <td><a href="tel:${escHtml(c.phone)}" style="color:var(--text);text-decoration:none">${escHtml(c.phone)}</a></td>
-      <td><a href="mailto:${escHtml(c.email)}" style="color:var(--accent);text-decoration:none">${escHtml(c.email)}</a></td>
-      <td style="text-align:right;white-space:nowrap">
-        <button class="lansering-action-btn" onclick="openContactModal('${c.id}')">Redigera</button>
-        <button class="lansering-action-btn danger" onclick="deleteContact('${c.id}')">Ta bort</button>
-      </td>
-    </tr>`).join('');
+  const uniqueCustomers = [...new Set(contacts.map(c => c.customer).filter(Boolean))].sort();
+  const custOptions = ['<option value="">Alla</option>',
+    ...uniqueCustomers.map(v => `<option value="${escHtml(v)}">${escHtml(CHAIN_LABELS[v] || v)}</option>`)
+  ].join('');
+
+  const rows = contacts.map(contactRowHtml).join('');
 
   el.innerHTML = `
     <div class="contacts-page">
@@ -3864,12 +3892,16 @@ function renderContacts() {
         <button class="inline-btn" onclick="openContactModal()"><i class="ti ti-plus"></i> Lägg till kontakt</button>
       </div>
       ${contacts.length ? `
+        <div class="contacts-search-bar">
+          <input class="lansering-form-input" id="contacts-search" placeholder="Sök namn, kund, kategori, roll..." oninput="filterContacts()" style="flex:1;min-width:0">
+          <select class="lansering-form-input" id="contacts-customer-filter" onchange="filterContacts()" style="width:auto;min-width:130px">${custOptions}</select>
+        </div>
         <div style="overflow-x:auto">
           <table class="contacts-table">
             <thead><tr>
-              <th>Namn</th><th>Kund</th><th>Kategori</th><th>Roll</th><th>Telefon</th><th>Mail</th><th></th>
+              <th>Namn</th><th>Kund</th><th>Kategori</th><th>Roll</th><th>Telefon</th><th>Mail</th><th>Senast ändrad</th><th></th>
             </tr></thead>
-            <tbody>${rows}</tbody>
+            <tbody id="contacts-tbody">${rows}</tbody>
           </table>
         </div>` :
         `<div class="empty-state">
@@ -3943,10 +3975,11 @@ async function saveContact() {
   const payload = { name, customer, category, role, phone, email };
 
   if (editingContactId) {
-    const { error } = await supabaseClient.from('contacts').update(payload).eq('id', editingContactId);
+    const updatedAt = new Date().toISOString();
+    const { error } = await supabaseClient.from('contacts').update({ ...payload, updated_at: updatedAt }).eq('id', editingContactId);
     if (error) { addNotif('Kunde inte uppdatera kontakt: ' + error.message, 'error'); return; }
     const idx = contacts.findIndex(c => c.id === editingContactId);
-    if (idx >= 0) contacts[idx] = { ...contacts[idx], ...payload };
+    if (idx >= 0) contacts[idx] = { ...contacts[idx], ...payload, updated_at: updatedAt };
     addActivity('📋', `Kontakt "${name}" uppdaterad`);
   } else {
     const { data, error } = await supabaseClient

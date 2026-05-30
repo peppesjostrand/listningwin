@@ -2484,6 +2484,12 @@
    CONTACTS PAGE
 ═══════════════════════════════════════════ */
 .contacts-page { max-width: 960px; }
+.contacts-search-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
 .contacts-page-header {
   display: flex;
   align-items: center;

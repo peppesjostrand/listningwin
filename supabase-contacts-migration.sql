@@ -11,7 +11,8 @@ create table if not exists public.contacts (
   role          text,
   phone         text        not null,
   email         text        not null,
-  created_at    timestamptz not null default now()
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 
 -- 2. contacts_projects table (many-to-many between contacts and lansering projects)
