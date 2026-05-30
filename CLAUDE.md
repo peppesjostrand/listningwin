@@ -1,87 +1,181 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with the ListingWin repository.
+Instruktionsfil för Claude Code när det arbetar med ListingWin-repot.
 
-## What This Is
+---
 
-**ListingWin** (listingwin.com) is a Swedish-language SaaS tool for suppliers in the Swedish grocery trade (DVH — Dagligvaruhandeln). It helps brands track product listing windows and launch deadlines across the three major Swedish grocery retail chains: **Coop, ICA, and Dagab**.
+## Vad är ListingWin?
 
-The product is built and maintained by Peter Sjöstrand at Foodster AB (makers of Tony's Pizza). ListingWin is currently in pilot phase with its first paying customer (1 000 kr/mån). The target market is suppliers with multiple brands and product groups across multiple categories.
+**ListingWin** (listingwin.com) är ett svenskspråkigt SaaS-verktyg för leverantörer inom svensk dagligvaruhandel (DVH). Det hjälper varumärken att hålla koll på listningsfönster och lanseringsdeadlines hos de tre stora kedjorna: **Coop, ICA och Dagab**.
 
-## Business Context
+Produkten byggs och underhålls av Peter Sjöstrand på Foodster AB (tillverkare av Tony's Pizza). ListingWin är i pilotfas med sin första betalande kund (1 000 kr/mån). Målmarknaden är leverantörer med flera varumärken och produktgrupper inom flera kategorier.
 
-- **Pricing model**: 2 000 kr/mån per workspace (includes 1 user) + 500 kr/mån per additional user. Unlimited brands included.
-- **Target customer**: Suppliers managing multiple brands across Coop, ICA, and Dagab categories
-- **Core value proposition**: The ECR revision window concept — knowing exactly when to act to get a product listed at each chain
-- **Language**: All UI text is Swedish. Code comments are English.
+### Affärskontext
 
-## Working Instructions
+- **Prismodell**: 2 000 kr/mån per workspace (inkl. 1 användare) + 500 kr/mån per extra användare. Obegränsat antal varumärken.
+- **Målkund**: Leverantörer som hanterar flera varumärken hos Coop, ICA och Dagab
+- **Kärnvärde**: ECR-revideringsfönster-konceptet — att veta exakt när man måste agera för att få en produkt listad hos respektive kedja
+- **Språk**: All UI-text är på svenska. Kodkommentarer är på svenska (se Kodstil nedan).
 
-- **Always commit and push to GitHub automatically** when a task is complete — do not wait for Peter to ask
-- Use clear Swedish-friendly commit messages describing what changed
-- Verify that the site still works after each significant change
+---
 
-## Architecture
+## Sidor i applikationen
 
-The application is split into three files:
-- `index.html` — HTML skeleton (~358 lines)
-- `styles.css` — all CSS (~1 234 lines)
-- `app.js` — all JavaScript (~4 500 lines)
+| Sida | Tab-nyckel | Beskrivning |
+|---|---|---|
+| **Hem** | `overview` | Dashboard med aktiva lanseringar, kommande fönster och snabbåtgärder |
+| **Fönster & Kategorier** | `categories` | Alla kategorier per kedja med listningstillfällen och aviserings-/lanseringsveckor. Sökbar. |
+| **Tidslinje** | `timeline` | Visuell tidslinje per kedja och lanseringsfönster — visar alla steg och deadlines |
+| **Varumärken** | `brands` | Automatiskt register över varumärken och deras produktgrupper, byggt från aktiva lanseringar |
+| **Aktiva lanseringar** | `lansering` | Aktiva lanseringsprojekt. Detaljvy per kedja med fyra tabbar: Uppgifter, Artiklar & priser, Aktivitet, Deadlines |
+| **Arkiv** | `arkiv` | Avslutade och arkiverade lanseringar |
+| **Kalkyl** | `kalkyl` | Marginalberäkning med moms-korrigering, bruttomarginal och nettomarginal |
+| **Påminnelser** | `paminnelser` | Händelsebaserade påminnelser om kommande deadlines |
+| **Branschkunskap** | `branschkunskap` | 22 expanderbara insikter om DVH-branschen — statiskt innehåll |
+| **Marknaden** | `marknaden` | Struktur och marknadsdata om svensk dagligvaruhandel — statiskt innehåll |
+| **Kontakter** | `contacts` | Kontaktregister för nyckelkontakter hos kedjorna. Sökbart med kundfilter. Kopplas till lanseringar. |
+| **Inställningar** | `settings` | Workspace-inställningar, teammedlemmar och mörkt/ljust läge |
+| **Aktivitetslogg** | `aktivitetslogg` | Realtidsfeed med alla händelser i workspacet, sparad i Supabase (12 månaders retention) |
 
-Retailer calendar data lives in:
-- `data/windows/coop.json` — COOP_FOOD_RAW + COOP_HEMMA_RAW
-- `data/windows/ica.json` — 12 launch windows × 8 steps
-- `data/windows/dagab.json` — 12 launch windows × 9 steps
+---
 
-Loaded dynamically via `loadWindowData()` at startup before `authInit()` runs.
+## Teknisk stack och filstruktur
 
-## Development
+**Frontend**: Vanilla JavaScript (ES6+), inget ramverk, imperativ DOM-manipulation  
+**Backend**: Supabase — PostgreSQL via RPC, e-post/lösenords-auth, realtidsprenumerationer  
+**Hosting**: GitHub Pages, custom domän via CNAME (listingwin.com)
 
-No build step. Serve over HTTP (required for Supabase auth):
+### Filer
+
+```
+index.html          — HTML-skelett (~590 rader)
+styles.css          — All CSS (~2 573 rader)
+app.js              — All JavaScript (~6 416 rader)
+CLAUDE.md           — Instruktioner för Claude Code
+CHANGELOG.md        — Ändringslogg
+design.md           — Designreferens (färger, typografi, komponenter)
+supabase-contacts-migration.sql  — SQL för att skapa contacts + contacts_projects
+
+assets/
+  Coop.png          — Coop-logotyp
+  ICA.png           — ICA-logotyp
+  Dagab.png         — Dagab-logotyp
+
+data/windows/
+  coop.json         — COOP_FOOD_RAW + COOP_HEMMA_RAW
+  ica.json          — 12 lanseringsfönster × 8 steg
+  dagab.json        — 12 lanseringsfönster × 9 steg
+  dagab-cats.json   — Kategoridata för Dagab
+```
+
+Kalenderdata laddas dynamiskt via `loadWindowData()` vid uppstart innan `authInit()` körs.
+
+### Lokal utveckling
+
+Inget byggsteg. Servera över HTTP (krävs för Supabase-auth):
 
 ```powershell
 npx serve .
-# or
+# eller
 python -m http.server 8080
 ```
 
-Never open `index.html` as `file://` — Supabase auth will fail.
+Öppna **aldrig** `index.html` som `file://` — Supabase-auth kommer att misslyckas.
 
-## Tech Stack
+---
 
-- **Frontend**: Vanilla JavaScript (ES6+), no framework, imperative DOM
-- **Backend**: Supabase — PostgreSQL via RPC, email/password auth, realtime subscriptions
-- **Hosting**: GitHub Pages, custom domain via CNAME (listingwin.com)
+## Supabase-tabeller
 
-## Supabase Tables
+### `workspaces`
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | uuid PK | Unikt workspace-ID |
+| `name` | text | Workspace-namn (företagsnamn) |
+| `created_at` | timestamptz | Skapandedatum |
 
-| Table | Purpose |
-|---|---|
-| `workspaces` | One per company/team |
-| `workspace_members` | Users in workspace (roles: owner, member) |
-| `projects` | Both brands and lanseringar |
-| `project_members` | Per-project access (roles: owner, editor, viewer) |
-| `activity_log` | Workspace activity feed — workspace_id, user_id, user_email, emoji, action, created_at |
+### `workspace_members`
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | Referens till workspaces |
+| `user_id` | uuid | Supabase auth user ID |
+| `role` | text | `owner` eller `member` |
+| `created_at` | timestamptz | |
 
-### Key RPC Functions
+### `projects`
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `name` | text | Projektnamn |
+| `color` | text | HEX-färg |
+| `visibility` | text | `workspace` eller `private` |
+| `data` | text | JSON-blob med all appdata (se Datastruktur) |
+| `created_at` | timestamptz | |
+
+### `project_members`
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | uuid PK | |
+| `project_id` | uuid FK | |
+| `user_id` | uuid | |
+| `role` | text | `owner`, `editor` eller `viewer` |
+
+### `activity_log`
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `user_id` | uuid | |
+| `user_email` | text | |
+| `emoji` | text | Emoji-ikon för aktiviteten |
+| `action` | text | Fritext — vad som hände |
+| `created_at` | timestamptz | |
+
+### `contacts`
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `name` | text | Kontaktpersonens namn |
+| `customer` | text | Fritext — t.ex. "ICA", "Coop", "Dagab", "Foodservice" |
+| `category` | text | Produktkategori (valfritt) |
+| `role` | text | Roll/titel (valfritt) |
+| `phone` | text | Telefonnummer (valfritt) |
+| `email` | text | E-postadress (valfritt) |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | Uppdateras vid redigering |
+
+### `contacts_projects`
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | uuid PK | |
+| `contact_id` | uuid FK | Referens till contacts |
+| `project_id` | uuid FK | Referens till projects (lansering) |
+
+> **OBS:** `contacts` och `contacts_projects` skapas av `supabase-contacts-migration.sql`. Kör den i Supabase SQL Editor om tabellerna saknas.
+
+### Viktiga RPC-funktioner
 - `create_workspace_for_user(workspace_name, user_id)`
 - `create_project(p_workspace_id, p_name, p_color, p_visibility)`
 - `get_my_projects(p_workspace_id)`
 - `save_project_data(p_project_id, p_data)`
 - `my_project_permission(p_project_id)`
-- `clean_old_activity_log()` — deletes activity_log entries older than 12 months, called at login
+- `clean_old_activity_log()` — tar bort activity_log-poster äldre än 12 månader, anropas vid inloggning
 
-### Data Storage Pattern
-All app data stored as JSON blob in `data` column (type: text — **always parse defensively**):
+### Datalagringsmönster
+All appdata lagras som JSON-blob i `data`-kolumnen (typ: text — **parsa alltid defensivt**):
 ```javascript
 if (typeof data === 'string') data = JSON.parse(data);
 ```
-- **Brands** (`is_lansering !== true`): productGroups, products, cats, logo, color
+- **Varumärken** (`is_lansering !== true`): productGroups, products, cats, logo, color
 - **Lanseringar** (`is_lansering: true`): brandId, groupIndex, chains, customers, contactLog
 
-## Navigation Structure
+---
 
-Sidebar is grouped into sections:
+## Navigationsstruktur
+
+Sidebaren är grupperad i sektioner:
 
 ```
 HEM
@@ -100,39 +194,52 @@ VERKTYG
   → Kalkyl                 (tab: kalkyl)
   → Påminnelser            (tab: paminnelser)
 ─────────────
-  Inställningar
+KUNSKAP
+  → Branschkunskap         (tab: branschkunskap)
+  → Marknaden              (tab: marknaden)
+─────────────
+  Kontakter                (tab: contacts)
+  Inställningar            (tab: settings)
   Aktivitetslogg           (tab: aktivitetslogg)
 ```
 
-Removed tabs: `historik` (replaced by arkiv), `agenda` (removed entirely).
-Undo/redo functionality has been removed entirely — do not re-add it.
+Borttagna flikar: `historik` (ersatt av arkiv), `agenda` (borttagen helt).  
+Ångra/gör om-funktionaliteten är borttagen — lägg inte tillbaka den.
 
-## Global State
+---
+
+## Global state
 
 ```javascript
 let state = { tab: 'overview', active: { coop, ica, dagab, coopHemma }, showPast: false };
-let brands = [];                 // projects where is_lansering !== true
-let lanseringar = [];            // projects where is_lansering === true
+let brands = [];                 // projects där is_lansering !== true
+let lanseringar = [];            // projects där is_lansering === true
+let contacts = [];               // alla kontakter för workspacet
+let cachedCatRows = [];          // cachade kategorirader för DOM-filtrering
 let currentUser = null;
 let currentWorkspaceId = null;
 let currentUserRole = 'owner' | 'member';
 let selectedBrandId = null;
 let selectedLanseringId = null;
-const openGroups = new Set();    // format: "brandId|groupIndex" (pipe, not dash)
+const openGroups = new Set();    // format: "brandId|groupIndex" (pipe, inte bindestreck)
 ```
 
-## Data Flow
+---
 
-1. `loadWindowData()` — fetches 3 JSON files, builds ROUNDS constants
-2. `authInit()` → session check → `authOnLogin(user)`
-3. `authOnLogin()` → load workspace → `loadBrands()` + `loadLanseringar()` + `loadActivityLog()`
-4. `subscribeActivityLog()` — realtime channel for team activity feed
-5. `renderAll()` reads `state.tab` → calls appropriate `render*()` function
-6. `saveProject(brandId)` and `saveLansering(lid)` handle persistence
+## Dataflöde
 
-## Key Data Structures
+1. `loadWindowData()` — hämtar 3 JSON-filer, bygger ROUNDS-konstanter
+2. `authInit()` → sessionskontroll → `authOnLogin(user)`
+3. `authOnLogin()` → laddar workspace → `loadBrands()` + `loadLanseringar()` + `loadActivityLog()`
+4. `subscribeActivityLog()` — realtidskanal för teamets aktivitetsfeed
+5. `renderAll()` läser `state.tab` → anropar rätt `render*()`-funktion
+6. `saveProject(brandId)` och `saveLansering(lid)` hanterar persistens
 
-### Brand
+---
+
+## Viktiga datastrukturer
+
+### Varumärke (Brand)
 ```javascript
 {
   id, name, color, logo,
@@ -141,7 +248,7 @@ const openGroups = new Set();    // format: "brandId|groupIndex" (pipe, not dash
     articles: [{ id, name, ean }],
     cats: [{ catName, source }]  // source = 'coop' | 'ica' | 'dagab'
   }],
-  products: []  // legacy, unused
+  products: []  // legacy, används ej
 }
 ```
 
@@ -165,49 +272,99 @@ const openGroups = new Set();    // format: "brandId|groupIndex" (pipe, not dash
 }
 ```
 
-## Retailer Calendar Data
+---
 
-All dates roll forward automatically — never hard-code years.
+## Kalenderdata
 
-- `buildCoopRounds()` — dynamic year via `weekYear(w)`
-- `icaDate(d, m, y)` — auto-advances if date has passed
-- `dagabDate(d, m, y)` — auto-advances if date has passed
-- `isoWeekToDate(w)` — returns Friday 23:59 of that week
-- `weekYear(w)` — returns current year if week hasn't passed, else next year
+Alla datum rullar automatiskt framåt — hårdkoda aldrig år.
 
-## UI Conventions
+- `buildCoopRounds()` — dynamiskt år via `weekYear(w)`
+- `icaDate(d, m, y)` — avancerar automatiskt om datumet passerat
+- `dagabDate(d, m, y)` — avancerar automatiskt om datumet passerat
+- `isoWeekToDate(w)` — returnerar fredag 23:59 för given vecka
+- `weekYear(w)` — returnerar innevarande år om veckan ej passerat, annars nästa år
 
-- Dark theme; CSS variables in `styles.css`
-- Chain colors: Coop `#4ade80`, ICA `#f87171`, Dagab `#fb923c`
-- Notifications: `addNotif(message, type)` — types: `'success'`, `'error'`, `'info'`
-- Activity log: `addActivity(emoji, text)` — saves to Supabase, shown in Aktivitetslogg tab
-- Always use `getOrInitGroups(brand)` to access productGroups
+---
 
-## Completed Work
+## UI-konventioner
 
-- ✅ Split index.html → index.html + styles.css + app.js
-- ✅ Retailer data extracted to data/windows/*.json
-- ✅ CLAUDE.md created and maintained
-- ✅ Navigation restructured into grouped sections
-- ✅ Historik replaced by Arkiv, Agenda removed
-- ✅ Chain toggle buttons removed from sidebar
-- ✅ Hero/countdown only shown on HEM
-- ✅ Activity log with Supabase persistence, realtime, 12-month retention
-- ✅ Undo/redo removed
+- Dualt tema (ljust/mörkt); CSS-variabler i `styles.css` (se `design.md` för komplett referens)
+- Kedjefärger: Coop `#00AB46`, ICA `#E3000B`, Dagab `#0D4F35`
+- Notiser: `addNotif(message, type)` — typer: `'success'`, `'error'`, `'info'`
+- Aktivitetslogg: `addActivity(emoji, text)` — sparas i Supabase, visas i Aktivitetslogg-fliken
+- Använd alltid `getOrInitGroups(brand)` för att komma åt productGroups
 
-## Planned Work (Priority Order)
+### DOM-filtreringsmönster
+Sök- och filterfält ska **aldrig** orsaka en full re-render av sidan. Mönstret:
+1. Cacha datarader i en modulvariabel (t.ex. `cachedCatRows`, `contacts`)
+2. Ge tabellens `<tbody>` ett unikt `id`
+3. Uppdatera bara `tbody.innerHTML` vid sökning — aldrig hela sidan
+4. Sökfältet förlorar aldrig fokus
 
-### UX
-1. Tomma tillstånd + onboarding — guide new users step by step
-2. Dashboard actionable — urgent actions, active lanseringar, upcoming windows
-3. Arkiv — archive customers per lansering, auto-move to arkiv when all archived
-4. Förenkla varumärkes/lanseringsflödet
+---
+
+## Testdata
+
+Varumärkena **Tony's Pizza**, **Toppery** och **Dippery** är testdata som används under pilotfasen. De är inte riktiga externa kunder. När riktiga kunder tillkommer ska testdata hållas separerat och inte blandas med kunddata i produktion.
+
+---
+
+## Arbetssätt
+
+### Commit-meddelanden
+- Alla commit-meddelanden ska vara **på svenska**
+- Beskriv exakt vad som ändrades och varför
+- Undvik generiska meddelanden som "fix", "update" eller "changes"
+- Format: `Kort rubrik som beskriver förändringen` — max 72 tecken på första raden
+- Exempel: `Kontaktsidan: sökfält, kundfilter och Senast ändrad-kolumn`
+
+### Automatisk commit och push
+- Committa och pusha till GitHub automatiskt när en uppgift är klar — vänta inte på att Peter ska fråga
+
+### Kodstil
+- Alla kommentarer i `app.js` ska vara **på svenska**
+- Varje ny funktion ska ha en kommentarsrad ovanför: `// Renderar kontaktsidan med sökning och filter.`
+- Varje större kodblock inom en funktion ska ha en kort inline-kommentar: `// Hämta kontakter från Supabase och cacha lokalt.`
+- Inga onödiga kommentarer — kommentera bara om **varför** inte är uppenbart från koden
+
+### Supabase-backup
+- Supabase automatisk backup ska vara aktiverad i projektinställningarna
+- Kontrollera detta regelbundet under inloggade sessioner med Supabase-dashboarden
+- URL: https://supabase.com/dashboard/project/rjbqvbnzxxltnwoqfstb/settings/general
+
+---
+
+## Klart / Planerat
+
+### Klar funktionalitet
+- ✅ Delning av index.html → index.html + styles.css + app.js
+- ✅ Kedjekалenderdata extraherad till data/windows/*.json
+- ✅ CLAUDE.md skapad och underhållen
+- ✅ Navigation omstrukturerad med grupperade sektioner
+- ✅ Historik ersatt av Arkiv, Agenda borttagen
+- ✅ Kedjetoggle-knappar borttagna från sidebaren
+- ✅ Hero/countdown visas bara på HEM
+- ✅ Aktivitetslogg med Supabase-persistens, realtid, 12 månaders retention
+- ✅ Ångra/gör om borttagen
+- ✅ Kollapsbar sidebar med ikonläge och tooltips
+- ✅ Kontaktsida med sökning, kundfilter och koppling till lanseringar
+- ✅ Lanseringsdetaljvy med kedjeval-dropdown och fyra tabbar
+- ✅ Fönster & Kategorier-sökning utan re-render eller fokusstörtning
+- ✅ Branschkunskap- och Marknaden-sidor
+
+### Planerat (prioritetsordning)
+
+#### UX
+1. Tomma tillstånd + onboarding — guida nya användare steg för steg
+2. Dashboard actionable — brådskande åtgärder, aktiva lanseringar, kommande fönster
+3. Arkiv — arkivera kunder per lansering, auto-flytta till arkiv när alla är arkiverade
+4. Förenkla varumärkes-/lanseringsflödet
 5. Mobiloptimering
 
-### Design
-6. Visuell upplyftning — typography, spacing, component consistency
+#### Design
+6. Visuell upplyftning — typografi, avstånd, komponentkonsekvens
 
-### Product
-7. Landningssida — for non-logged-in visitors (pricing, features, CTA)
-8. Juridik — Terms of Service, Privacy Policy (GDPR), cookie banner
-9. Betalning — Stripe integration, workspace model (2 000 kr + 500 kr/user)
+#### Produkt
+7. Landningssida — för icke-inloggade besökare (priser, funktioner, CTA)
+8. Juridik — Användarvillkor, Integritetspolicy (GDPR), cookie-banner
+9. Betalning — Stripe-integration, workspace-modell (2 000 kr + 500 kr/användare)
