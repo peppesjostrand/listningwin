@@ -1,4 +1,21 @@
 ﻿
+// Sentry-initiering för automatisk felrapportering i produktion.
+// OBS: Byt ut DSN-värdet mot ditt projekt-DSN från https://sentry.io/settings/
+if (typeof Sentry !== 'undefined') {
+  Sentry.init({
+    dsn: 'BYTA_UT_MOT_RIKTIGT_DSN_FRAN_SENTRY_DASHBOARDEN',
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    // Mäter 100% av transaktioner — sänk i produktion om trafiken är hög
+    tracesSampleRate: 1.0,
+    // Spelar in 10% av sessioner normalt, 100% vid fel
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
+}
+
 const LOGOS = {
   coop: "assets/Coop.png",
   ica: "assets/ICA.png",
@@ -1171,8 +1188,11 @@ async function loadBrands() {
   try {
     if (!currentWorkspaceId) throw new Error('No workspace');
     console.log('loadBrands: currentWorkspaceId=', currentWorkspaceId);
+    // Mät tid för att hämta alla projekt från Supabase
+    console.time('Supabase: hämta projekt (loadBrands)');
     const { data, error } = await supabaseClient
       .rpc('get_my_projects', { p_workspace_id: currentWorkspaceId });
+    console.timeEnd('Supabase: hämta projekt (loadBrands)');
     console.log('loadBrands: get_my_projects returned', data?.length, 'rows, error:', error?.message);
     if (data) data.forEach(p => console.log('  projekt:', p.name, '| data:', JSON.stringify(p.data)?.slice(0,120)));
     if (error) throw error;
@@ -1224,10 +1244,13 @@ async function saveProject(brandId) {
     return;
   }
   console.log('saveProject: anropar RPC för', brandId);
+  // Mät tid för att spara projektdata till Supabase
+  console.time('Supabase: spara projekt');
   const { data, error } = await supabaseClient.rpc('save_project_data', {
     p_project_id: brandId,
     p_data: JSON.stringify({ products: brand.products, productGroups: brand.productGroups || [] })
   });
+  console.timeEnd('Supabase: spara projekt');
   console.log('saveProject: RPC svar — data:', data, 'error:', error);
   if (error) {
     console.error('saveProject error:', error);
@@ -1245,12 +1268,15 @@ async function saveBrands() {
 // Skapa nytt projekt i Supabase + lägg till i brands-arrayen
 async function createProject(name, color) {
   if (!currentWorkspaceId) return null;
+  // Mät tid för att skapa ett nytt projekt i Supabase
+  console.time('Supabase: skapa projekt');
   const { data: projectId, error } = await supabaseClient.rpc('create_project', {
     p_workspace_id: currentWorkspaceId,
     p_name: name,
     p_color: color,
     p_visibility: 'private'
   });
+  console.timeEnd('Supabase: skapa projekt');
   if (error) { console.error('createProject error', error); return null; }
   const newBrand = {
     id: projectId,
@@ -1591,8 +1617,11 @@ const TASK_STATUSES = ['Ej påbörjad','Pågående','Klar','Blockerad'];
 async function loadLanseringar() {
   if (!currentWorkspaceId) return;
   try {
+    // Mät tid för att hämta lanseringar från Supabase
+    console.time('Supabase: hämta lanseringar');
     const { data, error } = await supabaseClient
       .rpc('get_my_projects', { p_workspace_id: currentWorkspaceId });
+    console.timeEnd('Supabase: hämta lanseringar');
     if (error) throw error;
     // Lanseringar identifieras via is_lansering-flagga i data-fältet
     lanseringar = (data || [])
@@ -1619,10 +1648,13 @@ async function saveLansering(lid) {
   const l = lanseringar.find(x => x.id === lid);
   if (!l || !currentWorkspaceId) return;
   const { id, name, color, ...rest } = l;
+  // Mät tid för att spara lanseringsdata till Supabase
+  console.time('Supabase: spara lansering');
   const { error } = await supabaseClient.rpc('save_project_data', {
     p_project_id: id,
     p_data: JSON.stringify({ ...rest, is_lansering: true })
   });
+  console.timeEnd('Supabase: spara lansering');
   if (error) { console.error('saveLansering error', error); addNotif('Kunde inte spara lansering: ' + error.message, 'error'); }
 }
 
@@ -2397,7 +2429,10 @@ async function deleteLansering(lid) {
   const l = getLansering(lid);
   const name = l?.name || 'Okänd lansering';
   try {
+    // Mät tid för att ta bort lansering från Supabase
+    console.time('Supabase: ta bort lansering');
     await supabaseClient.from('projects').delete().eq('id', lid);
+    console.timeEnd('Supabase: ta bort lansering');
   } catch(e) {}
   lanseringar = lanseringar.filter(x => x.id !== lid);
   if (selectedLanseringId === lid) selectedLanseringId = null;
@@ -3765,12 +3800,15 @@ function addActivity(emoji, text) {
 
 async function loadActivityLog() {
   if (!currentWorkspaceId) return;
+  // Mät tid för att hämta aktivitetsloggen från Supabase
+  console.time('Supabase: hämta aktivitetslogg');
   const { data } = await supabaseClient
     .from('activity_log')
     .select('emoji, action, user_email, created_at')
     .eq('workspace_id', currentWorkspaceId)
     .order('created_at', { ascending: false })
     .limit(100);
+  console.timeEnd('Supabase: hämta aktivitetslogg');
   if (data) {
     activityLog = data.map(r => ({
       icon: r.emoji || '•',
@@ -3825,9 +3863,12 @@ function contactCustomerBg(c) {
 
 async function loadWsTeamMembers() {
   if (!currentWorkspaceId) return;
+  // Mät tid för att hämta teammedlemmar med e-postadresser
+  console.time('Supabase: hämta teammedlemmar');
   const { data } = await supabaseClient.rpc('get_workspace_members_with_email', {
     p_workspace_id: currentWorkspaceId
   });
+  console.timeEnd('Supabase: hämta teammedlemmar');
   wsTeamMembers = (data || []).map(m => ({
     user_id: m.user_id,
     email: m.email || '',
@@ -3837,21 +3878,27 @@ async function loadWsTeamMembers() {
 
 async function loadContacts() {
   if (!currentWorkspaceId) return;
+  // Mät tid för att hämta kontakter från Supabase
+  console.time('Supabase: hämta kontakter');
   const { data, error } = await supabaseClient
     .from('contacts')
     .select('*')
     .eq('workspace_id', currentWorkspaceId)
     .order('name');
+  console.timeEnd('Supabase: hämta kontakter');
   if (error) { console.error('loadContacts error', error); return; }
   contacts = data || [];
   if (state.tab === 'contacts') renderContacts();
 }
 
 async function loadLanseringContactLinks(lid) {
+  // Mät tid för att hämta kontaktkopplingar för en lansering
+  console.time('Supabase: hämta kontaktkopplingar');
   const { data, error } = await supabaseClient
     .from('contacts_projects')
     .select('contact_id')
     .eq('project_id', lid);
+  console.timeEnd('Supabase: hämta kontaktkopplingar');
   lanseringContactLinks[lid] = error ? [] : (data || []).map(r => r.contact_id);
   if (state.tab === 'lansering') renderLansering();
 }
@@ -3993,16 +4040,22 @@ async function saveContact() {
 
   if (editingContactId) {
     const updatedAt = new Date().toISOString();
+    // Mät tid för att uppdatera kontakt i Supabase
+    console.time('Supabase: uppdatera kontakt');
     const { error } = await supabaseClient.from('contacts').update({ ...payload, updated_at: updatedAt }).eq('id', editingContactId);
+    console.timeEnd('Supabase: uppdatera kontakt');
     if (error) { addNotif('Kunde inte uppdatera kontakt: ' + error.message, 'error'); return; }
     const idx = contacts.findIndex(c => c.id === editingContactId);
     if (idx >= 0) contacts[idx] = { ...contacts[idx], ...payload, updated_at: updatedAt };
     addActivity('📋', `Kontakt "${name}" uppdaterad`);
   } else {
+    // Mät tid för att skapa ny kontakt i Supabase
+    console.time('Supabase: spara kontakt');
     const { data, error } = await supabaseClient
       .from('contacts')
       .insert({ ...payload, workspace_id: currentWorkspaceId })
       .select().single();
+    console.timeEnd('Supabase: spara kontakt');
     if (error) { addNotif('Kunde inte spara kontakt: ' + error.message, 'error'); return; }
     contacts.push(data);
     addActivity('📋', `Kontakt "${name}" tillagd`);
@@ -4021,7 +4074,10 @@ async function deleteContact(id) {
   const c = contacts.find(x => x.id === id);
   if (!c) return;
   if (!confirm(`Ta bort "${c.name}"? Kontakten kopplas också bort från alla lanseringar.`)) return;
+  // Mät tid för att ta bort kontakt från Supabase
+  console.time('Supabase: ta bort kontakt');
   const { error } = await supabaseClient.from('contacts').delete().eq('id', id);
+  console.timeEnd('Supabase: ta bort kontakt');
   if (error) { addNotif('Kunde inte ta bort kontakt: ' + error.message, 'error'); return; }
   contacts = contacts.filter(x => x.id !== id);
   Object.keys(lanseringContactLinks).forEach(lid => {
@@ -4051,6 +4107,70 @@ async function addContactToLanseringFromSelect(lid) {
   const contactId = sel?.value;
   if (!contactId) return;
   await addContactToLansering(lid, contactId);
+}
+
+// ═══════════════════════════════════════════════
+// FEEDBACK
+// ═══════════════════════════════════════════════
+
+// Öppnar feedback-modalen med typ-dropdown och fritextfält.
+function openFeedbackModal() {
+  document.getElementById('feedback-modal-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'feedback-modal-overlay';
+  overlay.className = 'lansering-modal';
+  overlay.style.display = 'flex';
+  overlay.onclick = e => { if (e.target === overlay) closeFeedbackModal(); };
+  overlay.innerHTML = `
+    <div class="lansering-modal-box" style="max-width:440px;width:100%">
+      <div class="lansering-modal-title">Skicka feedback</div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Typ</label>
+        <select class="lansering-form-input" id="fb-type">
+          <option value="Bugg">Bugg</option>
+          <option value="Förbättringsförslag">Förbättringsförslag</option>
+          <option value="Övrigt">Övrigt</option>
+        </select>
+      </div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Meddelande</label>
+        <textarea class="lansering-form-input activity-edit-textarea" id="fb-message" rows="5"
+          placeholder="Beskriv buggen eller din idé..." style="min-height:120px"></textarea>
+      </div>
+      <div class="lansering-modal-btns">
+        <button class="lansering-action-btn" onclick="closeFeedbackModal()">Avbryt</button>
+        <button class="inline-btn" onclick="saveFeedback()">Skicka</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  // Fokusera textarea direkt
+  setTimeout(() => overlay.querySelector('#fb-message')?.focus(), 50);
+}
+
+// Stänger feedback-modalen och tar bort DOM-elementet.
+function closeFeedbackModal() {
+  document.getElementById('feedback-modal-overlay')?.remove();
+}
+
+// Sparar feedback till Supabase och visar bekräftelse.
+async function saveFeedback() {
+  const type    = document.getElementById('fb-type')?.value    || 'Övrigt';
+  const message = document.getElementById('fb-message')?.value.trim() || '';
+  if (!message) { addNotif('Skriv ett meddelande innan du skickar.', 'info'); return; }
+
+  // Spara feedback-raden till Supabase
+  console.time('Supabase: spara feedback');
+  const { error } = await supabaseClient.from('feedback').insert({
+    workspace_id: currentWorkspaceId,
+    user_id: currentUser?.id,
+    type,
+    message
+  });
+  console.timeEnd('Supabase: spara feedback');
+
+  if (error) { addNotif('Kunde inte skicka feedback: ' + error.message, 'error'); return; }
+  closeFeedbackModal();
+  addNotif('Tack för din feedback!', 'success');
 }
 
 async function removeContactFromLansering(lid, contactId) {
