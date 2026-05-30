@@ -3872,7 +3872,7 @@ async function loadWsTeamMembers() {
   wsTeamMembers = (data || []).map(m => ({
     user_id: m.user_id,
     email: m.email || '',
-    name: [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email || 'Okänd'
+    name: [m.first_name, m.last_name].filter(Boolean).join(' ') || (m.email ? m.email.split('@')[0] : 'Okänd')
   }));
 }
 
@@ -4959,14 +4959,24 @@ function setLanseringTab(lid, tabId) {
   renderLansering();
 }
 
+// Lägger till en fri kund med namn och typ i lanseringen.
 function addFreeCustomer(lid) {
-  const input = document.getElementById(`free-cust-input-${lid}`);
-  const name = input?.value.trim();
+  const nameInput = document.getElementById(`new-cust-name-${lid}`);
+  const typeEl = document.getElementById(`new-cust-type-${lid}`);
+  const name = nameInput?.value.trim();
   if (!name) return;
   const l = getLansering(lid);
   if (!l) return;
   if (!l.freeCustomers) l.freeCustomers = [];
-  if (!l.freeCustomers.includes(name)) l.freeCustomers.push(name);
+  if (!l.freeCustomers.includes(name)) {
+    l.freeCustomers.push(name);
+    // Spara kundtyp i chainData för kunden
+    const custKey = 'free_' + name.replace(/\s/g, '_');
+    if (!l.chainData) l.chainData = {};
+    if (!l.chainData[custKey]) l.chainData[custKey] = {};
+    l.chainData[custKey].type = typeEl?.value || 'Övrigt';
+    l.activeCustomerTab = custKey;
+  }
   saveLansering(lid);
   addActivity('', `Kund "${name}" tillagd i "${l.name}"`);
   renderLansering();
@@ -5325,25 +5335,6 @@ function renderLanseringDetail(l) {
     `<option value="${escHtml(c.id)}" ${c.id === activeChain ? 'selected' : ''}>${escHtml(c.label)}</option>`
   ).join('');
 
-  // Available chains to add
-  const removedChains = l.removedChains || [];
-  const activeChainIds = (l.chains || []).filter(c => !removedChains.includes(c));
-  const availableToAdd = ['coop', 'ica', 'dagab'].filter(c => !activeChainIds.includes(c));
-
-  let chainAddPickerHtml = '';
-  if (addingChainForLid === l.id) {
-    const opts = availableToAdd.length
-      ? availableToAdd.map(c => {
-          const col = CHAIN_COLORS[c];
-          return `<button class="chain-add-option" style="color:${col};border-color:${col}" onclick="addChainToLansering('${l.id}','${c}')">${CHAIN_LABELS[c]}</button>`;
-        }).join('')
-      : '<span style="color:var(--muted);font-size:11px">Alla kedjor redan tillagda</span>';
-    chainAddPickerHtml = `<div class="chain-add-picker">
-      ${opts}
-      <button class="chain-add-cancel" onclick="cancelAddChain('${l.id}')">×</button>
-    </div>`;
-  }
-
   // Remove button for active chain/customer
   const activeCustomer = customers.find(c => c.id === activeChain);
   let removeChainBtn = '';
@@ -5395,11 +5386,22 @@ function renderLanseringDetail(l) {
     <div class="chain-selector-row">
       <select class="chain-select" style="color:${chainColor}" onchange="handleChainSelectChange('${l.id}',this.value)">
         ${chainOptions}
-        <option value="__add__" style="color:var(--muted)">+ Lägg till kedja</option>
       </select>
       ${removeChainBtn}
     </div>
-    ${chainAddPickerHtml}
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+      <input type="text" id="new-cust-name-${l.id}" class="contact-input" placeholder="Lägg till kund..."
+        autocomplete="off" style="flex:2;min-width:120px"
+        onkeydown="if(event.key==='Enter')addFreeCustomer('${l.id}')">
+      <select id="new-cust-type-${l.id}" class="contact-input" style="flex:1;min-width:100px">
+        <option value="DVH">DVH</option>
+        <option value="SVH">SVH</option>
+        <option value="Foodservice">Foodservice</option>
+        <option value="Servicehandel">Servicehandel</option>
+        <option value="Övrigt">Övrigt</option>
+      </select>
+      <button class="inline-btn" style="flex-shrink:0" onclick="addFreeCustomer('${l.id}')">Lägg till</button>
+    </div>
 
     <div class="detail-tabs">${tabButtons}</div>
     <div class="detail-tab-area">
@@ -5479,11 +5481,6 @@ function setDetailTab(lid, tab) {
 }
 
 function handleChainSelectChange(lid, value) {
-  if (value === '__add__') {
-    addingChainForLid = lid;
-    renderLansering();
-    return;
-  }
   addingChainForLid = null;
   const l = getLansering(lid);
   if (!l) return;
@@ -5522,6 +5519,22 @@ function saveFixedTaskMeta(lid, custKey, itemId, field, value) {
   if (!l.customers[custKey].taskMeta[itemId]) l.customers[custKey].taskMeta[itemId] = {};
   l.customers[custKey].taskMeta[itemId][field] = value;
   saveLansering(lid);
+}
+
+// Tar bort en grunduppgift från den aktuella lansering+kundkombinationen.
+function removeFixedTask(lid, custKey, itemId) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.customers) l.customers = {};
+  if (!l.customers[custKey]) l.customers[custKey] = { checklist: {}, tasks: [], taskMeta: {}, removedFixedTasks: [] };
+  if (!l.customers[custKey].removedFixedTasks) l.customers[custKey].removedFixedTasks = [];
+  if (!l.customers[custKey].removedFixedTasks.includes(itemId)) {
+    l.customers[custKey].removedFixedTasks.push(itemId);
+  }
+  // Avmarkera uppgiften om den var ikryssad
+  if (l.customers[custKey].checklist?.[itemId]) delete l.customers[custKey].checklist[itemId];
+  saveLansering(lid);
+  renderLansering();
 }
 
 function addActivityEntry(lid, custKey) {
@@ -5596,7 +5609,8 @@ function renderDetailTabTasks(l, chainKey) {
     }
   }
 
-  const fixedRowsHtml = FIXED_TASK_ITEMS.map(item => {
+  const removedFixedTasks = custData.removedFixedTasks || [];
+  const fixedRowsHtml = FIXED_TASK_ITEMS.filter(item => !removedFixedTasks.includes(item.id)).map(item => {
     const done = !!checks[item.id];
     const meta = taskMeta[item.id] || {};
     const ownerOpts = wsTeamMembers.map(m =>
@@ -5612,6 +5626,8 @@ function renderDetailTabTasks(l, chainKey) {
         <option value="">Ansvarig...</option>
         ${ownerOpts}
       </select>
+      <button style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:16px;padding:0;line-height:1"
+        onclick="removeFixedTask('${l.id}','${chainKey}','${item.id}')">×</button>
     </div>`;
   }).join('');
 
