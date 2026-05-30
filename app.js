@@ -3,7 +3,7 @@
 // OBS: Byt ut DSN-värdet mot ditt projekt-DSN från https://sentry.io/settings/
 if (typeof Sentry !== 'undefined') {
   Sentry.init({
-    dsn: 'BYTA_UT_MOT_RIKTIGT_DSN_FRAN_SENTRY_DASHBOARDEN',
+    dsn: 'https://fd7666b9ec4c49bb95b2e713ac8e1f7c@o4511481112035328.ingest.de.sentry.io/4511481119309904',
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
