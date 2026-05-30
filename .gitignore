@@ -1,0 +1,15 @@
+# Backup-filer — ska aldrig pushas till GitHub
+backup.js
+backup-*.json
+
+# Miljövariabler och hemliga nycklar
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+
+# Operativsystem
+.DS_Store
+Thumbs.db
