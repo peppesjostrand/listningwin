@@ -1198,10 +1198,24 @@
   .brand-register-col { padding: 14px 18px; }
   .brand-register-col:first-child { border-right: 1px solid var(--border); }
   .brand-register-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-  .brand-group-list { display: flex; flex-direction: column; gap: 4px; }
+  .brand-group-list { display: flex; flex-direction: column; gap: 2px; }
+  .brand-group-expandable { border-radius: 6px; overflow: hidden; }
+  .brand-group-header { display: flex; align-items: center; gap: 6px; padding: 5px 6px; cursor: pointer; border-radius: 6px; transition: background 0.12s; user-select: none; }
+  .brand-group-header:hover { background: var(--bg); }
+  .brand-group-chevron { font-size: 11px; color: var(--muted2); flex-shrink: 0; width: 12px; }
+  .brand-group-name-label { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; }
+  .brand-group-edit-btn { background: none; border: none; cursor: pointer; color: var(--muted2); font-size: 11px; padding: 2px 4px; line-height: 1; border-radius: 4px; flex-shrink: 0; transition: color 0.12s; }
+  .brand-group-edit-btn:hover { color: var(--text); }
+  .brand-group-meta { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .brand-group-articles { padding: 4px 4px 4px 22px; display: flex; flex-direction: column; gap: 2px; }
+  .brand-article-row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; border-radius: 4px; }
+  .brand-article-row:hover { background: var(--bg); }
+  .brand-article-name-label { font-size: 12px; flex: 1; }
+  .brand-article-ean { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .brand-article-empty { font-size: 11px; color: var(--muted); padding: 4px 0; }
+  .brand-inline-cta { padding: 8px 0; }
   .brand-group-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
   .brand-group-name { font-size: 13px; font-weight: 500; flex: 1; }
-  .brand-group-meta { font-size: 11px; color: var(--muted); }
   .brand-lansering-pill { display: inline-flex; align-items: center; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25); color: #a78bfa; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; cursor: pointer; transition: all 0.12s; }
   .brand-lansering-pill:hover { background: rgba(167,139,250,0.22); }
   .brand-new-lansering-btn { margin-top: 10px; display: inline-block; background: none; border: 1px dashed var(--border2); color: var(--muted2); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-family: var(--font); font-size: 11px; transition: all 0.12s; }

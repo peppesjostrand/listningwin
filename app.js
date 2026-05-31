@@ -2609,8 +2609,9 @@ async function archiveLansering(lid) {
   if (selectedLanseringId === lid) selectedLanseringId = null;
   addActivity('', `Lansering "${l.name}" arkiverad`);
   addNotif(`"${l.name}" arkiverad`, 'info');
+  // Uppdatera alltid båda vyerna direkt utan sidladdning
   renderLansering();
-  if (state.tab === 'arkiv') renderArkiv();
+  renderArkiv();
 }
 
 // Återaktiverar en arkiverad lansering och flyttar den tillbaka till aktiva.
@@ -2622,7 +2623,9 @@ async function reactivateLansering(lid) {
   selectedLanseringId = lid;
   addActivity('', `Lansering "${l.name}" återaktiverad`);
   addNotif(`"${l.name}" återaktiverad`, 'success');
+  // Uppdatera arkiv direkt och navigera till aktiva lanseringar
   renderArkiv();
+  renderLansering();
   showTab('lansering');
 }
 
@@ -2680,7 +2683,8 @@ function renderArticleSection(brand) {
   </div>`;
 }
 
-const openGroups = new Set(); // håller reda på vilka grupper som är öppna
+const openGroups = new Set();      // håller reda på vilka grupper som är öppna
+const openBrandGroups = new Set(); // håller reda på vilka varumärkesgrupper som är expanderade
 
 function toggleGroup(brandId, gi) {
   const key = `${brandId}|${gi}`;
@@ -6526,24 +6530,27 @@ function renderBrands() {
   const el = document.getElementById('brands-content');
   if (!el) return;
 
+  const tip = tipHtml('varumarken', 'Varumärken och produktgrupper skapas automatiskt när du skapar en lansering. Gå till Aktiva lanseringar och klicka på Ny lansering för att komma igång.');
+
   if (brands.length === 0) {
-    el.innerHTML = `<div class="empty-state-card">
+    el.innerHTML = `${tip}<div class="empty-state-card">
         <div class="empty-icon"><i class="ti ti-tag"></i></div>
         <div class="empty-title">Inga varumärken ännu</div>
-        <div class="empty-desc">Lägg till ditt första varumärke för att komma igång</div>
-        <button class="inline-btn" onclick="openLanseringWizard()">Lägg till varumärke</button>
+        <div class="empty-desc">Varumärken skapas automatiskt när du startar din första lansering</div>
+        <button class="inline-btn" onclick="openLanseringWizard()">Ny lansering</button>
       </div>`;
     return;
   }
 
   const cards = brands.map(brand => {
-    const linked = lanseringar.filter(l => l.brandId === brand.id);
-    const canDelete = brand.permission === 'owner' && linked.length === 0;
-    const canEdit   = brand.permission === 'owner' || brand.permission === 'editor';
+    const allLinked   = lanseringar.filter(l => l.brandId === brand.id);
+    const activeLinked = allLinked.filter(l => !l.is_archived);
+    const canEdit      = brand.permission === 'owner' || brand.permission === 'editor';
+    const hasActive    = activeLinked.length > 0;
 
-    // Aggregate product groups dynamically from linked lanseringar
+    // Aggregera produktgrupper från alla lanseringar (inkl. arkiverade för visning)
     const groupMap = new Map();
-    for (const l of linked) {
+    for (const l of allLinked) {
       if (!l.groupName) continue;
       if (!groupMap.has(l.groupName)) groupMap.set(l.groupName, []);
       const existing = groupMap.get(l.groupName);
@@ -6554,30 +6561,62 @@ function renderBrands() {
     }
     const groups = Array.from(groupMap.entries()).map(([name, arts]) => ({ name, articles: arts }));
 
-    const groupsHtml = groups.length === 0
-      ? `<span style="color:var(--muted);font-size:12px">Inga produktgrupper</span>`
-      : groups.map(g => {
-          const arts = g.articles || [];
-          return `<div class="brand-group-row">
-            <span class="brand-group-name">${g.name}</span>
+    // Expanderbara produktgrupper
+    let groupsHtml;
+    if (groups.length === 0) {
+      groupsHtml = `<div class="brand-inline-cta">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Inga produktgrupper ännu – skapa en lansering för att lägga till produktgrupper och artiklar</div>
+        <button class="inline-btn" style="font-size:11px;padding:5px 12px" onclick="openLanseringWizard()">Skapa lansering</button>
+      </div>`;
+    } else {
+      groupsHtml = groups.map(g => {
+        const encodedName = encodeURIComponent(g.name);
+        const isOpen = openBrandGroups.has(`${brand.id}|${g.name}`);
+        const arts = g.articles || [];
+        const articlesHtml = isOpen ? `<div class="brand-group-articles">
+          ${arts.length === 0
+            ? `<div class="brand-article-empty">Inga artiklar kopplade</div>`
+            : arts.map(a => {
+                const safeArt = (a.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                return `<div class="brand-article-row">
+                  <span class="brand-article-name-label" data-article="${a.id}">${escHtml(a.name||'')}</span>
+                  ${a.ean ? `<span class="brand-article-ean">${escHtml(a.ean)}</span>` : ''}
+                  ${canEdit ? `<button class="brand-group-edit-btn" onclick="startEditArticleName('${brand.id}','${a.id}','${safeArt}')" title="Redigera artikelnamn"><i class="ti ti-pencil"></i></button>` : ''}
+                </div>`;
+              }).join('')}
+        </div>` : '';
+        return `<div class="brand-group-expandable">
+          <div class="brand-group-header" onclick="toggleBrandGroup('${brand.id}','${encodedName}')">
+            <i class="ti ${isOpen ? 'ti-chevron-down' : 'ti-chevron-right'} brand-group-chevron"></i>
+            <span class="brand-group-name-label" data-brand="${brand.id}" data-name="${encodedName}">${escHtml(g.name)}</span>
+            ${canEdit ? `<button class="brand-group-edit-btn" onclick="event.stopPropagation();startEditBrandGroupName('${brand.id}','${encodedName}')" title="Redigera gruppnamn"><i class="ti ti-pencil"></i></button>` : ''}
             <span class="brand-group-meta">${arts.length} artikel${arts.length !== 1 ? 'ar' : ''}</span>
-          </div>`;
-        }).join('');
+          </div>
+          ${articlesHtml}
+        </div>`;
+      }).join('');
+    }
 
-    const pillsHtml = linked.length > 0
-      ? linked.map(l => `<span class="brand-lansering-pill"
-          onclick="showTab('lansering');selectedLanseringId='${l.id}';renderLansering()">${l.name}</span>`).join('')
+    // Ta bort-knapp — inaktiverad om aktiva lanseringar finns
+    const deleteBtn = brand.permission === 'owner'
+      ? (hasActive
+          ? `<button class="brand-action-btn danger" disabled title="Det går inte att ta bort varumärket eftersom det har aktiva lanseringar. Arkivera eller ta bort lanseringarna först." style="opacity:0.38;cursor:not-allowed">Ta bort</button>`
+          : `<button class="brand-action-btn danger" onclick="deleteBrand('${brand.id}')">Ta bort</button>`)
+      : '';
+
+    const pillsHtml = activeLinked.length > 0
+      ? activeLinked.map(l => `<span class="brand-lansering-pill" onclick="selectLansering('${l.id}');showTab('lansering')">${escHtml(l.name)}</span>`).join('')
       : `<span style="color:var(--muted);font-size:12px">Inga aktiva lanseringar</span>`;
 
     return `<div class="brand-register-card">
       <div class="brand-register-header">
         <span class="brand-color-dot" style="background:${brand.color}"></span>
         ${brand.logo
-          ? `<img src="${brand.logo}" alt="${brand.name}" style="max-height:22px;max-width:90px;object-fit:contain;">`
-          : `<span class="brand-register-name">${brand.name}</span>`}
+          ? `<img src="${brand.logo}" alt="${escHtml(brand.name)}" style="max-height:22px;max-width:90px;object-fit:contain;">`
+          : `<span class="brand-register-name">${escHtml(brand.name)}</span>`}
         <div style="flex:1"></div>
-        ${canEdit   ? `<button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>` : ''}
-        ${canDelete ? `<button class="brand-action-btn danger" onclick="deleteBrand('${brand.id}')">Ta bort</button>` : ''}
+        ${canEdit ? `<button class="brand-action-btn" onclick="openBrandModal('${brand.id}')">Redigera</button>` : ''}
+        ${deleteBtn}
       </div>
       <div class="brand-register-body">
         <div class="brand-register-col">
@@ -6593,7 +6632,79 @@ function renderBrands() {
     </div>`;
   }).join('');
 
-  el.innerHTML = `<div class="brand-register">${cards}</div>`;
+  el.innerHTML = `${tip}<div class="brand-register">${cards}</div>`;
+}
+
+// Växlar expand/kollaps för en produktgrupp på varumärkessidan.
+function toggleBrandGroup(brandId, encodedGroupName) {
+  const groupName = decodeURIComponent(encodedGroupName);
+  const key = `${brandId}|${groupName}`;
+  if (openBrandGroups.has(key)) openBrandGroups.delete(key);
+  else openBrandGroups.add(key);
+  renderBrands();
+}
+
+// Öppnar inline-redigering för ett produktgruppsnamn direkt i DOM:en.
+function startEditBrandGroupName(brandId, encodedOldName) {
+  const oldName = decodeURIComponent(encodedOldName);
+  const span = document.querySelector(`.brand-group-name-label[data-brand="${brandId}"][data-name="${encodedOldName}"]`);
+  if (!span) return;
+  const input = document.createElement('input');
+  input.className = 'inline-input';
+  input.style.cssText = 'width:160px;padding:3px 8px;font-size:13px;height:26px;margin-right:4px';
+  input.value = oldName;
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  let saved = false;
+  const doSave = () => { if (!saved) { saved = true; saveBrandGroupName(brandId, oldName, input.value.trim()); } };
+  input.addEventListener('blur', doSave);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') renderBrands(); });
+}
+
+// Sparar nytt produktgruppsnamn till alla berörda lanseringar.
+async function saveBrandGroupName(brandId, oldName, newName) {
+  if (!newName || newName === oldName) { renderBrands(); return; }
+  const matching = lanseringar.filter(l => l.brandId === brandId && l.groupName === oldName);
+  for (const l of matching) {
+    l.groupName = newName;
+    // Uppdatera lanseringens expand-nyckel
+    const oldKey = `${brandId}|${oldName}`;
+    if (openBrandGroups.has(oldKey)) { openBrandGroups.delete(oldKey); openBrandGroups.add(`${brandId}|${newName}`); }
+    await saveLansering(l.id);
+  }
+  if (matching.length) addNotif('Produktgruppsnamn uppdaterat', 'success');
+  renderBrands();
+}
+
+// Öppnar inline-redigering för ett artikelnamn direkt i DOM:en.
+function startEditArticleName(brandId, articleId, currentName) {
+  const span = document.querySelector(`.brand-article-name-label[data-article="${articleId}"]`);
+  if (!span) return;
+  const input = document.createElement('input');
+  input.className = 'inline-input';
+  input.style.cssText = 'width:180px;padding:3px 8px;font-size:13px;height:26px;margin-right:4px';
+  input.value = currentName;
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  let saved = false;
+  const doSave = () => { if (!saved) { saved = true; saveArticleName(brandId, articleId, input.value.trim()); } };
+  input.addEventListener('blur', doSave);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') renderBrands(); });
+}
+
+// Sparar nytt artikelnamn till alla berörda lanseringar.
+async function saveArticleName(brandId, articleId, newName) {
+  if (!newName) { renderBrands(); return; }
+  const matching = lanseringar.filter(l => l.brandId === brandId && (l.articles||[]).some(a => a.id === articleId));
+  for (const l of matching) {
+    const art = l.articles.find(a => a.id === articleId);
+    if (art) art.name = newName;
+    await saveLansering(l.id);
+  }
+  if (matching.length) addNotif('Artikelnamn uppdaterat', 'success');
+  renderBrands();
 }
 
 function renderBrandWindows(brand, allCats) {
@@ -6765,9 +6876,9 @@ async function saveBrand() {
 }
 
 async function deleteBrand(id) {
-  const linked = lanseringar.filter(l => l.brandId === id);
-  if (linked.length > 0) {
-    addNotif(`Kan inte ta bort — ${linked.length} aktiv${linked.length !== 1 ? 'a' : ''} lansering${linked.length !== 1 ? 'ar' : ''} är kopplade till varumärket`, 'error');
+  const activeLinked = lanseringar.filter(l => l.brandId === id && !l.is_archived);
+  if (activeLinked.length > 0) {
+    addNotif('Det går inte att ta bort varumärket eftersom det har aktiva lanseringar. Arkivera eller ta bort lanseringarna först.', 'error');
     return;
   }
   if (!confirm('Ta bort detta varumärke? Det kan inte ångras.')) return;
