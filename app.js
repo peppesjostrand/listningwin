@@ -3377,22 +3377,35 @@ async function setOnboardingCompleted() {
 
 // Avgör om välkomstflödet ska visas för den inloggade användaren.
 async function shouldShowOnboarding() {
-  if (!currentUser) return false;
+  if (!currentUser) {
+    console.log('[Onboarding] shouldShowOnboarding: ingen inloggad användare — returnerar false');
+    return false;
+  }
   // Hämta färsk metadata från servern — undviker stale JWT-cache
-  const { data: { user: freshUser } } = await supabaseClient.auth.getUser();
+  const { data, error } = await supabaseClient.auth.getUser();
+  console.log('[Onboarding] auth.getUser() svar:', data, 'fel:', error);
+  const freshUser = data?.user;
   const meta = freshUser?.user_metadata || {};
-  console.log('[Onboarding] shouldShowOnboarding — user_metadata:', meta, '— onboarding_completed:', meta.onboarding_completed);
-  if (meta.onboarding_completed) return false;
+  console.log('[Onboarding] user_metadata:', meta);
+  console.log('[Onboarding] onboarding_completed:', meta.onboarding_completed);
+  if (meta.onboarding_completed) {
+    console.log('[Onboarding] shouldShowOnboarding → false (redan klar)');
+    return false;
+  }
   // Hoppa över om workspace redan har data — troligtvis inbjuden som kollega
   if (brands.length > 0 || lanseringar.length > 0) {
+    console.log('[Onboarding] shouldShowOnboarding → false (workspace har redan data, brands:', brands.length, 'lanseringar:', lanseringar.length, ')');
     await setOnboardingCompleted();
     return false;
   }
+  console.log('[Onboarding] shouldShowOnboarding → true (visar onboarding)');
   return true;
 }
 
 async function startOnboarding() {
+  console.log('[Onboarding] startOnboarding() körs');
   const show = await shouldShowOnboarding();
+  console.log('[Onboarding] startOnboarding: show =', show);
   if (!show) return;
   onboardStep = 1;
   onboardData.brandName = '';
