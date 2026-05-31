@@ -921,6 +921,10 @@
   .dark .contextual-tip { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.25); }
   .contextual-tip i { color: #3b82f6; margin-top: 1px; }
   @keyframes tipFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  /* Grön välkomstbanner efter onboarding */
+  .onboard-welcome-banner { display: flex; align-items: flex-start; padding: 14px 18px; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); border-radius: 10px; color: var(--text); font-size: 13px; line-height: 1.55; margin-bottom: 20px; animation: tipFadeIn 0.25s ease; }
+  .dark .onboard-welcome-banner { background: rgba(74,222,128,0.12); border-color: rgba(74,222,128,0.28); }
+  .onboard-welcome-banner i { color: #4ade80; }
   /* Kom-igång-checklista på dashboarden */
   .onboarding-checklist { border: 1px solid var(--border); border-radius: 12px; padding: 28px 28px 24px; max-width: 480px; margin: 32px auto; background: var(--surface); }
   .onboarding-checklist-title { font-family: var(--display); font-size: 16px; font-weight: 700; margin-bottom: 6px; }

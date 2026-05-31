@@ -1729,9 +1729,37 @@ function renderLansering() {
   // Filtrera bort arkiverade lanseringar från aktiva listan
   const aktivaLanseringar = lanseringar.filter(l => !l.is_archived);
 
+  // Rensa onboarding-flaggan automatiskt när första lansering skapats
+  if (aktivaLanseringar.length > 0 && localStorage.getItem('lw_onboarding_just_completed')) {
+    localStorage.removeItem('lw_onboarding_just_completed');
+  }
+
+  // Bygg grön välkomstbanner (visas tills första lansering skapas eller stängs manuellt)
+  const showWelcomeBanner = aktivaLanseringar.length === 0 && localStorage.getItem('lw_onboarding_just_completed');
+  const firstName = currentUser?.user_metadata?.first_name || currentUser?.email?.split('@')[0] || '';
+  const welcomeBannerHtml = showWelcomeBanner ? `
+    <div class="onboard-welcome-banner" id="onboard-welcome-banner">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <i class="ti ti-confetti" style="font-size:18px;flex-shrink:0;margin-top:1px"></i>
+        <div>
+          <div style="font-weight:600;margin-bottom:3px">Bra start${firstName ? ', ' + escHtml(firstName) : ''}!</div>
+          <div style="font-size:13px">Klicka på <strong>Skapa lansering</strong> för att lägga upp din första lansering. Du kommer att få välja kategori, artiklar och kontaktpersoner steg för steg.</div>
+        </div>
+        <button onclick="dismissWelcomeBanner()" style="background:none;border:none;cursor:pointer;color:inherit;padding:0;margin-left:auto;font-size:20px;line-height:1;flex-shrink:0" aria-label="Stäng">×</button>
+      </div>
+    </div>` : '';
+
+  // Bygg blå tip för efter första lansering skapats (visas tills stängd)
+  const firstLansTipHtml = (aktivaLanseringar.length > 0 && !localStorage.getItem('lw_tip_first_lansering_created')) ? `
+    <div class="contextual-tip" id="tip-first-lansering-created">
+      <i class="ti ti-info-circle"></i>
+      <span>Din lansering är skapad. Klicka på den för att öppna den och fyll i artiklar och priser under <strong>Artiklar &amp; priser</strong>, logga kontakter under <strong>Aktivitet</strong> och följ dina deadlines under <strong>Deadlines</strong>.</span>
+      <button onclick="dismissFirstLanseringTip()" style="background:none;border:none;cursor:pointer;color:inherit;padding:0;margin-left:auto;font-size:18px;line-height:1" aria-label="Stäng">×</button>
+    </div>` : '';
+
   // Om inga aktiva lanseringar — visa tomt tillstånd
   if (aktivaLanseringar.length === 0) {
-    el.innerHTML = `<div class="empty-state-card">
+    el.innerHTML = `${welcomeBannerHtml}<div class="empty-state-card">
       <div class="empty-icon"><i class="ti ti-rocket"></i></div>
       <div class="empty-title">Du har inga aktiva lanseringar</div>
       <div class="empty-desc">Skapa din första lansering och få kontroll över dina deadlines och tidslinjer</div>
@@ -1774,7 +1802,7 @@ function renderLansering() {
   }
 
   const collapsedClass = panelCollapsed ? ' panel-collapsed' : '';
-  el.innerHTML = `<div class="lansering-layout${collapsedClass}">${listHtml}${detailHtml}</div>`;
+  el.innerHTML = `${firstLansTipHtml}<div class="lansering-layout${collapsedClass}">${listHtml}${detailHtml}</div>`;
 
   // Render lansering modal if open
   if (document.getElementById('lansering-modal')) return;
@@ -2972,6 +3000,20 @@ function dismissTip(page) {
   if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-4px)'; el.style.transition = 'all 0.15s'; setTimeout(() => el.remove(), 150); }
 }
 
+// Stänger välkomstbannern efter onboarding och rensar localStorage-flaggan.
+function dismissWelcomeBanner() {
+  localStorage.removeItem('lw_onboarding_just_completed');
+  const el = document.getElementById('onboard-welcome-banner');
+  if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-4px)'; el.style.transition = 'all 0.15s'; setTimeout(() => el.remove(), 150); }
+}
+
+// Stänger blå tip om första lansering och sparar som stängd i localStorage.
+function dismissFirstLanseringTip() {
+  localStorage.setItem('lw_tip_first_lansering_created', '1');
+  const el = document.getElementById('tip-first-lansering-created');
+  if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-4px)'; el.style.transition = 'all 0.15s'; setTimeout(() => el.remove(), 150); }
+}
+
 function renderKalkyl() {
   const el = document.getElementById('kalkyl-content');
   if (!el) return;
@@ -3507,46 +3549,11 @@ function onboardBack() {
   onboardStep = 1;
   renderOnboardModal();
 }
-// Skapar lanseringen och avslutar onboarding-flödet.
+// Avslutar onboarding-flödet utan att skapa en lansering.
 async function onboardFinish() {
   document.getElementById('onboard-overlay')?.remove();
   await setOnboardingCompleted();
-
-  // Skapa en startlansering om varumärke och kedjor valts
-  if (onboardCreatedBrandId && onboardData.chains.length > 0 && currentWorkspaceId) {
-    const brand = brands.find(b => b.id === onboardCreatedBrandId);
-    const brandName = brand?.name || onboardData.brandName;
-    const chainLabels = onboardData.chains.map(c => CHAIN_LABELS[c]||c).join(', ');
-    const newL = {
-      id: null, name: `${brandName} — Start`,
-      brandId: onboardCreatedBrandId, brand: brandName,
-      color: brand?.color || '#a78bfa',
-      groupName: 'Start', chains: onboardData.chains,
-      chainData: Object.fromEntries(onboardData.chains.map(c => [c, { category: '', aviseringsVeckor: [], fonsterVeckor: [] }])),
-      articles: [], customers: {}, checklist: {}, tasks: [], contactLog: [], freeCustomers: [],
-      is_lansering: true, activeCustomerTab: onboardData.chains[0]
-    };
-    // Initialisera kunddata per kedja
-    for (const c of onboardData.chains) newL.customers[c] = { checklist: {}, tasks: [] };
-    try {
-      const { data: pid } = await supabaseClient.rpc('create_project', {
-        p_workspace_id: currentWorkspaceId,
-        p_name: newL.name,
-        p_color: newL.color,
-        p_visibility: 'private'
-      });
-      if (pid) {
-        newL.id = pid;
-        const { id: _id, name: _n, color: _c, ...rest } = newL;
-        await supabaseClient.rpc('save_project_data', { p_project_id: pid, p_data: JSON.stringify({ ...rest, is_lansering: true }) });
-        lanseringar.push({ ...newL, id: pid });
-        selectedLanseringId = pid;
-      }
-    } catch(e) { console.error('onboardFinish: kunde inte skapa lansering', e); }
-    addActivity('', `Lansering skapad: ${brandName} mot ${chainLabels}`);
-    addNotif('Bra start! Du är redo att ta kontroll över din lansering.', 'success');
-  }
-
+  localStorage.setItem('lw_onboarding_just_completed', 'true');
   renderAll();
   showTab('lansering');
 }
