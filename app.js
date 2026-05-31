@@ -3388,17 +3388,20 @@ async function shouldShowOnboarding() {
   const meta = freshUser?.user_metadata || {};
   console.log('[Onboarding] user_metadata:', meta);
   console.log('[Onboarding] onboarding_completed:', meta.onboarding_completed);
+  // Om flaggan är satt är onboarding klar — visa aldrig igen
   if (meta.onboarding_completed) {
     console.log('[Onboarding] shouldShowOnboarding → false (redan klar)');
     return false;
   }
-  // Hoppa över om workspace redan har data — troligtvis inbjuden som kollega
-  if (brands.length > 0 || lanseringar.length > 0) {
-    console.log('[Onboarding] shouldShowOnboarding → false (workspace har redan data, brands:', brands.length, 'lanseringar:', lanseringar.length, ')');
+  // Flaggan saknas — kontrollera om användaren är inbjuden till ett workspace
+  // som redan skapats av någon annan. I så fall hoppar vi över flödet och
+  // markerar det som klart så att det inte dyker upp igen.
+  if (currentUserRole === 'member' && (brands.length > 0 || lanseringar.length > 0)) {
+    console.log('[Onboarding] shouldShowOnboarding → false (inbjuden medlem, workspace har redan data)');
     await setOnboardingCompleted();
     return false;
   }
-  console.log('[Onboarding] shouldShowOnboarding → true (visar onboarding)');
+  console.log('[Onboarding] shouldShowOnboarding → true (visar onboarding, roll:', currentUserRole, ')');
   return true;
 }
 
