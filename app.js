@@ -669,10 +669,38 @@ function renderOverview() {
     };
   }
 
-  if (!brands.length) {
-    document.getElementById('overview-content').innerHTML =
-      '<div class="empty-state" style="margin-top:40px">Inga varumärken än — lägg till i fliken Varumärken</div>';
-    return;
+  // Kom-igång-checklista när workspace är tomt
+  if (!brands.length && !lanseringar.length) {
+    const hasBrand = brands.length > 0;
+    const hasLansering = lanseringar.filter(l => !l.is_archived).length > 0;
+    const hasContact = contacts.length > 0;
+    const allDone = hasBrand && hasLansering && hasContact;
+    // Om alla tre är klara visas normal dashboard vid nästa render
+    if (!allDone) {
+      const check = done => `<span class="onboarding-checklist-check ${done ? 'done' : ''}">${done ? '✓' : ''}</span>`;
+      document.getElementById('overview-content').innerHTML = `
+        <div class="onboarding-checklist">
+          <div class="onboarding-checklist-title">Kom igång med ListingWIN</div>
+          <div class="onboarding-checklist-sub">Tre enkla steg för att sätta upp ditt konto</div>
+          <div class="onboarding-checklist-item" onclick="showTab('brands')">
+            ${check(hasBrand)}
+            <span class="onboarding-checklist-label ${hasBrand?'done':''}">Skapa ett varumärke</span>
+            <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
+          </div>
+          <div class="onboarding-checklist-item" onclick="showTab('lansering')">
+            ${check(hasLansering)}
+            <span class="onboarding-checklist-label ${hasLansering?'done':''}">Skapa din första lansering</span>
+            <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
+          </div>
+          <div class="onboarding-checklist-item" onclick="showTab('contacts')">
+            ${check(hasContact)}
+            <span class="onboarding-checklist-label ${hasContact?'done':''}">Lägg till en kontaktperson</span>
+            <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
+          </div>
+        </div>
+        ${tipHtml('overview_first', 'Visste du att du kan dela dina lanseringar med kollegor? Bjud in dem under Inställningar.')}`;
+      return;
+    }
   }
 
   const custColor = { coop: 'var(--coop-color)', ica: 'var(--ica-color)', dagab: 'var(--dagab-color)' };
@@ -776,6 +804,14 @@ function catRowHtml(c, sourceRounds) {
     return `<span class="wchip">v.${w}</span>`;
   }).join('');
 
+  // Kontrollera om användaren har en aktiv lansering i denna kategori och kedja
+  const hasActiveLansering = lanseringar.some(l => {
+    if (l.is_archived) return false;
+    const cd = l.chainData?.[c.source];
+    return cd?.category === c.name;
+  });
+  const activeBadge = hasActiveLansering ? `<span class="active-lans-badge">Aktiv lansering</span>` : '';
+
   const sel = state.selectedCat === c.name ? 'selected' : '';
   const rowId = 'sg-' + c.source + '-' + (c.area||0) + '-' + Math.random().toString(36).slice(2,6);
   const hasSubs = c.subgroups && c.subgroups.length > 0;
@@ -795,7 +831,7 @@ function catRowHtml(c, sourceRounds) {
 
   return `<tr class="cat-row ${sel}${hasSubs ? ' has-subgroup' : ''}" ${trClick}>
     <td style="font-size:10px;color:var(--muted2)">${c.group || c.sub}</td>
-    <td class="cat-name-cell" ${tdClick}>${areaLabel}${c.name}${sgToggle ? ' ' + sgToggle : ''}</td>
+    <td class="cat-name-cell" ${tdClick}>${areaLabel}${c.name}${activeBadge}${sgToggle ? ' ' + sgToggle : ''}</td>
     <td><div class="window-chips">${pairBadges}</div></td>
   </tr>${sgPanel}`;
 }
@@ -885,7 +921,7 @@ function renderCategories() {
     }
   }
 
-  document.getElementById('cat-content').innerHTML = tableHTML + detailHTML;
+  document.getElementById('cat-content').innerHTML = tipHtml('categories', 'Här ser du alla lanseringsfönster per kedja och kategori. Välj en kategori för att se aviserings- och lanseringsveckor. Dina egna lanseringar visas med en markering i tabellen.') + tableHTML + detailHTML;
 }
 
 function selectCat(name) {
@@ -986,7 +1022,7 @@ function renderTimeline() {
     ? weekCats.map(c => `<div class="tl-week-cat-row">${c.cat}</div>`).join('')
     : `<div style="color:var(--muted);font-size:12px">Inga kategorier för denna vecka</div>`;
 
-  document.getElementById('timeline-content').innerHTML = `
+  document.getElementById('timeline-content').innerHTML = tipHtml('timeline', 'Välj en kedja och en lanseringsvecka för att se vilka kategorier som lansererar och vad processen innebär steg för steg.') + `
     <div class="tl-new-wrap">
       <div class="tl-cust-tabs">${custTabs}</div>
       <div class="tl-window-bar">
@@ -1690,11 +1726,26 @@ function renderLansering() {
   const toggleIcon = panelCollapsed ? '›' : '‹';
   const toggleTitle = panelCollapsed ? 'Visa lista' : 'Dölj lista';
 
+  // Filtrera bort arkiverade lanseringar från aktiva listan
+  const aktivaLanseringar = lanseringar.filter(l => !l.is_archived);
+
+  // Om inga aktiva lanseringar — visa tomt tillstånd
+  if (aktivaLanseringar.length === 0) {
+    el.innerHTML = `<div class="empty-state-card">
+      <div class="empty-icon"><i class="ti ti-rocket"></i></div>
+      <div class="empty-title">Du har inga aktiva lanseringar</div>
+      <div class="empty-desc">Skapa din första lansering och få kontroll över dina deadlines och tidslinjer</div>
+      <button class="inline-btn" onclick="openLanseringWizard()">Skapa lansering</button>
+    </div>`;
+    return;
+  }
+
   const listHtml = `
     <div class="lansering-list-panel">
       <button class="panel-toggle-btn" onclick="toggleLanseringPanel()" title="${toggleTitle}">${toggleIcon}</button>
       <div class="lansering-list-content">
-        ${lanseringar.map(l => {
+        ${tipHtml('lansering', 'Varje lansering har fyra flikar – Uppgifter, Artiklar & priser, Aktivitet och Deadlines. Börja med att fylla i uppgifter och koppla kontaktpersoner under Aktivitet.')}
+        ${aktivaLanseringar.map(l => {
           const pct = getLanseringProgress(l);
           return `<div class="lansering-card ${selectedLanseringId===l.id?'selected':''}" onclick="selectLansering('${l.id}')">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -2440,6 +2491,32 @@ async function deleteLansering(lid) {
   renderLansering();
 }
 
+// Arkiverar en lansering och döljer den från aktiva listan.
+async function archiveLansering(lid) {
+  const l = getLansering(lid);
+  if (!l) return;
+  l.is_archived = true;
+  await saveLansering(lid);
+  if (selectedLanseringId === lid) selectedLanseringId = null;
+  addActivity('', `Lansering "${l.name}" arkiverad`);
+  addNotif(`"${l.name}" arkiverad`, 'info');
+  renderLansering();
+  if (state.tab === 'arkiv') renderArkiv();
+}
+
+// Återaktiverar en arkiverad lansering och flyttar den tillbaka till aktiva.
+async function reactivateLansering(lid) {
+  const l = getLansering(lid);
+  if (!l) return;
+  l.is_archived = false;
+  await saveLansering(lid);
+  selectedLanseringId = lid;
+  addActivity('', `Lansering "${l.name}" återaktiverad`);
+  addNotif(`"${l.name}" återaktiverad`, 'success');
+  renderArkiv();
+  showTab('lansering');
+}
+
 
 
 // ═══════════════════════════════════════════════
@@ -2657,11 +2734,31 @@ function renderArkiv() {
     </table>`;
   };
 
+  // Arkiverade lanseringar
+  const arkiverade = lanseringar.filter(l => l.is_archived);
+  const arkiveradHtml = arkiverade.length === 0
+    ? `<div class="empty-state-card" style="max-width:100%;margin:0 0 24px">
+        <div class="empty-icon"><i class="ti ti-archive"></i></div>
+        <div class="empty-title">Inga arkiverade lanseringar</div>
+        <div class="empty-desc">Avslutade lanseringar hamnar här automatiskt när du arkiverar dem från Aktiva lanseringar.</div>
+      </div>`
+    : `<div style="margin-bottom:24px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Arkiverade lanseringar</div>
+        ${arkiverade.map(l => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
+            <span style="font-size:13px;font-weight:500;flex:1">${escHtml(l.name)}</span>
+            <button class="inline-btn" style="font-size:11px;padding:4px 10px" onclick="reactivateLansering('${l.id}')">Återaktivera</button>
+          </div>`).join('')}
+      </div>`;
+
   el.innerHTML = `<div class="history-section">
+    ${tipHtml('arkiv', 'Avslutade lanseringar hamnar här automatiskt. Bra för att se historik och lära av tidigare lanseringar.')}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <div style="font-family:var(--display);font-size:18px;font-weight:700">Arkiv & Export</div>
       <button class="export-btn" onclick="exportToExcel()">Exportera till Excel</button>
     </div>
+    ${arkiveradHtml}
 
     <div class="history-filter-bar">
       <select class="history-filter-select" id="hist-filter-view" onchange="renderArkiv()">
@@ -2847,11 +2944,31 @@ function fmtKr(n) {
   return fmt(n, 2) + ' kr';
 }
 
+// ── KONTEXTUELLA TIPS ──
+
+// Returnerar HTML för ett tips-banner om användaren inte stängt det.
+function tipHtml(page, text) {
+  if (localStorage.getItem(`lw_tip_dismissed_${page}`)) return '';
+  return `<div class="contextual-tip" id="tip-${page}">
+    <i class="ti ti-info-circle"></i>
+    <span>${text}</span>
+    <button onclick="dismissTip('${page}')" style="background:none;border:none;cursor:pointer;color:inherit;padding:0;margin-left:auto;font-size:18px;line-height:1" aria-label="Stäng tips">×</button>
+  </div>`;
+}
+
+// Stänger och döljer ett tips permanent via localStorage.
+function dismissTip(page) {
+  localStorage.setItem(`lw_tip_dismissed_${page}`, '1');
+  const el = document.getElementById(`tip-${page}`);
+  if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-4px)'; el.style.transition = 'all 0.15s'; setTimeout(() => el.remove(), 150); }
+}
+
 function renderKalkyl() {
   const el = document.getElementById('kalkyl-content');
   if (!el) return;
 
   el.innerHTML = `<div class="kalkyl-page">
+    ${tipHtml('kalkyl', 'Kalkylen hjälper dig räkna ut listpris, rabatt och marginal innan du går in i mötet med kategorichefen. Fyll i kostnad och konsumentpris så räknas resten ut automatiskt.')}
     <div style="font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:4px">Kalkylator</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Värdekedja, volymer och Rapid Start-kostnad</div>
 
@@ -3106,6 +3223,7 @@ function renderPaminnelser() {
     </div>`;
 
   el.innerHTML = `<div class="pam-page">
+    ${tipHtml('paminnelser', 'Här ser du kommande deadlines för alla dina aktiva lanseringar. Ställ in påminnelser så missar du aldrig en aviseringsvecka.')}
     <div style="font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:4px">Påminnelser</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Välj vilka moment du vill bli påmind om och hur många dagar i förväg</div>
 
@@ -3239,70 +3357,91 @@ function savePamAndConfirm() {
 // ═══════════════════════════════════════════════
 
 // ── 1. ONBOARDING ──
-const ONBOARD_KEY = 'lw_onboarded_v1';
-let onboardStep = 0;
+let onboardStep = 1;
+let onboardCreatedBrandId = null;  // ID för varumärke skapat i steg 1
 const onboardData = { brandName: '', chains: [] };
 
-function shouldShowOnboarding() {
-  return !sessionStorage.getItem(ONBOARD_KEY) && brands.length === 0;
+// Markerar onboarding som klar i Supabase Auth metadata.
+async function setOnboardingCompleted() {
+  if (currentUser) await supabaseClient.auth.updateUser({ data: { onboarding_completed: true } });
 }
 
-function startOnboarding() {
-  if (!shouldShowOnboarding()) return;
-  onboardStep = 0;
-  renderOnboardStep();
+// Avgör om välkomstflödet ska visas för den inloggade användaren.
+async function shouldShowOnboarding() {
+  if (!currentUser) return false;
+  const meta = currentUser.user_metadata || {};
+  if (meta.onboarding_completed) return false;
+  // Hoppa över om workspace redan har data — troligtvis inbjuden som kollega
+  if (brands.length > 0 || lanseringar.length > 0) {
+    await setOnboardingCompleted();
+    return false;
+  }
+  return true;
 }
 
-function renderOnboardStep() {
-  const existing = document.getElementById('onboard-overlay');
-  if (existing) existing.remove();
+async function startOnboarding() {
+  const show = await shouldShowOnboarding();
+  if (!show) return;
+  onboardStep = 1;
+  onboardData.brandName = '';
+  onboardData.chains = [];
+  onboardCreatedBrandId = null;
+  renderOnboardModal();
+}
 
-  const steps = [
-    {
-      title: 'Välkommen till ListingWIN!',
-      desc: 'Det här är ditt verktyg för att hantera listningar inom dagligvaruhandeln. Vi hjälper dig att hålla koll på aviseringsfönster, lanseringar och kontakter mot kedjorna. Låt oss sätta upp ditt konto på 3 enkla steg.',
-      content: '',
-      next: 'Kom igång →'
-    },
-    {
-      title: 'Vilket varumärke representerar du?',
-      desc: 'Börja med att lägga in ditt första varumärke. Du kan alltid lägga till fler senare.',
-      content: `<input class="onboard-input" id="ob-brand" placeholder="T.ex. Löfbergs, Paulúns, Oatly..." value="${onboardData.brandName}" autocomplete="off" oninput="onboardData.brandName=this.value">`,
-      next: 'Nästa →'
-    },
-    {
-      title: 'Vilka kedjor jobbar du mot?',
-      desc: 'Välj de kedjor du aktivt jobbar med. Aviseringsfönster visas bara för valda kedjor.',
-      content: `<div class="onboard-chain-picks">
-        <button class="onboard-chain-pick ${onboardData.chains.includes('coop')?'picked-coop':''}" onclick="toggleOnboardChain('coop',this)">Coop</button>
-        <button class="onboard-chain-pick ${onboardData.chains.includes('ica')?'picked-ica':''}" onclick="toggleOnboardChain('ica',this)">ICA</button>
-        <button class="onboard-chain-pick ${onboardData.chains.includes('dagab')?'picked-dagab':''}" onclick="toggleOnboardChain('dagab',this)">Dagab</button>
-      </div>`,
-      next: 'Avsluta setup →'
-    }
-  ];
-
-  const s = steps[onboardStep];
-  const pct = ((onboardStep) / steps.length) * 100;
-
+// Renderar onboarding-modalen för aktuellt steg.
+function renderOnboardModal() {
+  document.getElementById('onboard-overlay')?.remove();
   const div = document.createElement('div');
   div.className = 'onboard-overlay';
   div.id = 'onboard-overlay';
+  const pct = onboardStep === 1 ? 50 : 100;
+  const stepLabel = `Steg ${onboardStep} av 2`;
+
+  let body = '';
+  let btns = '';
+
+  if (onboardStep === 1) {
+    body = `
+      <div class="onboard-step-label">${stepLabel}</div>
+      <div class="onboard-title">Vilket varumärke ska du börja med?</div>
+      <div class="onboard-desc">Ange ditt varumärkesnamn för att komma igång. Du kan alltid lägga till fler varumärken senare.</div>
+      <input class="onboard-input" id="ob-brand" placeholder="T.ex. Oatly eller Felix"
+        value="${escHtml(onboardData.brandName)}" autocomplete="off"
+        onkeydown="if(event.key==='Enter')onboardNext()"
+        oninput="onboardData.brandName=this.value">`;
+    btns = `
+      <span class="onboard-skip" onclick="skipOnboarding()">Hoppa över</span>
+      <button class="onboard-next" onclick="onboardNext()">Fortsätt →</button>`;
+  } else {
+    body = `
+      <div class="onboard-step-label">${stepLabel}</div>
+      <div class="onboard-title">Mot vilken kedja planerar du din första lansering?</div>
+      <div class="onboard-desc">Välj en eller flera kedjor. Du kan alltid lägga till fler kedjor per lansering senare.</div>
+      <div class="onboard-chain-picks">
+        <button class="onboard-chain-pick ${onboardData.chains.includes('coop')?'picked-coop':''}"
+          onclick="toggleOnboardChain('coop',this)">Coop</button>
+        <button class="onboard-chain-pick ${onboardData.chains.includes('ica')?'picked-ica':''}"
+          onclick="toggleOnboardChain('ica',this)">ICA</button>
+        <button class="onboard-chain-pick ${onboardData.chains.includes('dagab')?'picked-dagab':''}"
+          onclick="toggleOnboardChain('dagab',this)">Dagab</button>
+      </div>`;
+    btns = `
+      <button class="onboard-back" onclick="onboardBack()">← Tillbaka</button>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="onboard-skip" onclick="skipOnboarding()">Hoppa över</span>
+        <button class="onboard-next" onclick="onboardFinish()">Kom igång →</button>
+      </div>`;
+  }
+
   div.innerHTML = `
     <div class="onboard-box">
       <div class="onboard-progress"><div class="onboard-progress-fill" style="width:${pct}%"></div></div>
-      <div class="onboard-body">
-        <div class="onboard-step-label">Steg ${onboardStep+1} av ${steps.length}</div>
-        <div class="onboard-title">${s.title}</div>
-        <div class="onboard-desc">${s.desc}</div>
-        ${s.content}
-      </div>
-      <div class="onboard-btns">
-        <span class="onboard-skip" onclick="skipOnboarding()">Hoppa över</span>
-        <button class="onboard-next" onclick="nextOnboardStep()">${s.next}</button>
-      </div>
+      <div class="onboard-body">${body}</div>
+      <div class="onboard-btns">${btns}</div>
     </div>`;
   document.body.appendChild(div);
+  if (onboardStep === 1) document.getElementById('ob-brand')?.focus();
 }
 
 function toggleOnboardChain(chain, btn) {
@@ -3316,43 +3455,79 @@ function toggleOnboardChain(chain, btn) {
   }
 }
 
-async function nextOnboardStep() {
-  if (onboardStep === 1) {
-    const name = document.getElementById('ob-brand')?.value.trim();
-    if (name) onboardData.brandName = name;
-  }
-  onboardStep++;
-  if (onboardStep >= 3) {
-    await finishOnboarding();
+// Går till steg 2 — skapar varumärket om ett namn angetts.
+async function onboardNext() {
+  const name = document.getElementById('ob-brand')?.value.trim();
+  if (!name) {
+    document.getElementById('ob-brand')?.focus();
+    addNotif('Ange ett varumärkesnamn för att fortsätta.', 'info');
     return;
   }
-  renderOnboardStep();
+  onboardData.brandName = name;
+  // Skapa varumärket direkt vid steg 1 → 2
+  if (currentWorkspaceId) {
+    const pid = await createProject(name, '#a78bfa');
+    onboardCreatedBrandId = pid || null;
+    await loadBrands();
+  }
+  onboardStep = 2;
+  renderOnboardModal();
 }
 
-async function finishOnboarding() {
-  sessionStorage.setItem(ONBOARD_KEY, '1');
+// Går tillbaka till steg 1 utan att ta bort det skapade varumärket.
+function onboardBack() {
+  onboardStep = 1;
+  renderOnboardModal();
+}
+// Skapar lanseringen och avslutar onboarding-flödet.
+async function onboardFinish() {
   document.getElementById('onboard-overlay')?.remove();
+  await setOnboardingCompleted();
 
-  // Skapa varumärke om angivet
-  if (onboardData.brandName && currentWorkspaceId) {
-    await createProject(onboardData.brandName, '#a78bfa');
-    renderAll();
+  // Skapa en startlansering om varumärke och kedjor valts
+  if (onboardCreatedBrandId && onboardData.chains.length > 0 && currentWorkspaceId) {
+    const brand = brands.find(b => b.id === onboardCreatedBrandId);
+    const brandName = brand?.name || onboardData.brandName;
+    const chainLabels = onboardData.chains.map(c => CHAIN_LABELS[c]||c).join(', ');
+    const newL = {
+      id: null, name: `${brandName} — Start`,
+      brandId: onboardCreatedBrandId, brand: brandName,
+      color: brand?.color || '#a78bfa',
+      groupName: 'Start', chains: onboardData.chains,
+      chainData: Object.fromEntries(onboardData.chains.map(c => [c, { category: '', aviseringsVeckor: [], fonsterVeckor: [] }])),
+      articles: [], customers: {}, checklist: {}, tasks: [], contactLog: [], freeCustomers: [],
+      is_lansering: true, activeCustomerTab: onboardData.chains[0]
+    };
+    // Initialisera kunddata per kedja
+    for (const c of onboardData.chains) newL.customers[c] = { checklist: {}, tasks: [] };
+    try {
+      const { data: pid } = await supabaseClient.rpc('create_project', {
+        p_workspace_id: currentWorkspaceId,
+        p_name: newL.name,
+        p_color: newL.color,
+        p_visibility: 'private'
+      });
+      if (pid) {
+        newL.id = pid;
+        const { id: _id, name: _n, color: _c, ...rest } = newL;
+        await supabaseClient.rpc('save_project_data', { p_project_id: pid, p_data: JSON.stringify({ ...rest, is_lansering: true }) });
+        lanseringar.push({ ...newL, id: pid });
+        selectedLanseringId = pid;
+      }
+    } catch(e) { console.error('onboardFinish: kunde inte skapa lansering', e); }
+    addActivity('', `Lansering skapad: ${brandName} mot ${chainLabels}`);
+    addNotif('Bra start! Du är redo att ta kontroll över din lansering.', 'success');
   }
 
-  // Aktivera valda kedjor
-  if (onboardData.chains.length > 0) {
-    state.active.coop = onboardData.chains.includes('coop');
-    state.active.ica = onboardData.chains.includes('ica');
-    state.active.dagab = onboardData.chains.includes('dagab');
-    renderAll();
-  }
-
-  addActivity('', 'Välkommen! Ditt konto är nu satt upp.');
+  renderAll();
+  showTab('lansering');
 }
 
-function skipOnboarding() {
-  sessionStorage.setItem(ONBOARD_KEY, '1');
+// Hoppar över onboarding och markerar den som klar.
+async function skipOnboarding() {
   document.getElementById('onboard-overlay')?.remove();
+  await setOnboardingCompleted();
+  renderAll();
 }
 
 // ── 2. STATUSDASHBOARD WIDGETS ──
@@ -3953,6 +4128,7 @@ function renderContacts() {
 
   el.innerHTML = `
     <div class="contacts-page">
+      ${tipHtml('contacts', 'Kontakter du lägger till här kan kopplas till dina lanseringar och väljas i aktivitetsloggen. Dela dem med kollegor i samma workspace.')}
       <div class="contacts-page-header">
         <span style="font-size:13px;color:var(--muted)">${contacts.length} kontakt${contacts.length!==1?'er':''} i workspacet</span>
         <button class="inline-btn" onclick="openContactModal()"><i class="ti ti-plus"></i> Lägg till kontakt</button>
@@ -3970,9 +4146,11 @@ function renderContacts() {
             <tbody id="contacts-tbody">${rows}</tbody>
           </table>
         </div>` :
-        `<div class="empty-state">
-           <div>Inga kontakter ännu</div>
-           <div style="font-size:12px;color:var(--muted);margin-top:8px">Lägg till kontaktpersoner hos dina kunder för att koppla dem till lanseringar</div>
+        `<div class="empty-state-card">
+           <div class="empty-icon"><i class="ti ti-address-book"></i></div>
+           <div class="empty-title">Inga kontakter ännu</div>
+           <div class="empty-desc">Lägg till dina kontaktpersoner hos kedjorna och koppla dem till dina lanseringar</div>
+           <button class="inline-btn" onclick="openContactModal()">Lägg till kontakt</button>
          </div>`}
     </div>`;
 }
@@ -4380,7 +4558,7 @@ function renderBranschkunskap() {
       ${insightsHtml}
     </div>`;
   }).join('');
-  el.innerHTML = `<div class="bk-wrap">${sectionsHtml}</div>`;
+  el.innerHTML = tipHtml('branschkunskap', 'Klicka på varje insikt för att expandera och läsa mer. Innehållet är baserat på intervjuer med kategorichefer och branschforskning.') + `<div class="bk-wrap">${sectionsHtml}</div>`;
 }
 
 function toggleInsight(si, ii) {
@@ -4537,7 +4715,7 @@ function renderMarknaden() {
     </div>`
   ).join('');
 
-  el.innerHTML = `<div class="mk-wrap">
+  el.innerHTML = tipHtml('marknaden', 'En översikt över den svenska dagligvarumarknaden. Använd den för att förstå distributionspotential och regional spridning inför en lansering.') + `<div class="mk-wrap">
     <div class="mk-section">
       <div class="mk-section-title">Den svenska dagligvarumarknaden</div>
       <div class="mk-hero-stat">~350 mdr kr</div>
@@ -4586,6 +4764,7 @@ function renderAktivitetslogg() {
     return;
   }
   el.innerHTML = `<div style="padding:20px;max-width:680px;">
+    ${tipHtml('aktivitetslogg', 'Här ser du allt som händer i ditt workspace – vem som gjort vad och när. Användbart när ni är flera som delar ett konto.')}
     <div style="font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:0.45;margin-bottom:16px;">Aktivitetslogg</div>
     <div class="activity-feed">
       ${activityLog.map(a => `
@@ -5378,6 +5557,7 @@ function renderLanseringDetail(l) {
       <span style="width:14px;height:14px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
       <span class="lansering-detail-name">${l.name}</span>
       <button class="lansering-action-btn" onclick="openEditWizard('${l.id}')">Redigera</button>
+      <button class="lansering-action-btn" onclick="archiveLansering('${l.id}')" title="Arkivera lansering" style="opacity:0.55">Arkivera</button>
       <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
     </div>
 
@@ -6205,14 +6385,11 @@ function renderBrands() {
   if (!el) return;
 
   if (brands.length === 0) {
-    el.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;color:var(--muted)">
-        <div style="font-size:36px;margin-bottom:16px;opacity:0.4">◈</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text)">Inga varumärken ännu</div>
-        <div style="font-size:13px;margin-bottom:24px;max-width:340px;margin-left:auto;margin-right:auto;line-height:1.6">
-          Varumärken skapas automatiskt när du skapar din första lansering via wizarden.
-        </div>
-        <button class="inline-btn" onclick="openLanseringWizard()">+ Skapa lansering</button>
+    el.innerHTML = `<div class="empty-state-card">
+        <div class="empty-icon"><i class="ti ti-tag"></i></div>
+        <div class="empty-title">Inga varumärken ännu</div>
+        <div class="empty-desc">Lägg till ditt första varumärke för att komma igång</div>
+        <button class="inline-btn" onclick="openLanseringWizard()">Lägg till varumärke</button>
       </div>`;
     return;
   }
