@@ -3721,7 +3721,7 @@ function getLanseringDeadlines(l) {
 function renderDeadlineTimeline(l, chainId, custChecklist) {
   const win = chainId ? getNextWindowForChain(l, chainId) : null;
   if (!win) {
-    return `<div style="color:var(--muted);font-size:11px;padding:8px 0">Ingen matchande kategori hittad — koppla en kategori till produktgruppen för att se deadlines.</div>`;
+    return `<div style="color:var(--muted);font-size:11px;padding:8px 0">Ingen matchande kategori hittad — tryck på Redigera och koppla en kategori för att se deadlines.</div>`;
   }
 
   const checks = custChecklist || {};
@@ -5373,7 +5373,7 @@ function renderArticleBlock(l, custKey) {
   if (!articles.length) {
     return `<div class="section-block">
       <div class="section-block-title">Artiklar & priser</div>
-      <div style="color:var(--muted);font-size:12px;padding:8px 0">Inga artiklar — lägg till i lanseringsguiden</div>
+      <div style="color:var(--muted);font-size:12px;padding:8px 0">Inga artiklar — tryck på Redigera för att addera artiklar</div>
     </div>`;
   }
 
@@ -5836,7 +5836,7 @@ function renderDetailTabTasks(l, chainKey) {
         ${daysStr ? `<span class="task-info-sep">·</span><span class="task-info-days" style="color:${urgency}">${daysStr}</span>` : ''}
       </div>`;
     } else {
-      infoBarHtml = `<div class="task-info-bar"><span class="task-info-bar-empty">Ingen kategori kopplad — lägg till i lanseringsguiden</span></div>`;
+      infoBarHtml = `<div class="task-info-bar"><span class="task-info-bar-empty">Ingen kategori kopplad — tryck på Redigera för att koppla kategori</span></div>`;
     }
   }
 
