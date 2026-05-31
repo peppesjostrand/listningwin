@@ -67,6 +67,25 @@ function isoWeekToDate(w) {
   return d;
 }
 
+// Returnerar startdatum (måndag) för en given ISO-vecka och år som Date-objekt.
+function getWeekStartDate(weekNumber, year) {
+  const w = weeksData[year]?.[String(weekNumber)];
+  return w ? new Date(w.start) : null;
+}
+
+// Returnerar slutdatum (söndag) för en given ISO-vecka och år som Date-objekt.
+function getWeekEndDate(weekNumber, year) {
+  const w = weeksData[year]?.[String(weekNumber)];
+  return w ? new Date(w.end) : null;
+}
+
+// Returnerar antal dagar från idag till veckans start. Negativt om veckan passerat.
+function daysUntilWeek(weekNumber, year) {
+  const start = getWeekStartDate(weekNumber, year);
+  if (!start) return null;
+  return Math.round((start - TODAY) / 86400000);
+}
+
 const CW = isoWeek(TODAY);
 
 // ═══════════════════════════════════════════════
@@ -76,16 +95,20 @@ let COOP_FOOD_RAW, COOP_HEMMA_RAW;
 let ICA_LAUNCH_WEEKS, ICA_ALL_STEPS, ICA_STEP_LABELS;
 let DAGAB_RAW, DAGAB_ALL_STEPS, DAGAB_STEP_LABELS;
 let COOP_CATS = [], ICA_CATS = [], DAGAB_CATS = [];
+let weeksData = {};
 
 async function loadWindowData() {
-  const [coop, ica, dagab, coopCats, icaCats, dagabCats] = await Promise.all([
+  const [coop, ica, dagab, coopCats, icaCats, dagabCats, w2026, w2027] = await Promise.all([
     fetch('data/windows/coop.json').then(r => r.json()),
     fetch('data/windows/ica.json').then(r => r.json()),
     fetch('data/windows/dagab.json').then(r => r.json()),
     fetch('data/windows/coop-cats.json').then(r => r.json()),
     fetch('data/windows/ica-cats.json').then(r => r.json()),
     fetch('data/windows/dagab-cats.json').then(r => r.json()),
+    fetch('data/weeks/2026.json').then(r => r.json()),
+    fetch('data/weeks/2027.json').then(r => r.json()),
   ]);
+  weeksData = { 2026: w2026, 2027: w2027 };
   COOP_FOOD_RAW  = coop.coopFood;
   COOP_HEMMA_RAW = coop.coopHemma;
   COOP_CATS  = coopCats;
@@ -641,154 +664,211 @@ function renderRoundCard(r) {
 }
 
 // ═══════════════════════════════════════════════
-// RENDER OVERVIEW — brand boxes
+// RENDER OVERVIEW — ombyggd dashboard
 // ═══════════════════════════════════════════════
 function renderOverview() {
-  const allRoundsMap = {
-    coop:  [...COOP_FOOD_ROUNDS, ...(state.active.coopHemma ? COOP_HEMMA_ROUNDS : [])],
-    ica:   ICA_ROUNDS,
-    dagab: DAGAB_ROUNDS,
-  };
+  const el = document.getElementById('overview-content');
+  if (!el) return;
 
-  // Helper: get next avisering + launch for a category
-  function catDeadlines(catName, source) {
-    const catDef = CATEGORIES.find(c => c.name === catName && c.source === source);
-    if (!catDef) return null;
-    const rounds = allRoundsMap[source] || [];
-    const catRounds = rounds.filter(r => catDef.windows.includes(r.launch));
-    // Find the round with the next upcoming avisering — launch comes from same round
-    const nextAv = catRounds
-      .map(r => ({ r, step: r.steps.find(s => s.primary && s.days >= 0) }))
-      .filter(x => x.step)
-      .sort((a, b) => a.step.days - b.step.days)[0];
-    return {
-      avWeek:     nextAv ? nextAv.step.week           : null,
-      avDays:     nextAv ? nextAv.step.days           : null,
-      launchWeek: nextAv ? nextAv.r.launch            : null,
-      launchDays: nextAv ? daysLeft(nextAv.r.launchDate) : null,
-    };
-  }
+  const aktivaLanseringar = lanseringar.filter(l => !l.is_archived);
 
-  // Kom-igång-checklista när workspace är tomt
-  if (!brands.length && !lanseringar.length) {
+  // Tomt tillstånd — visa kom-igång-checklista
+  if (!brands.length && !aktivaLanseringar.length) {
     const hasBrand = brands.length > 0;
-    const hasLansering = lanseringar.filter(l => !l.is_archived).length > 0;
+    const hasLansering = aktivaLanseringar.length > 0;
     const hasContact = contacts.length > 0;
-    const allDone = hasBrand && hasLansering && hasContact;
-    // Om alla tre är klara visas normal dashboard vid nästa render
-    if (!allDone) {
-      const check = done => `<span class="onboarding-checklist-check ${done ? 'done' : ''}">${done ? '✓' : ''}</span>`;
-      document.getElementById('overview-content').innerHTML = `
-        <div class="onboarding-checklist">
-          <div class="onboarding-checklist-title">Kom igång med ListingWIN</div>
-          <div class="onboarding-checklist-sub">Tre enkla steg för att sätta upp ditt konto</div>
-          <div class="onboarding-checklist-item" onclick="showTab('brands')">
-            ${check(hasBrand)}
-            <span class="onboarding-checklist-label ${hasBrand?'done':''}">Skapa ett varumärke</span>
-            <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
-          </div>
-          <div class="onboarding-checklist-item" onclick="showTab('lansering')">
-            ${check(hasLansering)}
-            <span class="onboarding-checklist-label ${hasLansering?'done':''}">Skapa din första lansering</span>
-            <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
-          </div>
-          <div class="onboarding-checklist-item" onclick="showTab('contacts')">
-            ${check(hasContact)}
-            <span class="onboarding-checklist-label ${hasContact?'done':''}">Lägg till en kontaktperson</span>
-            <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
-          </div>
+    const check = done => `<span class="onboarding-checklist-check ${done ? 'done' : ''}">${done ? '✓' : ''}</span>`;
+    el.innerHTML = `
+      <div class="onboarding-checklist">
+        <div class="onboarding-checklist-title">Kom igång med ListingWIN</div>
+        <div class="onboarding-checklist-sub">Tre enkla steg för att sätta upp ditt konto</div>
+        <div class="onboarding-checklist-item" onclick="showTab('brands')">
+          ${check(hasBrand)}
+          <span class="onboarding-checklist-label ${hasBrand?'done':''}">Skapa ett varumärke</span>
+          <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
         </div>
-        ${tipHtml('overview_first', 'Visste du att du kan dela dina lanseringar med kollegor? Bjud in dem under Inställningar.')}`;
-      return;
-    }
+        <div class="onboarding-checklist-item" onclick="showTab('lansering')">
+          ${check(hasLansering)}
+          <span class="onboarding-checklist-label ${hasLansering?'done':''}">Skapa din första lansering</span>
+          <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
+        </div>
+        <div class="onboarding-checklist-item" onclick="showTab('contacts')">
+          ${check(hasContact)}
+          <span class="onboarding-checklist-label ${hasContact?'done':''}">Lägg till en kontaktperson</span>
+          <i class="ti ti-chevron-right" style="color:var(--muted2);font-size:12px"></i>
+        </div>
+      </div>
+      ${tipHtml('overview_first', 'Visste du att du kan dela dina lanseringar med kollegor? Bjud in dem under Inställningar.')}`;
+    return;
   }
 
-  const custColor = { coop: 'var(--coop-color)', ica: 'var(--ica-color)', dagab: 'var(--dagab-color)' };
-
-  let html = '<div class="brand-overview-grid">';
-
-  brands.forEach(b => {
-    // Collect all cat rows across all products
-    const allRows = [];
-    // Produktgrupper (ny struktur)
-    (b.productGroups||[]).forEach(g => {
-      (g.cats||[]).forEach(c => {
-        if (!state.active[c.source]) return;
-        if (c.source === 'coop' && c.catName) {
-          const catDef = CATEGORIES.find(cd => cd.name === c.catName && cd.source === 'coop');
-          if (catDef && catDef.sub === 'Coop Hemma' && !state.active.coopHemma) return;
-        }
-        const dl = catDeadlines(c.catName, c.source);
-        allRows.push({ product: g.name, catName: c.catName, source: c.source, dl });
+  // ── SEKTION 1: Mötesbokning-zoner ──
+  const moteRows = [];
+  aktivaLanseringar.forEach(l => {
+    (l.chains || []).forEach(chain => {
+      const custData = (l.customers || {})[chain] || {};
+      if (custData.checklist?.mote) return; // redan avbockad
+      const win = getNextWindowForChain(l, chain);
+      const avStep = win?.steps?.find(s => s.primary);
+      if (!avStep) return;
+      const d = daysLeft(avStep.date);
+      if (d < 0) return; // avisering passerad
+      moteRows.push({
+        brand: l.brand || l.name,
+        groupName: l.groupName || '',
+        chain,
+        daysToAv: d,
+        lid: l.id,
       });
     });
-
-    // Sort: soonest avisering first, nulls last
-    allRows.sort((a, b) => {
-      const da = a.dl?.avDays ?? 9999;
-      const db = b.dl?.avDays ?? 9999;
-      return da - db;
-    });
-
-    // Find nearest deadline for badge
-    const nearest = allRows.find(r => r.dl?.avDays != null && r.dl.avDays >= 0);
-    let badgeHtml = '';
-    if (nearest) {
-      const st = status(nearest.dl.avDays);
-      badgeHtml = '<span class="pill ' + st.cls + '" style="margin-left:auto">' + st.label + '</span>';
-    }
-
-    // Build rows
-    const rowsHtml = allRows.length === 0
-      ? '<div style="color:var(--muted);font-size:11px;padding:10px 0">Inga kopplade kategorier</div>'
-      : allRows.map(row => {
-          const logo = '<img src="' + LOGOS[row.source] + '" style="height:11px;object-fit:contain;max-width:32px;vertical-align:middle;opacity:0.85">';
-          let avHtml = '<span style="color:var(--muted)">—</span>';
-          let lvHtml = '<span style="color:var(--muted)">—</span>';
-          let pillHtml = '';
-          if (row.dl) {
-            if (row.dl.avDays != null) {
-              const st = status(row.dl.avDays);
-              const col = row.dl.avDays < 0 ? 'var(--muted)' : 'var(--text)';
-              avHtml = '<span style="color:' + col + '">v.' + row.dl.avWeek + '</span>';
-              pillHtml = row.dl.avDays >= 0 ? '<span class="pill ' + st.cls + '">' + st.label + '</span>' : '<span class="pill pill-done">Passerad</span>';
-            }
-            if (row.dl.launchWeek != null) {
-              lvHtml = '<span style="color:var(--text)">v.' + row.dl.launchWeek + '</span>';
-            }
-          }
-          return '<div class="bov-row">'
-            + '<div class="bov-logo">' + logo + '</div>'
-            + '<div class="bov-product">' + row.product + '</div>'
-            + '<div class="bov-cat">' + row.catName + '</div>'
-            + '<div class="bov-av">' + avHtml + '</div>'
-            + '<div class="bov-lv">' + lvHtml + '</div>'
-            + '<div class="bov-pill">' + pillHtml + '</div>'
-            + '</div>';
-        }).join('');
-
-    html += '<div class="bov-box">'
-      + '<div class="bov-header">'
-      +   (b.logo
-          ? '<img class="bov-brand-logo" src="' + b.logo + '" alt="' + b.name + '">'
-          : '<span class="brand-color-dot" style="background:' + (b.color||'#888') + ';width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0"></span>'
-          + '<span class="bov-brand-name">' + b.name + '</span>')
-      +   badgeHtml
-      + '</div>'
-      + '<div class="bov-table-head">'
-      +   '<div></div><div>Produkt</div><div>Kategori</div><div>Avisering</div><div>Lansering</div><div></div>'
-      + '</div>'
-      + '<div class="bov-rows">' + rowsHtml + '</div>'
-      + '</div>';
   });
+  moteRows.sort((a, b) => a.daysToAv - b.daysToAv);
 
-  html += '</div>';
+  function moteZone(d) {
+    if (d >= 45 && d <= 75) return { color: '#4ade80', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.3)', text: 'Bra läge att boka möte' };
+    if (d >= 21 && d <= 44) return { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)', text: 'Boka möte denna vecka' };
+    if (d < 21)             return { color: '#E3000B', bg: 'rgba(227,0,11,0.07)', border: 'rgba(227,0,11,0.3)', text: 'Kritiskt – boka möte omedelbart och fokusera på professionell avisering' };
+    return { color: 'var(--muted)', bg: 'var(--surface)', border: 'var(--border)', text: 'Planera mötesbokningsdatum' };
+  }
 
-  // Lägg till mobilsnabbvy
-  html += renderMobileQuick();
+  const moteHtml = moteRows.length === 0
+    ? `<div class="db-all-done"><i class="ti ti-circle-check"></i> Alla mötesbokningar är hanterade</div>`
+    : moteRows.map(r => {
+        const z = moteZone(r.daysToAv);
+        return `<div class="db-mote-row" style="border-color:${z.border};background:${z.bg}" onclick="selectLansering('${r.lid}');showTab('lansering')">
+          <div class="db-mote-left">
+            <span class="db-mote-brand">${escHtml(r.brand)}</span>
+            ${r.groupName ? `<span class="db-mote-group"> · ${escHtml(r.groupName)}</span>` : ''}
+            <span class="db-mote-chain" style="color:${CHAIN_COLORS[r.chain]}">${CHAIN_LABELS[r.chain]||r.chain}</span>
+          </div>
+          <div class="db-mote-right">
+            <span class="db-mote-days" style="color:${z.color}">${r.daysToAv}d</span>
+            <span class="db-mote-zone" style="color:${z.color}">${z.text}</span>
+          </div>
+        </div>`;
+      }).join('');
 
-  document.getElementById('overview-content').innerHTML = html;
+  // ── SEKTION 2: Varumärkeskort med aktiva lanseringar ──
+  const brandCards = brands
+    .map(b => {
+      const bLans = aktivaLanseringar.filter(l => l.brandId === b.id);
+      if (!bLans.length) return null;
+      const rows = bLans.map(l => {
+        let minDays = null;
+        const chainBadges = (l.chains || []).map(chain => {
+          const win = getNextWindowForChain(l, chain);
+          const avStep = win?.steps?.find(s => s.primary);
+          const d = avStep ? daysLeft(avStep.date) : null;
+          if (d !== null && d >= 0 && (minDays === null || d < minDays)) minDays = d;
+          const cat = l.chainData?.[chain]?.category || '';
+          return { chain, cat, d };
+        });
+        return { l, minDays, chainBadges, pct: getLanseringProgress(l) };
+      });
+      rows.sort((a, b) => (a.minDays ?? 9999) - (b.minDays ?? 9999));
+      return { b, rows, nearestDays: rows[0]?.minDays ?? null };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (a.nearestDays ?? 9999) - (b.nearestDays ?? 9999));
 
+  const brandsHtml = brandCards.length === 0
+    ? `<div style="color:var(--muted);font-size:13px;padding:8px 0">Inga aktiva lanseringar kopplade till varumärken ännu</div>`
+    : brandCards.map(({ b, rows }) => `
+      <div class="db-brand-card">
+        <div class="db-brand-header">
+          ${b.logo
+            ? `<img src="${b.logo}" style="height:20px;object-fit:contain;max-width:80px">`
+            : `<span class="db-brand-dot" style="background:${b.color||'#888'}"></span>`}
+          <span class="db-brand-name">${escHtml(b.name)}</span>
+        </div>
+        ${rows.map(({ l, minDays, chainBadges, pct }) => {
+          const daysColor = minDays !== null && minDays <= 21 ? '#E3000B' : minDays !== null && minDays <= 44 ? '#f59e0b' : 'var(--muted)';
+          const chainPills = chainBadges.map(({ chain, cat }) =>
+            `<span style="color:${CHAIN_COLORS[chain]};font-weight:600;font-size:10px">${CHAIN_LABELS[chain]}</span>`
+            + (cat ? `<span style="font-size:10px;color:var(--muted)"> ${escHtml(cat)}</span>` : '')
+          ).join('<span style="color:var(--border2);margin:0 4px">·</span>');
+          return `<div class="db-lans-row" onclick="selectLansering('${l.id}');showTab('lansering')">
+            <div class="db-lans-left">
+              <div class="db-lans-name">${escHtml(l.groupName || l.name)}</div>
+              <div class="db-lans-meta">${chainPills}</div>
+            </div>
+            <div class="db-lans-right">
+              <span class="db-lans-days" style="color:${daysColor}">${minDays !== null ? minDays + 'd' : '—'}</span>
+              <div class="db-progress-wrap"><div class="db-progress-fill" style="width:${pct}%"></div></div>
+              <span class="db-lans-pct">${pct}%</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+
+  // ── SEKTION 3: Senaste aktivitet ──
+  const recentActivity = activityLog.slice(0, 5);
+  const activityHtml = recentActivity.length === 0
+    ? `<div style="color:var(--muted);font-size:12px;padding:8px 0">Ingen aktivitet ännu</div>`
+    : recentActivity.map(a => {
+        const who = a.user_email ? a.user_email.split('@')[0] : '';
+        const timeStr = a.time instanceof Date
+          ? a.time.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '';
+        return `<div class="db-activity-item">
+          <span class="db-activity-icon">${escHtml(a.icon || '•')}</span>
+          <div class="db-activity-body">
+            <span class="db-activity-text">${escHtml(a.text)}</span>
+            <span class="db-activity-meta">${who ? escHtml(who) + ' · ' : ''}${timeStr}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+  el.innerHTML = `
+    <div class="db-layout">
+      <div class="db-main">
+        <div class="db-section">
+          <div class="db-section-header">
+            <span class="db-section-title">Mötesbokning</span>
+            <button class="db-info-btn" onclick="toggleMoteInfo(event)" aria-label="Info om mötesbokning">
+              <i class="ti ti-info-circle"></i>
+            </button>
+            <div class="db-mote-info-popup" id="mote-info-popup" style="display:none">
+              Kategorichefer bokas upp tidigt. Grön zon innebär att du har god chans att få ett möte.
+              I gul zon ökar konkurrensen om tider. I röd zon är kalendern troligen full – be alltid om möte ändå
+              och fokusera på att avisera professionellt.
+            </div>
+          </div>
+          <div class="db-mote-list">${moteHtml}</div>
+        </div>
+
+        <div class="db-section">
+          <div class="db-section-header">
+            <span class="db-section-title">Aktiva lanseringar</span>
+          </div>
+          ${brandsHtml}
+        </div>
+      </div>
+
+      <div class="db-side">
+        <div class="db-section">
+          <div class="db-section-header">
+            <span class="db-section-title">Senaste aktivitet</span>
+          </div>
+          ${activityHtml}
+        </div>
+      </div>
+    </div>`;
+}
+
+// Visar eller döljer info-popup för mötesbokning-sektionen.
+function toggleMoteInfo(e) {
+  if (e) e.stopPropagation();
+  const popup = document.getElementById('mote-info-popup');
+  if (!popup) return;
+  const isVisible = popup.style.display !== 'none';
+  popup.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    setTimeout(() => document.addEventListener('click', function close() {
+      popup.style.display = 'none';
+      document.removeEventListener('click', close);
+    }), 10);
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -3570,35 +3650,59 @@ function renderDashWidgets() {
   const el = document.getElementById('dash-widgets-area');
   if (!el || state.tab !== 'overview') { if(el) el.innerHTML=''; return; }
 
-  const urgentRounds = visibleRounds().filter(r => { const d = daysLeft(r.launchDate); return d >= 0 && d <= 21; });
-  const activeLanseringar = lanseringar.length;
-  const openTasks = lanseringar.reduce((n, l) => n + (l.tasks||[]).filter(t => t.status !== 'Klar').length, 0);
-  const unchecked = lanseringar.reduce((n, l) => {
-    const checks = l.checklist || {};
-    return n + CHECKLIST_ITEMS.filter(i => !checks[i.id]).length * (activeLanseringar > 0 ? 1/activeLanseringar : 0);
-  }, 0);
-  const nextWindow = visibleRounds().filter(r => daysLeft(r.launchDate) > 0).sort((a,b) => daysLeft(a.launchDate)-daysLeft(b.launchDate))[0];
+  const aktivaLanseringar = lanseringar.filter(l => !l.is_archived);
+
+  // Deadlines inom 14 dagar + dagar till nästa avisering
+  let deadlines14 = 0;
+  let minDaysToAv = null;
+  aktivaLanseringar.forEach(l => {
+    (l.chains || []).forEach(chain => {
+      const win = getNextWindowForChain(l, chain);
+      const avStep = win?.steps?.find(s => s.primary);
+      if (!avStep) return;
+      const d = daysLeft(avStep.date);
+      if (d < 0) return;
+      if (d <= 14) deadlines14++;
+      if (minDaysToAv === null || d < minDaysToAv) minDaysToAv = d;
+    });
+  });
+
+  // Öppna uppgifter: tasks + ej avbockade checklistposter per kedja
+  let openTasks = 0;
+  aktivaLanseringar.forEach(l => {
+    (l.chains || []).forEach(chain => {
+      const custData = (l.customers || {})[chain] || {};
+      openTasks += (custData.tasks || []).filter(t => t.status !== 'Klar').length;
+      openTasks += CHECKLIST_ITEMS.filter(i => !(custData.checklist || {})[i.id]).length;
+    });
+  });
+
+  const avColor = minDaysToAv !== null && minDaysToAv <= 21 ? '#E3000B'
+    : minDaysToAv !== null && minDaysToAv <= 44 ? '#f59e0b' : '#4ade80';
+  const avSub = minDaysToAv !== null
+    ? (minDaysToAv === 0 ? 'Idag' : `Nästa avisering om ${minDaysToAv} dagar`)
+    : 'Inga aktiva fönster';
 
   el.innerHTML = `<div class="dash-widgets">
     <div class="dash-widget" onclick="showTab('lansering')">
-      <div class="dash-widget-value" style="color:#f59e0b">${activeLanseringar}</div>
+      <div class="dash-widget-value" style="color:#f59e0b">${aktivaLanseringar.length}</div>
       <div class="dash-widget-label">Aktiva lanseringar</div>
       <div class="dash-widget-sub">Klicka för att hantera →</div>
     </div>
-    <div class="dash-widget" onclick="showTab('overview')">
-      <div class="dash-widget-value" style="color:${urgentRounds.length>0?'#E3000B':'#00AB46'}">${urgentRounds.length}</div>
-      <div class="dash-widget-label">Fönster inom 21 dagar</div>
-      <div class="dash-widget-sub">${nextWindow ? `Nästa: ${nextWindow.name}` : 'Inga akuta fönster'}</div>
+    <div class="dash-widget">
+      <div class="dash-widget-value" style="color:${deadlines14>0?'#E3000B':'#00AB46'}">${deadlines14}</div>
+      <div class="dash-widget-label">Deadlines inom 14 dagar</div>
+      <div class="dash-widget-sub">${deadlines14>0 ? 'Kräver uppmärksamhet' : 'Inga akuta deadlines'}</div>
     </div>
     <div class="dash-widget" onclick="showTab('lansering')">
-      <div class="dash-widget-value" style="color:${openTasks>0?'#0D4F35':'#00AB46'}">${openTasks}</div>
+      <div class="dash-widget-value" style="color:${openTasks>0?'#f59e0b':'#00AB46'}">${openTasks}</div>
       <div class="dash-widget-label">Öppna uppgifter</div>
-      <div class="dash-widget-sub">Ej avklarade projektuppgifter</div>
+      <div class="dash-widget-sub">Uppgifter + checklistor totalt</div>
     </div>
-    <div class="dash-widget" onclick="showTab('brands')">
-      <div class="dash-widget-value" style="color:#a78bfa">${brands.length}</div>
-      <div class="dash-widget-label">Varumärken</div>
-      <div class="dash-widget-sub">${(brands.reduce((n,b) => n+(b.productGroups||[]).reduce((m,g)=>m+(g.articles||[]).length,0),0))} artiklar registrerade</div>
+    <div class="dash-widget">
+      <div class="dash-widget-value" style="color:${avColor}">${minDaysToAv !== null ? minDaysToAv : '—'}</div>
+      <div class="dash-widget-label">Dagar till nästa avisering</div>
+      <div class="dash-widget-sub">${avSub}</div>
     </div>
   </div>`;
 }
