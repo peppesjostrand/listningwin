@@ -3981,6 +3981,7 @@ document.addEventListener('click', (e) => {
 
 // ── 7. AKTIVITETSLOGG ──
 let activityLog = [];
+let activityLogChannel = null;
 
 function addActivity(emoji, text) {
   activityLog.unshift({ icon: emoji, text, time: new Date(), user_email: currentUser?.email });
@@ -4027,7 +4028,8 @@ async function loadActivityLog() {
 
 function subscribeActivityLog() {
   if (!currentWorkspaceId) return;
-  supabaseClient
+  if (activityLogChannel) return;
+  activityLogChannel = supabaseClient
     .channel('activity_log_realtime')
     .on('postgres_changes', {
       event: 'INSERT',
@@ -4045,6 +4047,7 @@ function subscribeActivityLog() {
     })
     .subscribe();
 }
+
 
 function formatActivityTime(date) {
   const d = date.toLocaleDateString('sv-SE');
