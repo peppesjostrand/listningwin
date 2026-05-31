@@ -1430,7 +1430,7 @@ async function authRegister() {
 }
 
 async function authOnLogin(user) {
-  console.log('authOnLogin: user=', user?.email);
+  console.log('[Onboarding] authOnLogin user_metadata:', user?.user_metadata);
   currentUser = user;
   // Get workspace — use limit(1) instead of single() to avoid errors
   const { data: memberships } = await supabaseClient
@@ -2496,6 +2496,7 @@ async function archiveLansering(lid) {
   const l = getLansering(lid);
   if (!l) return;
   l.is_archived = true;
+  l.archived_at = new Date().toISOString();
   await saveLansering(lid);
   if (selectedLanseringId === lid) selectedLanseringId = null;
   addActivity('', `Lansering "${l.name}" arkiverad`);
@@ -2744,12 +2745,20 @@ function renderArkiv() {
       </div>`
     : `<div style="margin-bottom:24px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Arkiverade lanseringar</div>
-        ${arkiverade.map(l => `
+        ${arkiverade.map(l => {
+          const archivedLabel = l.archived_at
+            ? 'Arkiverades ' + new Date(l.archived_at).toLocaleDateString('sv-SE', { year: 'numeric', month: 'long', day: 'numeric' })
+            : '';
+          return `
           <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
             <span style="width:10px;height:10px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
-            <span style="font-size:13px;font-weight:500;flex:1">${escHtml(l.name)}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:500">${escHtml(l.name)}</div>
+              ${archivedLabel ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">${archivedLabel}</div>` : ''}
+            </div>
             <button class="inline-btn" style="font-size:11px;padding:4px 10px" onclick="reactivateLansering('${l.id}')">Återaktivera</button>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>`;
 
   el.innerHTML = `<div class="history-section">
@@ -3369,7 +3378,10 @@ async function setOnboardingCompleted() {
 // Avgör om välkomstflödet ska visas för den inloggade användaren.
 async function shouldShowOnboarding() {
   if (!currentUser) return false;
-  const meta = currentUser.user_metadata || {};
+  // Hämta färsk metadata från servern — undviker stale JWT-cache
+  const { data: { user: freshUser } } = await supabaseClient.auth.getUser();
+  const meta = freshUser?.user_metadata || {};
+  console.log('[Onboarding] shouldShowOnboarding — user_metadata:', meta, '— onboarding_completed:', meta.onboarding_completed);
   if (meta.onboarding_completed) return false;
   // Hoppa över om workspace redan har data — troligtvis inbjuden som kollega
   if (brands.length > 0 || lanseringar.length > 0) {
