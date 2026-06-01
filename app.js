@@ -4523,7 +4523,7 @@ async function addContactToLansering(lid, contactId, rerender = true) {
     addNotif('Kunde inte koppla kontakt: ' + error.message, 'error'); return;
   }
   lanseringContactLinks[lid] = [...(Array.isArray(ids) ? ids : []), contactId];
-  if (rerender && state.tab === 'lansering') renderLansering();
+  if (rerender && state.tab === 'lansering') { renderLansering(); showSaved(`save-ind-contacts-lans-${lid}`); }
 }
 
 async function addContactToLanseringFromSelect(lid) {
@@ -4606,6 +4606,7 @@ async function removeContactFromLansering(lid, contactId) {
   if (error) { addNotif('Kunde inte ta bort koppling: ' + error.message, 'error'); return; }
   lanseringContactLinks[lid] = (lanseringContactLinks[lid] || []).filter(id => id !== contactId);
   renderLansering();
+  showSaved(`save-ind-contacts-lans-${lid}`);
 }
 
 function renderLanseringContactsSection(l) {
@@ -4639,7 +4640,10 @@ function renderLanseringContactsSection(l) {
 
   return `
     <div class="lansering-contacts-section">
-      <div class="lansering-contacts-title"><i class="ti ti-address-book" style="font-size:12px;margin-right:5px;opacity:0.7"></i>Kontaktpersoner</div>
+      <div class="lansering-contacts-title" style="display:flex;align-items:center">
+        <i class="ti ti-address-book" style="font-size:12px;margin-right:5px;opacity:0.7"></i>Kontaktpersoner
+        <span id="save-ind-contacts-lans-${l.id}" style="margin-left:auto"></span>
+      </div>
       ${linked.length
         ? `<div class="lansering-contacts-list">${linkedRows}</div>`
         : `<div style="color:var(--muted);font-size:12px;margin-bottom:8px">Inga kontakter kopplade till denna lansering</div>`}
@@ -5872,6 +5876,7 @@ function saveCustomerDate(lid, custKey, field, value) {
   l.chainData[custKey][field] = value;
   saveLansering(lid);
   if (state.tab === 'overview') renderOverview();
+  showSaved(`save-ind-custdate-${lid}-${custKey}`);
 }
 
 // ── PER-KUND UPPGIFTER ──
@@ -6046,6 +6051,8 @@ function saveEditActivity(lid, type, origIdx) {
   saveLansering(lid);
   editingActivityEntry = null;
   renderLansering();
+  const _actChain = getLansering(lid)?.activeCustomerTab;
+  if (_actChain) showSaved(`save-ind-activity-${lid}-${_actChain}`);
 }
 
 function cancelEditActivity() {
@@ -6100,6 +6107,7 @@ function renderDetailTabTasks(l, chainKey) {
           value="${cd.customLanseringDate || ''}"
           onchange="saveCustomerDate('${l.id}','${chainKey}','customLanseringDate',this.value)">
       </div>
+      <span id="save-ind-custdate-${l.id}-${chainKey}" style="align-self:center;margin-left:auto"></span>
     </div>`;
   }
 
@@ -6856,7 +6864,7 @@ function renderBrands() {
     </div>`;
   }).join('');
 
-  el.innerHTML = `${tip}<div class="brand-register">${cards}</div>`;
+  el.innerHTML = `${tip}<div style="height:18px;text-align:right;margin-bottom:4px"><span id="save-ind-brands"></span></div><div class="brand-register">${cards}</div>`;
 }
 
 // Växlar expand/kollaps för en produktgrupp på varumärkessidan.
@@ -6899,6 +6907,7 @@ async function saveBrandGroupName(brandId, oldName, newName) {
   }
   if (matching.length) addNotif('Produktgruppsnamn uppdaterat', 'success');
   renderBrands();
+  showSaved('save-ind-brands');
 }
 
 // Öppnar inline-redigering för ett artikelnamn direkt i DOM:en.
@@ -6929,6 +6938,7 @@ async function saveArticleName(brandId, articleId, newName) {
   }
   if (matching.length) addNotif('Artikelnamn uppdaterat', 'success');
   renderBrands();
+  showSaved('save-ind-brands');
 }
 
 function renderBrandWindows(brand, allCats) {
