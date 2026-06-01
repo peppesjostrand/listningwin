@@ -5746,10 +5746,17 @@ function renderLanseringDetail(l) {
   const activeChain = l.activeCustomerTab || customers[0]?.id || '';
   const currentTab = detailTabState[l.id] || 'tasks';
 
-  // Chain dropdown options
-  const chainOptions = customers.map(c =>
-    `<option value="${escHtml(c.id)}" ${c.id === activeChain ? 'selected' : ''}>${escHtml(c.label)}</option>`
-  ).join('');
+  // Chain dropdown options — kedjor visar DVH, fria kunder visar kundtyp om satt.
+  const chainOptions = customers.map(c => {
+    let displayLabel = c.label;
+    if (c.type === 'chain') {
+      displayLabel = `${c.label} — DVH`;
+    } else {
+      const custType = l.chainData?.[c.id]?.type;
+      if (custType) displayLabel = `${c.label} — ${custType}`;
+    }
+    return `<option value="${escHtml(c.id)}" ${c.id === activeChain ? 'selected' : ''}>${escHtml(displayLabel)}</option>`;
+  }).join('');
 
   // Remove button for active chain/customer
   const activeCustomer = customers.find(c => c.id === activeChain);
