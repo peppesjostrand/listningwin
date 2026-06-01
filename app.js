@@ -5721,10 +5721,25 @@ function renderArticleBlock(l, custKey) {
     </div>`;
   }).join('');
 
+  // Bygg "Kopiera från"-dropdown för andra kunder i samma lansering.
+  const otherCustomers = getLanseringCustomers(l).filter(c => c.id !== custKey);
+  const copyFromHtml = otherCustomers.length ? `
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:10px;color:var(--muted)">Kopiera från</span>
+      <select class="contact-input" style="width:auto;font-size:11px;padding:3px 6px"
+        onchange="if(this.value)confirmCopyArticles('${l.id}','${custKey}',this.value,this);else void(0)">
+        <option value="">— välj —</option>
+        ${otherCustomers.map(c => `<option value="${escHtml(c.id)}">${escHtml(custKeyLabel(c.id))}</option>`).join('')}
+      </select>
+    </div>` : '';
+
   return `<div class="section-block">
-    <div class="section-block-title" style="display:flex;align-items:center;justify-content:space-between">
+    <div class="section-block-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
       <span>Artiklar & priser</span>
-      <span id="save-ind-articles-${l.id}-${custKey}"></span>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${copyFromHtml}
+        <span id="save-ind-articles-${l.id}-${custKey}"></span>
+      </div>
     </div>
     <div class="article-prices-list">${rowsHtml}</div>
   </div>`;
@@ -5746,6 +5761,40 @@ function saveArticlePriceField(lid, custKey, articleId, field, value) {
   l.articlePrices[custKey][articleId][field] = value;
   saveLansering(lid);
   showSaved(`save-ind-articles-${lid}-${custKey}`);
+}
+
+// Visar bekräftelsedialog och kopierar artikeldata (ej prisuppgifter) från en annan kund.
+function confirmCopyArticles(lid, targetCustKey, sourceCustKey, selectEl) {
+  const sourceLabel = custKeyLabel(sourceCustKey);
+  if (!confirm(`Vill du kopiera artiklar från ${sourceLabel}?\nBefintliga artikeldata ersätts.`)) {
+    selectEl.value = '';
+    return;
+  }
+  copyArticlesFromChain(lid, targetCustKey, sourceCustKey);
+  selectEl.value = '';
+}
+
+// Kopierar icke-prisspecifika artikelfält från en kund till en annan i samma lansering.
+function copyArticlesFromChain(lid, targetCustKey, sourceCustKey) {
+  const l = getLansering(lid);
+  if (!l) return;
+  if (!l.articlePrices) l.articlePrices = {};
+  if (!l.articlePrices[targetCustKey]) l.articlePrices[targetCustKey] = {};
+  const sourceArtPrices = (l.articlePrices || {})[sourceCustKey] || {};
+  const copyFields = ['artikelnummer', 'ean_kfp', 'ean_dfp', 'ean_pall', 'innehall'];
+  (l.articles || []).forEach(art => {
+    const src = sourceArtPrices[art.id] || {};
+    if (!l.articlePrices[targetCustKey][art.id]) l.articlePrices[targetCustKey][art.id] = {};
+    copyFields.forEach(field => {
+      if (src[field] !== undefined && src[field] !== '') {
+        l.articlePrices[targetCustKey][art.id][field] = src[field];
+      }
+    });
+  });
+  saveLansering(lid);
+  addActivity('', `Artikeldata kopierad från ${custKeyLabel(sourceCustKey)} till ${custKeyLabel(targetCustKey)} i "${l.name}"`);
+  renderLansering();
+  showSaved(`save-ind-articles-${lid}-${targetCustKey}`);
 }
 
 function calcArticleRow(lid, custKey, articleId) {
@@ -5836,6 +5885,7 @@ function renderLanseringDetail(l) {
       <span style="width:14px;height:14px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
       <span class="lansering-detail-name">${l.name}</span>
       <button class="lansering-action-btn" onclick="openEditWizard('${l.id}')">Redigera</button>
+      <button class="lansering-action-btn" onclick="openExportModal('${l.id}')"><i class="ti ti-download" style="font-size:11px;margin-right:3px"></i>Exportera</button>
       <button class="lansering-action-btn" onclick="archiveLansering('${l.id}')" title="Arkivera lansering" style="opacity:0.55">Arkivera</button>
       <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
     </div>
@@ -6311,15 +6361,6 @@ function renderDetailTabDeadlines(l, chainKey) {
     <span>Uppgift</span><span>Deadline</span><span>Ansvarig</span>
   </div>`;
 
-  const exportBtns = `<div style="display:flex;gap:8px;margin-bottom:16px">
-    <button class="inline-btn" style="font-size:11px;padding:5px 10px" onclick="exportTab4Excel('${l.id}','${chainKey}')">
-      <i class="ti ti-file-spreadsheet" style="margin-right:4px"></i>Excel
-    </button>
-    <button class="lansering-action-btn" style="font-size:11px" onclick="exportTab4PDF('${l.id}','${chainKey}')">
-      <i class="ti ti-file-pdf" style="margin-right:4px"></i>PDF
-    </button>
-  </div>`;
-
   // Bygg Uppgiftsdeadlines — grunduppgifter och egna uppgifter med datum.
   const taskRows = [];
   FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id)).forEach(item => {
@@ -6357,11 +6398,10 @@ function renderDetailTabDeadlines(l, chainKey) {
       ${taskDeadlinesHtml}
     </div>`;
 
-  if (!isChain) return `${exportBtns}${taskSection}`;
+  if (!isChain) return taskSection;
 
   // Sektion 1: Processchema — kedjans fasta steg sorterade på datum.
   return `
-    ${exportBtns}
     <div>
       ${sectionLabel('Processchema')}
       ${colHeader}
@@ -6370,19 +6410,192 @@ function renderDetailTabDeadlines(l, chainKey) {
     ${taskSection}`;
 }
 
+// Öppnar exportmodalen för en lansering.
+function openExportModal(lid) {
+  const l = getLansering(lid);
+  if (!l) return;
+  document.getElementById('export-modal-overlay')?.remove();
+  const customers = getLanseringCustomers(l);
+  const chainOpts = customers.map(c =>
+    `<option value="${escHtml(c.id)}">${escHtml(custKeyLabel(c.id))}</option>`
+  ).join('');
+  const overlay = document.createElement('div');
+  overlay.className = 'lansering-modal';
+  overlay.id = 'export-modal-overlay';
+  overlay.style.display = 'flex';
+  overlay.onclick = e => { if (e.target === overlay) closeExportModal(); };
+  overlay.innerHTML = `
+    <div class="lansering-modal-box" style="max-width:380px;width:100%">
+      <div class="lansering-modal-title"><i class="ti ti-download" style="margin-right:6px"></i>Exportera lansering</div>
+      <div class="lansering-form-group">
+        <label class="lansering-form-label">Vad ska exporteras?</label>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="radio" name="export-scope-${lid}" value="all" checked style="accent-color:var(--accent)">
+            Hela lanseringen <span style="font-size:11px;color:var(--muted)">(4 flikar)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;flex-wrap:wrap">
+            <input type="radio" name="export-scope-${lid}" value="chain" style="accent-color:var(--accent)">
+            Specifik kund:
+            <select id="export-chain-sel-${lid}" class="contact-input" style="width:auto;min-width:120px" onclick="document.querySelector('input[name=export-scope-${lid}][value=chain]').checked=true">
+              ${chainOpts}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer" style="margin-top:20px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="inline-btn secondary" onclick="closeExportModal()">Avbryt</button>
+        <button class="inline-btn" onclick="runExportFromModal('${lid}')">
+          <i class="ti ti-file-spreadsheet" style="margin-right:4px"></i>Exportera till Excel
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closeExportModal() {
+  document.getElementById('export-modal-overlay')?.remove();
+}
+
+// Kör exporten baserat på valet i exportmodalen.
+function runExportFromModal(lid) {
+  const scope = document.querySelector(`input[name="export-scope-${lid}"]:checked`)?.value || 'all';
+  if (scope === 'all') {
+    exportFullLansering(lid);
+  } else {
+    const chainKey = document.getElementById(`export-chain-sel-${lid}`)?.value;
+    if (chainKey) exportTab4Excel(lid, chainKey);
+  }
+  closeExportModal();
+}
+
 // Hjälp: hämtar displaynamn för en e-postadress från wsTeamMembers.
 function ownerDisplayName(email) {
   if (!email) return '';
   return wsTeamMembers.find(m => m.email === email)?.name || email.split('@')[0];
 }
 
-// Exporterar Tab 4-data (Processchema + Uppgiftsdeadlines) som Excel-fil (.xlsx).
-// Returnerar ett läsbart visningsnamn för en kund-nyckel (kjedja eller fri kund).
+// Returnerar ett läsbart visningsnamn för en kund-nyckel (kedja eller fri kund).
 function custKeyLabel(chainKey) {
   if (CHAIN_LABELS[chainKey]) return CHAIN_LABELS[chainKey];
   return chainKey.replace(/^free_/, '').replace(/_/g, ' ');
 }
 
+// Skapar ett säkert filnamn från lansering — ersätter specialtecken med understreck.
+function safeLanseringFilename(l) {
+  const clean = l.name.replace(/[^a-zA-Z0-9åäöÅÄÖ]/g, ' ').trim().replace(/\s+/g, '_');
+  const today = new Date().toISOString().slice(0, 10);
+  return `${clean}_${today}.xlsx`;
+}
+
+// Exporterar hela lanseringen som Excel med fyra flikar.
+function exportFullLansering(lid) {
+  const l = getLansering(lid);
+  if (!l || typeof XLSX === 'undefined') { addNotif('SheetJS laddades inte — kontrollera nätverksanslutningen', 'error'); return; }
+  const customers = getLanseringCustomers(l);
+  const wb = XLSX.utils.book_new();
+
+  // ── Flik 1: Översikt ──
+  const ovRows = [['Varumärke', 'Produktgrupp', 'Kund', 'Avisering', 'Lansering', 'Möte bokat']];
+  customers.forEach(c => {
+    const isChain = c.type === 'chain';
+    let avisering = '—', lansering = '—';
+    if (isChain) {
+      const win = getNextWindowForChain(l, c.id);
+      const avStep = win?.steps?.find(s => s.primary);
+      if (avStep) avisering = `v.${avStep.week}`;
+      if (win?.launch) lansering = `v.${win.launch}`;
+    } else {
+      const cd = l.chainData?.[c.id];
+      if (cd?.customAviseringDate) avisering = toSwedishDate(cd.customAviseringDate);
+      if (cd?.customLanseringDate) lansering = toSwedishDate(cd.customLanseringDate);
+    }
+    const mote = !!(l.customers?.[c.id]?.checklist?.mote) ? 'Ja' : 'Nej';
+    ovRows.push([l.brand || l.name, l.groupName || '', custKeyLabel(c.id), avisering, lansering, mote]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ovRows), 'Översikt');
+
+  // ── Flik 2: Uppgifter ──
+  const taskRows = [];
+  customers.forEach((c, ci) => {
+    if (ci > 0) taskRows.push([]);
+    taskRows.push([`=== ${custKeyLabel(c.id)} ===`]);
+    taskRows.push(['Uppgift', 'Deadline', 'Ansvarig']);
+    const custData = (l.customers || {})[c.id] || {};
+    const checks = custData.checklist || {};
+    const taskMeta = custData.taskMeta || {};
+    const removedFixed = custData.removedFixedTasks || [];
+    FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id)).forEach(item => {
+      const meta = taskMeta[item.id] || {};
+      const iso = toISODate(meta.date || '');
+      const dateStr = iso ? new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      taskRows.push([item.label, dateStr, ownerDisplayName(meta.owner || '')]);
+    });
+    (custData.tasks || []).forEach(t => {
+      const iso = toISODate(t.deadline || '');
+      const dateStr = iso ? new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      taskRows.push([t.name || 'Namnlös uppgift', dateStr, ownerDisplayName(t.owner || '')]);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(taskRows), 'Uppgifter');
+
+  // ── Flik 3: Artiklar och priser ──
+  const artRows = [];
+  const artCols = ['Artikel', 'Artikelnr', 'EAN KFP', 'EAN DFP', 'EAN PALL', 'Innehåll', 'Kostnad kr', 'Listpris kr', 'Rabatt %', 'Butikspåslag %', 'Konsumentpris kr', 'Moms'];
+  customers.forEach((c, ci) => {
+    if (ci > 0) artRows.push([]);
+    artRows.push([`=== ${custKeyLabel(c.id)} ===`]);
+    artRows.push(artCols);
+    const artPrices = (l.articlePrices || {})[c.id] || {};
+    (l.articles || []).forEach(art => {
+      const p = artPrices[art.id] || {};
+      artRows.push([art.name || '', p.artikelnummer || '', p.ean_kfp || p.ean || '', p.ean_dfp || '', p.ean_pall || '', p.innehall || '', p.kostnad || '', p.listpris || '', p.rabatt || '', p.butikspaslag || '', p.konsumentpris || '', p.moms || '']);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(artRows), 'Artiklar och priser');
+
+  // ── Flik 4: Deadlines ──
+  const dlRows = [];
+  customers.forEach((c, ci) => {
+    if (ci > 0) dlRows.push([]);
+    dlRows.push([`=== ${custKeyLabel(c.id)} ===`]);
+    const isChain = c.type === 'chain';
+    const custData = (l.customers || {})[c.id] || {};
+    const checks = custData.checklist || {};
+    const taskMeta = custData.taskMeta || {};
+    const removedFixed = custData.removedFixedTasks || [];
+    if (isChain) {
+      const win = getNextWindowForChain(l, c.id);
+      if (win) {
+        dlRows.push(['Processchema']);
+        dlRows.push(['Uppgift', 'Datum', 'Ansvarig']);
+        win.steps.forEach(s => dlRows.push([s.label, s.date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }), '']));
+        dlRows.push([]);
+      }
+    }
+    const taskDeadlines = [];
+    FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id)).forEach(item => {
+      const meta = taskMeta[item.id] || {};
+      const iso = toISODate(meta.date || '');
+      if (iso) taskDeadlines.push([iso, item.label, new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }), ownerDisplayName(meta.owner || '')]);
+    });
+    (custData.tasks || []).forEach(t => {
+      const iso = toISODate(t.deadline || '');
+      if (iso) taskDeadlines.push([iso, t.name || 'Namnlös', new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }), ownerDisplayName(t.owner || '')]);
+    });
+    taskDeadlines.sort((a, b) => a[0].localeCompare(b[0]));
+    if (taskDeadlines.length) {
+      dlRows.push(['Uppgiftsdeadlines']);
+      dlRows.push(['Uppgift', 'Datum', 'Ansvarig']);
+      taskDeadlines.forEach(r => dlRows.push(r.slice(1)));
+    }
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dlRows), 'Deadlines');
+
+  XLSX.writeFile(wb, safeLanseringFilename(l));
+}
+
+// Exporterar specifik kund/kedja som Excel (.xlsx).
 function exportTab4Excel(lid, chainKey) {
   const l = getLansering(lid);
   if (!l || typeof XLSX === 'undefined') { addNotif('SheetJS laddades inte — kontrollera nätverksanslutningen', 'error'); return; }
