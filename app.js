@@ -4266,6 +4266,14 @@ function formatActivityTime(date) {
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// Visar ett diskret "Sparad"-meddelande i ett ankarelement i 2 sekunder.
+function showSaved(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '<span class="saved-indicator"><i class="ti ti-check"></i> Sparad</span>';
+  setTimeout(() => { const e = document.getElementById(containerId); if (e) e.innerHTML = ''; }, 2100);
+}
 function contactCustomerBg(c) {
   return c==='coop' ? 'rgba(0,171,70,0.12)'
        : c==='ica'  ? 'rgba(227,0,11,0.12)'
@@ -4366,6 +4374,7 @@ function renderContacts() {
       ${tipHtml('contacts', 'Kontakter du lägger till här kan kopplas till dina lanseringar och väljas i aktivitetsloggen. Dela dem med kollegor i samma workspace.')}
       <div class="contacts-page-header">
         <span style="font-size:13px;color:var(--muted)">${contacts.length} kontakt${contacts.length!==1?'er':''} i workspacet</span>
+        <span id="save-ind-contacts"></span>
         <button class="inline-btn" onclick="openContactModal()"><i class="ti ti-plus"></i> Lägg till kontakt</button>
       </div>
       ${contacts.length ? `
@@ -4481,7 +4490,7 @@ async function saveContact() {
 
   const savedLid = contactModalLanseringId;
   closeContactModal();
-  if (state.tab === 'contacts') renderContacts();
+  if (state.tab === 'contacts') { renderContacts(); showSaved('save-ind-contacts'); }
   if (state.tab === 'lansering' && savedLid) renderLansering();
 }
 
@@ -5690,7 +5699,10 @@ function renderArticleBlock(l, custKey) {
   }).join('');
 
   return `<div class="section-block">
-    <div class="section-block-title">Artiklar & priser</div>
+    <div class="section-block-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Artiklar & priser</span>
+      <span id="save-ind-articles-${l.id}-${custKey}"></span>
+    </div>
     <div class="article-prices-list">${rowsHtml}</div>
   </div>`;
 }
@@ -5710,6 +5722,7 @@ function saveArticlePriceField(lid, custKey, articleId, field, value) {
   if (!l.articlePrices[custKey][articleId]) l.articlePrices[custKey][articleId] = {};
   l.articlePrices[custKey][articleId][field] = value;
   saveLansering(lid);
+  showSaved(`save-ind-articles-${lid}-${custKey}`);
 }
 
 function calcArticleRow(lid, custKey, articleId) {
@@ -5823,7 +5836,6 @@ function renderLanseringDetail(l) {
         <option value="DVH">DVH</option>
         <option value="SVH">SVH</option>
         <option value="Foodservice">Foodservice</option>
-        <option value="Servicehandel">Servicehandel</option>
         <option value="Övrigt">Övrigt</option>
       </select>
       <button class="inline-btn" style="flex-shrink:0" onclick="addFreeCustomer('${l.id}')">Lägg till</button>
@@ -5848,6 +5860,7 @@ function toggleCustomerCheckItem(lid, custKey, itemId, checked) {
   saveLansering(lid);
   addActivity('', `${CHECKLIST_ITEMS.find(i=>i.id===itemId)?.label} — ${l.name}`);
   renderLansering();
+  showSaved(`save-ind-tasks-${lid}-${custKey}`);
 }
 
 // Sparar eget aviserings- eller lanseringsdatum för en fri kund i chainData.
@@ -5882,6 +5895,7 @@ function updateCustomerTask(lid, custKey, idx, field, value) {
   if (field === 'status') {
     addActivity('', `Uppgift "${task.name || 'Namnlös'}" → ${value} (${custKey}, ${l.name})`);
   }
+  showSaved(`save-ind-tasks-${lid}-${custKey}`);
 }
 
 function deleteCustomerTask(lid, custKey, idx) {
@@ -5967,6 +5981,7 @@ function saveFixedTaskMeta(lid, custKey, itemId, field, value) {
   if (!l.customers[custKey].taskMeta[itemId]) l.customers[custKey].taskMeta[itemId] = {};
   l.customers[custKey].taskMeta[itemId][field] = value;
   saveLansering(lid);
+  showSaved(`save-ind-tasks-${lid}-${custKey}`);
 }
 
 // Tar bort en grunduppgift från den aktuella lansering+kundkombinationen.
@@ -5997,6 +6012,7 @@ function addActivityEntry(lid, custKey) {
   saveLansering(lid);
   addActivity('', `Aktivitet: ${custKey} — ${text.slice(0, 40)}`);
   renderLansering();
+  showSaved(`save-ind-activity-${lid}-${custKey}`);
 }
 
 // ── ACTIVITY ENTRY EDITING ──
@@ -6124,6 +6140,7 @@ function renderDetailTabTasks(l, chainKey) {
 
   return `
     ${infoBarHtml}
+    <div style="height:16px;text-align:right;margin-bottom:2px"><span id="save-ind-tasks-${l.id}-${chainKey}"></span></div>
     <div class="hybrid-task-list">
       ${fixedRowsHtml}
       ${customRowsHtml}
@@ -6210,7 +6227,10 @@ function renderDetailTabActivity(l, chainKey) {
   return `
     ${contactsSection}
     <div style="margin-bottom:12px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Logga aktivitet</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">Logga aktivitet</div>
+        <span id="save-ind-activity-${l.id}-${chainKey}"></span>
+      </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         ${contactSelectHtml}
         <input type="date" class="contact-input" id="act-date-${l.id}-${chainKey}"
