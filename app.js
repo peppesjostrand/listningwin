@@ -4283,27 +4283,36 @@ function contactCustomerBg(c) {
 
 async function loadWsTeamMembers() {
   if (!currentWorkspaceId) return;
-  // Mät tid för att hämta teammedlemmar med e-postadresser
-  console.time('Supabase: hämta teammedlemmar');
-  const { data } = await supabaseClient.rpc('get_workspace_members_with_email', {
+  const { data, error } = await supabaseClient.rpc('get_workspace_members_with_email', {
     p_workspace_id: currentWorkspaceId
   });
-  console.timeEnd('Supabase: hämta teammedlemmar');
-  // Fix 1 debug: logga rådata från RPC för att se vilka fält som returneras
-  console.log('[wsTeamMembers] RPC raw:', JSON.stringify(data));
-  wsTeamMembers = (data || []).map(m => ({
-    user_id: m.user_id,
-    email: m.email || '',
-    name: [m.first_name, m.last_name].filter(Boolean).join(' ') || (m.email ? m.email.split('@')[0] : 'Okänd')
-  }));
-  // Berika nuvarande användares post med korrekt namn från user_metadata om RPC saknar det
+  if (!error && data) {
+    wsTeamMembers = data.map(m => ({
+      user_id: m.user_id,
+      email: m.email || '',
+      name: [m.first_name, m.last_name].filter(Boolean).join(' ') || (m.email ? m.email.split('@')[0] : 'Okänd')
+    }));
+  } else {
+    // RPC saknas (404) eller fel — töm listan, currentUser läggs till nedan
+    if (error) console.warn('get_workspace_members_with_email:', error.message, '— kör supabase-workspace-members-migration.sql i Supabase SQL Editor');
+    wsTeamMembers = [];
+  }
+  // Garantera att nuvarande användare alltid finns med korrekt Förnamn Efternamn
   if (currentUser) {
     const meta = currentUser.user_metadata || {};
     const fullName = [meta.first_name, meta.last_name].filter(Boolean).join(' ');
-    const myEntry = wsTeamMembers.find(m => m.user_id === currentUser.id);
-    if (myEntry && fullName) myEntry.name = fullName;
+    const myEmail = currentUser.email || '';
+    const existing = wsTeamMembers.find(m => m.user_id === currentUser.id);
+    if (existing) {
+      if (fullName) existing.name = fullName;
+    } else {
+      wsTeamMembers.push({
+        user_id: currentUser.id,
+        email: myEmail,
+        name: fullName || (myEmail ? myEmail.split('@')[0] : 'Okänd')
+      });
+    }
   }
-  console.log('[wsTeamMembers] processed:', wsTeamMembers.map(m => `${m.email} → "${m.name}"`));
 }
 
 async function loadContacts() {
