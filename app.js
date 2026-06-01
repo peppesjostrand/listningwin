@@ -6377,11 +6377,17 @@ function ownerDisplayName(email) {
 }
 
 // Exporterar Tab 4-data (Processchema + Uppgiftsdeadlines) som Excel-fil (.xlsx).
+// Returnerar ett läsbart visningsnamn för en kund-nyckel (kjedja eller fri kund).
+function custKeyLabel(chainKey) {
+  if (CHAIN_LABELS[chainKey]) return CHAIN_LABELS[chainKey];
+  return chainKey.replace(/^free_/, '').replace(/_/g, ' ');
+}
+
 function exportTab4Excel(lid, chainKey) {
   const l = getLansering(lid);
   if (!l || typeof XLSX === 'undefined') { addNotif('SheetJS laddades inte — kontrollera nätverksanslutningen', 'error'); return; }
   const isChain = !chainKey.startsWith('free_');
-  const chainLabel = CHAIN_LABELS[chainKey] || chainKey;
+  const chainLabel = custKeyLabel(chainKey);
   const custData = (l.customers || {})[chainKey] || {};
   const checks = custData.checklist || {};
   const taskMeta = custData.taskMeta || {};
@@ -6430,7 +6436,7 @@ function exportTab4PDF(lid, chainKey) {
   if (!l || !window.jspdf) { addNotif('jsPDF laddades inte — kontrollera nätverksanslutningen', 'error'); return; }
   const { jsPDF } = window.jspdf;
   const isChain = !chainKey.startsWith('free_');
-  const chainLabel = CHAIN_LABELS[chainKey] || chainKey;
+  const chainLabel = custKeyLabel(chainKey);
   const custData = (l.customers || {})[chainKey] || {};
   const checks = custData.checklist || {};
   const taskMeta = custData.taskMeta || {};
