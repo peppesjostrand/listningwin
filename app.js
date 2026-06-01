@@ -4289,11 +4289,21 @@ async function loadWsTeamMembers() {
     p_workspace_id: currentWorkspaceId
   });
   console.timeEnd('Supabase: hämta teammedlemmar');
+  // Fix 1 debug: logga rådata från RPC för att se vilka fält som returneras
+  console.log('[wsTeamMembers] RPC raw:', JSON.stringify(data));
   wsTeamMembers = (data || []).map(m => ({
     user_id: m.user_id,
     email: m.email || '',
     name: [m.first_name, m.last_name].filter(Boolean).join(' ') || (m.email ? m.email.split('@')[0] : 'Okänd')
   }));
+  // Berika nuvarande användares post med korrekt namn från user_metadata om RPC saknar det
+  if (currentUser) {
+    const meta = currentUser.user_metadata || {};
+    const fullName = [meta.first_name, meta.last_name].filter(Boolean).join(' ');
+    const myEntry = wsTeamMembers.find(m => m.user_id === currentUser.id);
+    if (myEntry && fullName) myEntry.name = fullName;
+  }
+  console.log('[wsTeamMembers] processed:', wsTeamMembers.map(m => `${m.email} → "${m.name}"`));
 }
 
 async function loadContacts() {
@@ -6287,7 +6297,19 @@ function renderDetailTabDeadlines(l, chainKey) {
   const customTasks = custData.tasks || [];
   const removedFixed = custData.removedFixedTasks || [];
 
-  const sectionLabel = txt => `<div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">${txt}</div>`;
+  const sectionLabel = txt => `<div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${txt}</div>`;
+  const colHeader = `<div style="display:grid;grid-template-columns:1fr 110px 110px;gap:8px;padding:5px 0;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid var(--border);margin-bottom:4px">
+    <span>Uppgift</span><span>Deadline</span><span>Ansvarig</span>
+  </div>`;
+
+  const exportBtns = `<div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="inline-btn" style="font-size:11px;padding:5px 10px" onclick="exportTab4Excel('${l.id}','${chainKey}')">
+      <i class="ti ti-file-spreadsheet" style="margin-right:4px"></i>Excel
+    </button>
+    <button class="lansering-action-btn" style="font-size:11px" onclick="exportTab4PDF('${l.id}','${chainKey}')">
+      <i class="ti ti-file-pdf" style="margin-right:4px"></i>PDF
+    </button>
+  </div>`;
 
   // Bygg Uppgiftsdeadlines — grunduppgifter och egna uppgifter med datum.
   const taskRows = [];
@@ -6323,18 +6345,136 @@ function renderDetailTabDeadlines(l, chainKey) {
   const taskSection = `
     <div style="margin-top:${isChain ? '24px' : '0'}">
       ${sectionLabel('Uppgiftsdeadlines')}
+      ${colHeader}
       ${taskDeadlinesHtml}
     </div>`;
 
-  if (!isChain) return taskSection;
+  if (!isChain) return `${exportBtns}${taskSection}`;
 
   // Sektion 1: Processchema — kedjans fasta steg sorterade på datum.
   return `
+    ${exportBtns}
     <div>
       ${sectionLabel('Processchema')}
+      ${colHeader}
       ${renderDeadlineTimeline(l, chainKey, checks)}
     </div>
     ${taskSection}`;
+}
+
+// Hjälp: hämtar displaynamn för en e-postadress från wsTeamMembers.
+function ownerDisplayName(email) {
+  if (!email) return '';
+  return wsTeamMembers.find(m => m.email === email)?.name || email.split('@')[0];
+}
+
+// Exporterar Tab 4-data (Processchema + Uppgiftsdeadlines) som Excel-fil (.xlsx).
+function exportTab4Excel(lid, chainKey) {
+  const l = getLansering(lid);
+  if (!l || typeof XLSX === 'undefined') { addNotif('SheetJS laddades inte — kontrollera nätverksanslutningen', 'error'); return; }
+  const isChain = !chainKey.startsWith('free_');
+  const chainLabel = CHAIN_LABELS[chainKey] || chainKey;
+  const custData = (l.customers || {})[chainKey] || {};
+  const checks = custData.checklist || {};
+  const taskMeta = custData.taskMeta || {};
+  const removedFixed = custData.removedFixedTasks || [];
+
+  const wb = XLSX.utils.book_new();
+
+  // Flik 1: Processchema (bara för kedjor)
+  if (isChain) {
+    const win = getNextWindowForChain(l, chainKey);
+    const processData = win ? win.steps.map(s => ({
+      'Uppgift': s.label,
+      'Deadline': s.date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }),
+      'Ansvarig': ''
+    })) : [];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(processData), 'Processchema');
+  }
+
+  // Flik 2: Uppgiftsdeadlines
+  const taskData = [];
+  FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id)).forEach(item => {
+    const meta = taskMeta[item.id] || {};
+    const iso = toISODate(meta.date || '');
+    if (!iso) return;
+    taskData.push({ _iso: iso, 'Uppgift': item.label,
+      'Deadline': new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }),
+      'Ansvarig': ownerDisplayName(meta.owner || '') });
+  });
+  (custData.tasks || []).forEach(t => {
+    const iso = toISODate(t.deadline || '');
+    if (!iso) return;
+    taskData.push({ _iso: iso, 'Uppgift': t.name || 'Namnlös uppgift',
+      'Deadline': new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }),
+      'Ansvarig': ownerDisplayName(t.owner || '') });
+  });
+  taskData.sort((a, b) => a._iso.localeCompare(b._iso));
+  const taskSheet = taskData.map(({ _iso, ...rest }) => rest); // ta bort _iso-sorteringsfältet
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taskSheet.length ? taskSheet : [{ 'Uppgift': 'Inga uppgifter med deadline', 'Deadline': '', 'Ansvarig': '' }]), 'Uppgiftsdeadlines');
+
+  XLSX.writeFile(wb, `${l.name} — ${chainLabel}.xlsx`);
+}
+
+// Exporterar Tab 4-data (Processchema + Uppgiftsdeadlines) som PDF-fil.
+function exportTab4PDF(lid, chainKey) {
+  const l = getLansering(lid);
+  if (!l || !window.jspdf) { addNotif('jsPDF laddades inte — kontrollera nätverksanslutningen', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const isChain = !chainKey.startsWith('free_');
+  const chainLabel = CHAIN_LABELS[chainKey] || chainKey;
+  const custData = (l.customers || {})[chainKey] || {};
+  const checks = custData.checklist || {};
+  const taskMeta = custData.taskMeta || {};
+  const removedFixed = custData.removedFixedTasks || [];
+  const doc = new jsPDF();
+  const tableStyles = { styles: { fontSize: 9, cellPadding: 3 }, headStyles: { fillColor: [240, 240, 240], textColor: [80, 80, 80], fontStyle: 'bold' }, margin: { left: 14, right: 14 } };
+
+  // Rubrik
+  doc.setFontSize(16); doc.setFont(undefined, 'bold');
+  doc.text(l.name, 14, 18);
+  doc.setFontSize(11); doc.setFont(undefined, 'normal');
+  doc.text(`${chainLabel} — Deadlines`, 14, 26);
+  let y = 34;
+
+  // Sektion 1: Processchema
+  if (isChain) {
+    const win = getNextWindowForChain(l, chainKey);
+    if (win) {
+      doc.setFontSize(10); doc.setFont(undefined, 'bold');
+      doc.text('Processchema', 14, y); y += 3;
+      doc.autoTable({ ...tableStyles, startY: y,
+        head: [['Uppgift', 'Deadline', 'Ansvarig']],
+        body: win.steps.map(s => [s.label, s.date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }), ''])
+      });
+      y = doc.lastAutoTable.finalY + 10;
+    }
+  }
+
+  // Sektion 2: Uppgiftsdeadlines
+  const taskData = [];
+  FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id)).forEach(item => {
+    const meta = taskMeta[item.id] || {};
+    const iso = toISODate(meta.date || '');
+    if (!iso) return;
+    taskData.push([iso, item.label, new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }), ownerDisplayName(meta.owner || '')]);
+  });
+  (custData.tasks || []).forEach(t => {
+    const iso = toISODate(t.deadline || '');
+    if (!iso) return;
+    taskData.push([iso, t.name || 'Namngiven uppgift', new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }), ownerDisplayName(t.owner || '')]);
+  });
+  taskData.sort((a, b) => a[0].localeCompare(b[0]));
+  const taskBody = taskData.length ? taskData.map(r => r.slice(1)) : [['Inga uppgifter med deadline', '', '']];
+
+  doc.setFontSize(10); doc.setFont(undefined, 'bold');
+  doc.text('Uppgiftsdeadlines', 14, y); y += 3;
+  doc.autoTable({ ...tableStyles, startY: y,
+    head: [['Uppgift', 'Deadline', 'Ansvarig']],
+    body: taskBody
+  });
+
+  doc.save(`${l.name} — ${chainLabel}.pdf`);
 }
 
 // ── TEMA ──
