@@ -2105,18 +2105,22 @@ function openEditWizard(lid) {
   if (!l) return;
   const categories = { coop: null, ica: null, dagab: null };
   const catSearch  = { coop: '', ica: '', dagab: '' };
-  for (const chain of (l.chains || [])) {
+  // Initialisera kategorier för alla tre kedjor, inte bara aktiva
+  for (const chain of ['coop', 'ica', 'dagab']) {
     const catName = l.chainData?.[chain]?.category || '';
     const cats = chain === 'coop' ? COOP_CATS : chain === 'ica' ? ICA_CATS : DAGAB_CATS;
     const found = cats.find(c => c.cat === catName) || null;
     categories[chain] = found;
     catSearch[chain]  = catName;
   }
+  // Aktiva kedjor = l.chains minus borttagna (removedChains), inte alla l.chains
+  const removedChains = l.removedChains || [];
+  const activeChains = (l.chains || []).filter(c => !removedChains.includes(c));
   wizardData = {
     step: 1, isEdit: true, lanseringId: lid,
     brandId: l.brandId || '', newBrandName: '', useNewBrand: false,
     groupName: l.groupName || '',
-    chains: [...(l.chains || [])],
+    chains: activeChains,
     categories, catSearch,
     articles: (l.articles || [{name:''}]).map(a => (typeof a === 'string' ? a : a.name) || '')
   };
@@ -2599,10 +2603,17 @@ async function completeEditWizard() {
   const brandName  = b?.name  || l.brand  || '';
   const brandColor = b?.color || l.color  || '#f59e0b';
   const groupName  = data.groupName.trim();
-  const chainData = Object.fromEntries(data.chains.map(c => {
+  // Bevara befintlig chainData — uppdatera kedjepostningar, behåll fria kunder (free_*).
+  const newChainData = {};
+  if (l.chainData) {
+    for (const [k, v] of Object.entries(l.chainData)) {
+      if (!['coop', 'ica', 'dagab'].includes(k)) newChainData[k] = v;
+    }
+  }
+  for (const c of data.chains) {
     const cat = data.categories[c];
-    return [c, { category: cat?.cat || '', aviseringsVeckor: cat?.avisering || [], fonsterVeckor: cat?.fonster || [] }];
-  }));
+    newChainData[c] = { category: cat?.cat || '', aviseringsVeckor: cat?.avisering || [], fonsterVeckor: cat?.fonster || [] };
+  }
   const articles = validArticles.map((name, i) => ({
     id: l.articles?.[i]?.id || 'a_' + Math.random().toString(36).slice(2, 8), name
   }));
@@ -2612,7 +2623,7 @@ async function completeEditWizard() {
   const activeTab = data.chains.includes(l.activeCustomerTab) ? l.activeCustomerTab : data.chains[0];
   const updated = { ...l, brandId: data.brandId, brand: brandName, color: brandColor,
     groupName, name: `${brandName} — ${groupName}`,
-    chains: data.chains, chainData, articles, customers,
+    chains: data.chains, removedChains: [], chainData: newChainData, articles, customers,
     activeCustomerTab: activeTab, is_lansering: true };
   try {
     const { id: _id, name: _n, color: _c, ...rest } = updated;
@@ -5456,28 +5467,8 @@ function renderCustomerTabContent(l, tabId) {
 
   const bannerHtml = isChain ? renderChainDeadlineBanner(l, chainId) : '';
 
-  // Valfria datum för egendefinierade kunder — visas längst upp under infobar.
-  const customDateBlock = !isChain ? `
-    <div class="section-block">
-      <div style="display:flex;gap:20px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Eget aviseringsdatum</div>
-          <input type="date" style="background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:6px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;"
-            value="${l.chainData?.[custKey]?.customAviseringDate || ''}"
-            onchange="saveCustomerDate('${l.id}','${custKey}','customAviseringDate',this.value)">
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Eget lanseringsdatum</div>
-          <input type="date" style="background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:6px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;"
-            value="${l.chainData?.[custKey]?.customLanseringDate || ''}"
-            onchange="saveCustomerDate('${l.id}','${custKey}','customLanseringDate',this.value)">
-        </div>
-      </div>
-    </div>` : '';
-
   return `
     ${bannerHtml}
-    ${customDateBlock}
     <div class="section-block">
       <div class="section-block-title">Checklista</div>
       <div class="checklist">${checklistHtml}</div>
@@ -6039,6 +6030,25 @@ function renderDetailTabTasks(l, chainKey) {
     } else {
       infoBarHtml = `<div class="task-info-bar"><span class="task-info-bar-empty">Ingen kategori kopplad — tryck på Redigera för att koppla kategori</span></div>`;
     }
+  } else {
+    // Eget aviserings- och lanseringsdatum för egendefinierade kunder.
+    const cd = l.chainData?.[chainKey] || {};
+    infoBarHtml = `<div class="task-info-bar" style="gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Eget aviseringsdatum</div>
+        <input type="date"
+          style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;"
+          value="${cd.customAviseringDate || ''}"
+          onchange="saveCustomerDate('${l.id}','${chainKey}','customAviseringDate',this.value)">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Eget lanseringsdatum</div>
+        <input type="date"
+          style="background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;"
+          value="${cd.customLanseringDate || ''}"
+          onchange="saveCustomerDate('${l.id}','${chainKey}','customLanseringDate',this.value)">
+      </div>
+    </div>`;
   }
 
   const removedFixedTasks = custData.removedFixedTasks || [];
