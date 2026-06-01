@@ -6353,7 +6353,6 @@ function renderDetailTabDeadlines(l, chainKey) {
 
   const taskSection = `
     <div style="margin-top:${isChain ? '24px' : '0'}">
-      ${sectionLabel('Uppgiftsdeadlines')}
       ${colHeader}
       ${taskDeadlinesHtml}
     </div>`;
