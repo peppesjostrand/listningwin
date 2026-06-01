@@ -1838,6 +1838,7 @@ async function saveLansering(lid) {
 
 function getLansering(lid) { return lanseringar.find(x => x.id === lid); }
 
+// Beräknar total progress för en lansering across alla kedjor och kunder.
 function getLanseringProgress(l) {
   const customers = getLanseringCustomers(l);
   if (customers.length === 0) return 0;
@@ -1846,11 +1847,26 @@ function getLanseringProgress(l) {
     const custData = (l.customers || {})[c.id] || {};
     const checks = custData.checklist || {};
     const tasks = custData.tasks || [];
-    totalDone += CHECKLIST_ITEMS.filter(i => checks[i.id]).length;
+    const removedFixed = custData.removedFixedTasks || [];
+    const activeFixed = FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id));
+    totalDone += activeFixed.filter(i => checks[i.id]).length;
     totalDone += tasks.filter(t => t.status === 'Klar').length;
-    total += CHECKLIST_ITEMS.length + tasks.length;
+    total += activeFixed.length + tasks.length;
   });
   return total === 0 ? 0 : Math.round((totalDone / total) * 100);
+}
+
+// Beräknar progress för en specifik kund eller kedja.
+function getChainProgress(l, chainKey) {
+  if (!chainKey) return 0;
+  const custData = (l.customers || {})[chainKey] || {};
+  const checks = custData.checklist || {};
+  const tasks = custData.tasks || [];
+  const removedFixed = custData.removedFixedTasks || [];
+  const activeFixed = FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id));
+  const done = activeFixed.filter(i => checks[i.id]).length + tasks.filter(t => t.status === 'Klar').length;
+  const total = activeFixed.length + tasks.length;
+  return total === 0 ? 0 : Math.round((done / total) * 100);
 }
 
 function renderLansering() {
@@ -5769,7 +5785,8 @@ function renderLanseringDetail(l) {
     tabContent = `<div style="color:var(--muted);font-size:13px;padding:20px">Inga kedjor kopplade — välj kategori i lanseringsguiden</div>`;
   }
 
-  const pct = getLanseringProgress(l);
+  // Per-kedja-progress visas i detaljpanelen; total-progress visas i sidebaren.
+  const chainPct = getChainProgress(l, activeChain);
 
   return `<div class="lansering-detail">
     <div class="lansering-detail-header">
@@ -5780,8 +5797,9 @@ function renderLanseringDetail(l) {
       <button class="lansering-action-btn danger" onclick="deleteLansering('${l.id}')">Ta bort</button>
     </div>
 
-    <div style="padding:4px 0 8px">
-      <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    <div style="padding:4px 0 8px;display:flex;align-items:center;gap:8px">
+      <div class="progress-bar-wrap" style="flex:1;margin-top:0"><div class="progress-bar-fill" style="width:${chainPct}%"></div></div>
+      <span style="font-size:11px;color:var(--muted);min-width:28px;text-align:right;flex-shrink:0">${chainPct}%</span>
     </div>
 
     <div class="chain-selector-row">
