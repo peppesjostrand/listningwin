@@ -666,7 +666,7 @@ function renderRoundCard(r) {
 // ═══════════════════════════════════════════════
 // RENDER OVERVIEW — ombyggd dashboard
 // ═══════════════════════════════════════════════
-// Renderar Hem-sidan med tågtabell grupperad per varumärke.
+// Renderar Hem-sidan med kedjeboxar och tågtabell grupperad per varumärke.
 function renderOverview() {
   const el = document.getElementById('overview-content');
   if (!el) return;
@@ -711,12 +711,53 @@ function renderOverview() {
     return `${p[2]}/${p[1]}/${p[0]}`;
   }
 
-  // Returnerar zone-färg baserat på antal dagar kvar till avisering.
-  function zoneColor(daysToAv) {
-    if (daysToAv > 45) return '#4ade80';
-    if (daysToAv >= 21) return '#f59e0b';
-    return '#E3000B';
+  // Returnerar bakgrundsfärg för möte-bokat-cellen baserat på bokningsstatus och urgency.
+  function moteCellBg(moteBooked, isChain, daysToAv) {
+    if (moteBooked) return 'rgba(74,222,128,0.15)';
+    if (!isChain || daysToAv === null) return 'transparent';
+    if (daysToAv < 21) return 'rgba(227,0,11,0.1)';
+    if (daysToAv <= 45) return 'rgba(245,158,11,0.1)';
+    return 'transparent';
   }
+
+  // ── SEKTION 1: Kedjeboxar — närmaste avisering per kedja bland aktiva lanseringar ──
+  const chainBoxesHtml = ['coop', 'ica', 'dagab'].map(chain => {
+    let bestDays = null;
+    let bestWeek = null;
+    aktivaLanseringar.forEach(l => {
+      const activeChains = (l.chains || []).filter(c => !(l.removedChains || []).includes(c));
+      if (!activeChains.includes(chain)) return;
+      const win = getNextWindowForChain(l, chain);
+      const avStep = win?.steps?.find(s => s.primary);
+      if (!avStep) return;
+      const d = daysLeft(avStep.date);
+      if (bestDays === null || d < bestDays) { bestDays = d; bestWeek = avStep.week; }
+    });
+    const color = CHAIN_COLORS[chain];
+    const logo = LOGOS[chain];
+    const label = CHAIN_LABELS[chain];
+    if (bestWeek === null) {
+      return `<div class="db-chain-box">
+        <img src="${logo}" class="db-chain-logo" alt="${label}">
+        <div class="db-chain-info">
+          <div class="db-chain-label">Nästa avisering</div>
+          <div class="db-chain-none">Inga aktiva lanseringar</div>
+        </div>
+      </div>`;
+    }
+    const daysColor = bestDays < 21 ? '#E3000B' : bestDays <= 45 ? '#f59e0b' : color;
+    const daysStr = bestDays >= 0 ? `(${bestDays}d)` : '(Passerad)';
+    return `<div class="db-chain-box" style="border-color:${color}40">
+      <img src="${logo}" class="db-chain-logo" alt="${label}">
+      <div class="db-chain-info">
+        <div class="db-chain-label">Nästa avisering</div>
+        <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+          <span class="db-chain-week" style="color:${color}">v.${bestWeek}</span>
+          <span class="db-chain-days" style="color:${daysColor}">${daysStr}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 
   // Bygg tågtabell-rader grupperade per varumärke.
   const brandMap = {};
@@ -743,10 +784,15 @@ function renderOverview() {
         const win = getNextWindowForChain(l, custKey);
         const avStep = win?.steps?.find(s => s.primary);
         if (avStep) {
-          aviseringDisplay = `v.${avStep.week}`;
           daysToAv = daysLeft(avStep.date);
+          const avDaysStr = daysToAv >= 0 ? `${daysToAv}d` : 'Passerad';
+          aviseringDisplay = `v.${avStep.week} (${avDaysStr})`;
         }
-        if (win?.launch) lanseringDisplay = `v.${win.launch}`;
+        if (win?.launch) {
+          const lanDays = daysLeft(isoWeekToDate(win.launch));
+          const lanDaysStr = lanDays >= 0 ? `${lanDays}d` : 'Passerad';
+          lanseringDisplay = `v.${win.launch} (${lanDaysStr})`;
+        }
       } else {
         const cd = l.chainData?.[custKey];
         aviseringDisplay = fmtCustomDate(cd?.customAviseringDate) || '—';
@@ -766,7 +812,7 @@ function renderOverview() {
     });
   });
 
-  // Sortera varumärken efter urgency (lägst daysToAv först), rader lika.
+  // Sortera varumärken efter urgency (lägst daysToAv först), rader inom varje box lika.
   const brandEntries = Object.values(brandMap).filter(g => g.rows.length > 0);
   brandEntries.sort((a, b) => {
     const minA = Math.min(...a.rows.map(r => r.daysToAv ?? 9999));
@@ -783,21 +829,19 @@ function renderOverview() {
           ? `<img src="${brand.logo}" style="height:18px;object-fit:contain;max-width:80px">`
           : `<span class="db-brand-dot" style="background:${brand.color||'#888'}"></span>`;
         const rowsHtml = rows.map(r => {
-          const zone = r.isChain && r.daysToAv !== null ? zoneColor(r.daysToAv) : null;
-          const zoneBar = zone ? `<td class="db-train-zonebar" style="background:${zone}"></td>` : `<td class="db-train-zonebar"></td>`;
+          const bg = moteCellBg(r.moteBooked, r.isChain, r.daysToAv);
+          const moteIcon = r.moteBooked
+            ? `<i class="ti ti-circle-check" style="color:#4ade80;font-size:15px"></i>`
+            : `<i class="ti ti-circle" style="color:var(--border2);font-size:15px"></i>`;
           const customerCell = r.isChain
             ? `<span style="color:${r.customerColor};font-weight:600">${escHtml(r.customerLabel)}</span>`
             : `<span style="color:var(--muted)">${escHtml(r.customerLabel)}</span>`;
-          const moteCell = r.moteBooked
-            ? `<span class="db-train-mote done"><i class="ti ti-circle-check"></i></span>`
-            : `<span class="db-train-mote"><i class="ti ti-circle"></i></span>`;
           return `<tr class="db-train-row" onclick="selectLansering('${r.l.id}');showTab('lansering')">
-            ${zoneBar}
             <td class="db-train-group">${escHtml(r.groupName)}</td>
             <td class="db-train-cust">${customerCell}</td>
             <td class="db-train-week">${escHtml(r.aviseringDisplay)}</td>
             <td class="db-train-week">${escHtml(r.lanseringDisplay)}</td>
-            <td class="db-train-mote-cell">${moteCell}</td>
+            <td class="db-train-mote-cell" style="background:${bg}">${moteIcon}</td>
           </tr>`;
         }).join('');
         return `<div class="db-train-brand">
@@ -808,7 +852,6 @@ function renderOverview() {
           <table class="db-train-table">
             <thead>
               <tr>
-                <th class="db-train-zonebar-head"></th>
                 <th>Produktgrupp</th>
                 <th>Kund</th>
                 <th>Avisering</th>
@@ -842,6 +885,7 @@ function renderOverview() {
   el.innerHTML = `
     <div class="db-layout">
       <div class="db-main">
+        <div class="db-chain-boxes">${chainBoxesHtml}</div>
         <div class="db-section">
           <div class="db-section-header">
             <span class="db-section-title">Tågtabell</span>
@@ -849,7 +893,7 @@ function renderOverview() {
               <i class="ti ti-info-circle"></i>
             </button>
             <div class="db-mote-info-popup" id="tagtabell-info-popup" style="display:none">
-              Tabellen visar dina aktiva lanseringar grupperade per varumärke. Möte bokat visar om du har bockat av Mötesbokning kedja i uppgiftslistan för den lanseringen. Färgzonen på raden visar hur lång tid du har kvar att boka möte med kategorichefen innan aviseringsdeadline. Grön betyder att du har god tid. Gul betyder att du bör boka denna vecka. Röd betyder att det är kritiskt – be om möte ändå och fokusera på professionell avisering. Färgzoner visas bara för ICA, Coop och Dagab som har fasta lanseringsfönster.
+              Tabellen visar dina aktiva lanseringar grupperade per varumärke. Möte bokat visar om du har bockat av Mötesbokning kedja i uppgiftslistan för den lanseringen. Bakgrundsfärgen på Möte-cellen visar urgency: grön om mötet är bokat, röd om det saknas och avisering är inom 21 dagar, gul om 21–45 dagar. Färgzoner visas bara för ICA, Coop och Dagab som har fasta lanseringsfönster.
             </div>
           </div>
           ${tagtabellHtml}
