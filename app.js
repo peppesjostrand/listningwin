@@ -5968,6 +5968,17 @@ function toSwedishDate(val) {
   return val;
 }
 
+// Konverterar DD/MM/ÅÅÅÅ eller ÅÅÅÅ-MM-DD till ÅÅÅÅ-MM-DD (ISO 8601).
+function toISODate(val) {
+  if (!val) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    const [d, m, y] = val.split('/');
+    return `${y}-${m}-${d}`;
+  }
+  return val;
+}
+
 function toggleFixedTask(lid, custKey, itemId, checked) {
   toggleCustomerCheckItem(lid, custKey, itemId, checked);
 }
@@ -6092,20 +6103,27 @@ function renderDetailTabTasks(l, chainKey) {
     </div>`;
   }
 
+  // Hjälp: returnerar inline-style för rött datum om deadline passerat och ej klar.
+  function dateStyle(isoDate, done) {
+    if (done || !isoDate) return '';
+    return new Date(isoDate) < TODAY ? 'color:#E3000B;border-color:rgba(227,0,11,0.4);' : '';
+  }
+
   const removedFixedTasks = custData.removedFixedTasks || [];
   const fixedRowsHtml = FIXED_TASK_ITEMS.filter(item => !removedFixedTasks.includes(item.id)).map(item => {
     const done = !!checks[item.id];
     const meta = taskMeta[item.id] || {};
+    const isoDate = toISODate(meta.date || '');
+    const ds = dateStyle(isoDate, done);
     const ownerOpts = wsTeamMembers.map(m =>
-      `<option value="${escHtml(m.email)}" ${meta.owner === m.email ? 'selected' : ''}>${escHtml(m.name || m.email)}</option>`
+      `<option value="${escHtml(m.email)}" ${meta.owner === m.email ? 'selected' : ''}>${escHtml(m.name || m.email.split('@')[0])}</option>`
     ).join('');
     return `<div class="hybrid-task-row custom-task-row ${done ? 'done' : ''}">
       <input type="checkbox" class="hybrid-task-check" ${done ? 'checked' : ''}
         onchange="toggleFixedTask('${l.id}','${chainKey}','${item.id}',this.checked)">
       <span class="hybrid-task-name ${done ? 'done-text' : ''}">${escHtml(item.label)}</span>
-      <input type="text" class="hybrid-task-date" value="${escHtml(toSwedishDate(meta.date || ''))}"
-        placeholder="DD/MM/ÅÅÅÅ" autocomplete="off"
-        onblur="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','date',this.value)">
+      <input type="date" class="hybrid-task-date" value="${isoDate}" style="${ds}"
+        onchange="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','date',this.value)">
       <select class="task-owner-select" onchange="saveFixedTaskMeta('${l.id}','${chainKey}','${item.id}','owner',this.value)">
         <option value="">Ansvarig...</option>
         ${ownerOpts}
@@ -6117,8 +6135,10 @@ function renderDetailTabTasks(l, chainKey) {
 
   const customRowsHtml = customTasks.map((t, i) => {
     const done = t.status === 'Klar';
+    const isoDate = toISODate(t.deadline || '');
+    const ds = dateStyle(isoDate, done);
     const ownerOpts = wsTeamMembers.map(m =>
-      `<option value="${escHtml(m.email)}" ${t.owner === m.email ? 'selected' : ''}>${escHtml(m.name || m.email)}</option>`
+      `<option value="${escHtml(m.email)}" ${t.owner === m.email ? 'selected' : ''}>${escHtml(m.name || m.email.split('@')[0])}</option>`
     ).join('');
     return `<div class="hybrid-task-row custom-task-row ${done ? 'done' : ''}">
       <input type="checkbox" class="hybrid-task-check" ${done ? 'checked' : ''}
@@ -6126,9 +6146,8 @@ function renderDetailTabTasks(l, chainKey) {
       <input type="text" class="hybrid-task-name-input ${done ? 'done-text' : ''}" value="${escHtml(t.name || '')}"
         placeholder="Uppgift..." autocomplete="off"
         onblur="updateCustomerTask('${l.id}','${chainKey}',${i},'name',this.value)">
-      <input type="text" class="hybrid-task-date" value="${escHtml(toSwedishDate(t.deadline || ''))}"
-        placeholder="DD/MM/ÅÅÅÅ" autocomplete="off"
-        onblur="updateCustomerTask('${l.id}','${chainKey}',${i},'deadline',this.value)">
+      <input type="date" class="hybrid-task-date" value="${isoDate}" style="${ds}"
+        onchange="updateCustomerTask('${l.id}','${chainKey}',${i},'deadline',this.value)">
       <select class="task-owner-select" onchange="updateCustomerTask('${l.id}','${chainKey}',${i},'owner',this.value)">
         <option value="">Ansvarig...</option>
         ${ownerOpts}
@@ -6141,6 +6160,12 @@ function renderDetailTabTasks(l, chainKey) {
   return `
     ${infoBarHtml}
     <div style="height:16px;text-align:right;margin-bottom:2px"><span id="save-ind-tasks-${l.id}-${chainKey}"></span></div>
+    <div class="hybrid-task-header">
+      <span></span>
+      <span>Att göra</span>
+      <span>Deadline</span>
+      <span>Ansvarig</span>
+    </div>
     <div class="hybrid-task-list">
       ${fixedRowsHtml}
       ${customRowsHtml}
@@ -6245,12 +6270,63 @@ function renderDetailTabActivity(l, chainKey) {
     <div class="activity-feed">${feedHtml}</div>`;
 }
 
+// Renderar Tab 4 Deadlines med Processchema och Uppgiftsdeadlines.
 function renderDetailTabDeadlines(l, chainKey) {
-  if (chainKey.startsWith('free_')) {
-    return `<div style="color:var(--muted);font-size:12px;padding:8px 0">Deadlines visas bara för kedjor.</div>`;
-  }
+  const isChain = !chainKey.startsWith('free_');
   const custData = (l.customers || {})[chainKey] || {};
-  return renderDeadlineTimeline(l, chainKey, custData.checklist);
+  const checks = custData.checklist || {};
+  const taskMeta = custData.taskMeta || {};
+  const customTasks = custData.tasks || [];
+  const removedFixed = custData.removedFixedTasks || [];
+
+  const sectionLabel = txt => `<div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">${txt}</div>`;
+
+  // Bygg Uppgiftsdeadlines — grunduppgifter och egna uppgifter med datum.
+  const taskRows = [];
+  FIXED_TASK_ITEMS.filter(i => !removedFixed.includes(i.id)).forEach(item => {
+    const meta = taskMeta[item.id] || {};
+    const isoDate = toISODate(meta.date || '');
+    if (!isoDate) return;
+    taskRows.push({ name: item.label, isoDate, owner: meta.owner || '', done: !!checks[item.id] });
+  });
+  customTasks.forEach(t => {
+    const isoDate = toISODate(t.deadline || '');
+    if (!isoDate) return;
+    taskRows.push({ name: t.name || 'Namnlös uppgift', isoDate, owner: t.owner || '', done: t.status === 'Klar' });
+  });
+  taskRows.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+
+  const taskDeadlinesHtml = taskRows.length === 0
+    ? `<div style="color:var(--muted);font-size:12px;padding:4px 0">Inga uppgifter med deadline satta — lägg till deadline i Tab 1.</div>`
+    : taskRows.map(t => {
+        const overdue = !t.done && new Date(t.isoDate) < TODAY;
+        const color = t.done ? 'var(--muted)' : overdue ? '#E3000B' : 'var(--text)';
+        const decor = t.done ? 'line-through' : 'none';
+        const dateColor = t.done ? 'var(--muted)' : overdue ? '#E3000B' : 'var(--muted)';
+        const dateStr = new Date(t.isoDate).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' });
+        const ownerName = t.owner ? (wsTeamMembers.find(m => m.email === t.owner)?.name || t.owner.split('@')[0]) : '';
+        return `<div style="display:grid;grid-template-columns:1fr 110px 110px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:${color};text-decoration:${decor}">${escHtml(t.name)}</span>
+          <span style="font-size:11px;color:${dateColor}">${dateStr}</span>
+          <span style="font-size:11px;color:var(--muted)">${escHtml(ownerName)}</span>
+        </div>`;
+      }).join('');
+
+  const taskSection = `
+    <div style="margin-top:${isChain ? '24px' : '0'}">
+      ${sectionLabel('Uppgiftsdeadlines')}
+      ${taskDeadlinesHtml}
+    </div>`;
+
+  if (!isChain) return taskSection;
+
+  // Sektion 1: Processchema — kedjans fasta steg sorterade på datum.
+  return `
+    <div>
+      ${sectionLabel('Processchema')}
+      ${renderDeadlineTimeline(l, chainKey, checks)}
+    </div>
+    ${taskSection}`;
 }
 
 // ── TEMA ──

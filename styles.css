@@ -1459,7 +1459,8 @@
   .task-info-days { font-weight: 700; }
   .task-info-bar-empty { color: var(--muted2); font-size: 12px; }
 
-  .hybrid-task-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .hybrid-task-header { display: grid; grid-template-columns: 20px 1fr 130px 140px; gap: 8px; padding: 5px 12px 5px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0; background: var(--surface2); }
+  .hybrid-task-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; }
   .hybrid-task-row { display: grid; grid-template-columns: 20px 1fr 130px 140px; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
   .hybrid-task-row:last-child { border-bottom: none; }
   .hybrid-task-row:hover { background: rgba(255,255,255,0.025); }
